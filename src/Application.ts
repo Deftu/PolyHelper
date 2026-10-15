@@ -1,3 +1,4 @@
+import CacheHandler from './private/CacheHandler.ts';
 import DatabaseManager from './database/DatabaseManager.ts';
 import DiscordManager from './discord/DiscordManager.ts';
 import PolyHelperError from './private/error.ts';
@@ -6,23 +7,24 @@ import axios, { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from
 import packageJson from '../package.json' with { type: 'json' };
 import { canSendMessages, getApplicationOwners } from './utils/discordUtils.ts';
 import { execSync } from 'node:child_process';
-import { getErrorEmbed, getErrorTypeName, toError } from './utils/miscUtils.ts';
+import { getErrorEmbed, getErrorTypeName } from './utils/miscUtils.ts';
 import type { Config } from './types/config.ts';
 import type { EmbedHelperField } from './types/discord.ts';
 import type { RuntimeInformation, ValidErrors } from './types/application.ts';
 
 class Application {
-  readonly package: typeof packageJson = packageJson;
+  static readonly package: typeof packageJson = packageJson;
   readonly database: DatabaseManager;
   readonly discord: DiscordManager;
   readonly scripts: ScriptManager;
+  static readonly cache: CacheHandler = new CacheHandler();
   constructor(readonly config: Config) {
     this.database = new DatabaseManager(this);
     this.discord = new DiscordManager(this);
     this.scripts = new ScriptManager(this);
   }
 
-  async request<T>(url: string, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+  static async request<T>(url: string, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
     const headers = new AxiosHeaders(config.headers as AxiosHeaders | undefined);
     if (!headers.has('User-Agent')) headers.set('User-Agent', this.getUserAgent());
     return await axios.get<T>(url, { ...config, headers });
@@ -50,33 +52,33 @@ class Application {
     }
   }
 
-  private getGitCommit(): RuntimeInformation['commit'] {
+  private static getGitCommit(): RuntimeInformation['commit'] {
     try {
       return execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
     } catch (error) {
-      this.logError(toError(error));
+      console.error(error);
       return 'UNKNOWN';
     }
   }
 
-  private getGitDirty(): RuntimeInformation['dirty'] {
+  private static getGitDirty(): RuntimeInformation['dirty'] {
     try {
       return execSync('git status --porcelain', { encoding: 'utf8' }).trim().length > 0;
     } catch (error) {
-      this.logError(toError(error));
+      console.error(error);
       return false;
     }
   }
 
-  get startTime(): RuntimeInformation['startTime'] {
+  static get startTime(): RuntimeInformation['startTime'] {
     return Math.floor(Date.now() / 1000) - Math.floor(process.uptime());
   }
 
-  getRuntimeInformation(): RuntimeInformation {
+  static getRuntimeInformation(): RuntimeInformation {
     return { commit: this.getGitCommit(), dirty: this.getGitDirty(), startTime: this.startTime };
   }
 
-  getUserAgent() {
+  static getUserAgent() {
     const runtime = this.getRuntimeInformation();
     return `${this.package.name}/g${runtime.commit} (github:Polyfrost/PolyHelper)`;
   }

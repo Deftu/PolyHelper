@@ -7,7 +7,7 @@ import {
   CommandPermission,
   InteractionFlags
 } from '../../../types/discord.ts';
-import { getRoles } from '../../../utils/discordUtils.ts';
+import { hasRole } from '../../../utils/discordUtils.ts';
 import { isGuildMember } from '@sapphire/discord.js-utilities';
 import { toError } from '../../../utils/miscUtils.ts';
 
@@ -23,8 +23,7 @@ class CountingBlockCommand extends DiscordCommand {
   override async execute(interaction: ChatInputCommandInteractionWithGuild) {
     const member = interaction.options.getMember('user');
     if (!isGuildMember(member)) throw new PolyHelperError('Could not find that user');
-    const roles = await getRoles(member);
-    if (roles.map((role) => role.id).includes(this.discord.application.config.discord.roles.noCounting)) {
+    if (await hasRole(member, this.discord.application.config.discord.roles.noCounting)) {
       throw new PolyHelperError('User already has counting blacklist');
     }
 
@@ -36,7 +35,10 @@ class CountingBlockCommand extends DiscordCommand {
       .setFooter({ text: `${member.displayName} (${member.id})`, iconURL: member.displayAvatarURL() });
 
     try {
-      await member.roles.add(this.discord.application.config.discord.roles.noCounting);
+      await member.roles.add(
+        this.discord.application.config.discord.roles.noCounting,
+        `User blocked from counting by @${interaction.user.username} (${interaction.user.id})`
+      );
     } catch (error) {
       await this.discord.handleError(toError(error), interaction);
       await interaction.followUp({ content: 'Failed to block user from counting' });

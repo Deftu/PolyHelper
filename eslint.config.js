@@ -111,7 +111,6 @@ export default [
       'import/no-deprecated': 'error',
       '@stylistic/eol-last': 'error',
       'no-use-before-define': 'warn',
-      'no-underscore-dangle': 'warn',
       'no-unneeded-ternary': 'error',
       'import/exports-last': 'error',
       'import/no-namespace': 'warn',

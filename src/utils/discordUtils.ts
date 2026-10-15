@@ -23,6 +23,11 @@ export async function getRoles(member: GuildMember): Promise<Role[]> {
   return member.roles.cache.map((role) => role);
 }
 
+export async function hasRole(member: GuildMember, roleId: Role['id']): Promise<boolean> {
+  const userRoles = await getRoles(member).then((roles) => roles.map((role) => role.id));
+  return userRoles.includes(roleId);
+}
+
 export async function getApplicationOwners(client: Client<true>): Promise<string[]> {
   const app = await client.application.fetch();
   if (app.owner instanceof Team) return app.owner.members.map((member) => member.id);
@@ -48,25 +53,19 @@ export async function isAdminMember(user: User): Promise<boolean> {
 export async function isPolyfrostTeamMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
   if (!isGuildMember(member)) return false;
   if (await isAdminMember(member.user)) return true;
-  const userRoles = await getRoles(member).then((roles) => roles.map((role) => role.id));
-  if (userRoles.includes(member.client.config.discord.roles.polyfrostTeam)) return true;
-  return false;
+  return await hasRole(member, member.client.config.discord.roles.polyfrostTeam);
 }
 
 export async function isModeratorMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
   if (!isGuildMember(member)) return false;
   if (await isPolyfrostTeamMember(member)) return true;
-  const userRoles = await getRoles(member).then((roles) => roles.map((role) => role.id));
-  if (userRoles.includes(member.client.config.discord.roles.moderator)) return true;
-  return false;
+  return await hasRole(member, member.client.config.discord.roles.moderator);
 }
 
 export async function isSupportMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
   if (!isGuildMember(member)) return false;
   if (await isModeratorMember(member)) return true;
-  const userRoles = await getRoles(member).then((roles) => roles.map((role) => role.id));
-  if (userRoles.includes(member.client.config.discord.roles.support)) return true;
-  return false;
+  return await hasRole(member, member.client.config.discord.roles.support);
 }
 
 export function isChatInputCommandInteractionInsideOfGuild(

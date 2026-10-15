@@ -12,13 +12,13 @@ class ViewInformationButton extends DiscordButton {
     const ownerId = this.getOwnerId(interaction);
     if (ownerId === interaction.user.id) {
       await interaction.update({
-        components: InformationCommand.InformationComponent(this.discord, ownerId),
+        components: InformationCommand.InformationComponent(ownerId),
         flags: MessageFlags.IsComponentsV2,
         allowedMentions: { parse: [] }
       });
     } else {
       await interaction.reply({
-        components: InformationCommand.InformationComponent(this.discord, interaction.user.id),
+        components: InformationCommand.InformationComponent(interaction.user.id),
         flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         allowedMentions: { parse: [] }
       });

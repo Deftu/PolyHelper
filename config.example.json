@@ -8,8 +8,9 @@
       "polyfrostTeam": "DISCORD_ROLE_ID",
       "moderator": "DISCORD_ROLE_ID",
       "support": "DISCORD_ROLE_ID",
-      "noCounting":"DISCORD_ROLE_ID",
-      "noGiveaway":"DISCORD_ROLE_ID"
+      "noCounting": "DISCORD_ROLE_ID",
+      "noGiveaway": "DISCORD_ROLE_ID",
+      "devAccess": "DISCORD_ROLE_ID"
     },
     "channels": {
       "errorLog": null,

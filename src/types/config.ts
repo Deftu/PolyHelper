@@ -59,7 +59,8 @@ export const ConfigDiscordRoles = zod
     moderator: ConfigDiscordRoleId,
     support: ConfigDiscordRoleId,
     noCounting: ConfigDiscordRoleId,
-    noGiveaway: ConfigDiscordRoleId
+    noGiveaway: ConfigDiscordRoleId,
+    devAccess: ConfigDiscordRoleId
   })
   .meta({ description: 'Configuration options the discord roles' });
 export const ConfigDiscordChannels = zod

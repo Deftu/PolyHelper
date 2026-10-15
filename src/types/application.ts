@@ -44,3 +44,8 @@ export interface RuntimeInformation {
   dirty: boolean;
   startTime: number;
 }
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  nextPage: string | null;
+}

@@ -1,3 +1,4 @@
+import Application from '../../Application.ts';
 import DiscordCommand from '../private/commands/DiscordCommand.ts';
 import DiscordCommandDataBuilder from '../private/commands/DiscordCommandDataBuilder.ts';
 import {
@@ -9,7 +10,6 @@ import {
   TextDisplayBuilder
 } from 'discord.js';
 import { PatchedContainerBuilder, ViewCreditsButton, ViewSourceCodeButton } from '../private/ComponentHelper.ts';
-import type { DiscordManagerWithClient } from '../../types/discord.ts';
 
 class InformationCommand extends DiscordCommand {
   override readonly data = new DiscordCommandDataBuilder()
@@ -28,23 +28,20 @@ class InformationCommand extends DiscordCommand {
     return `**${name}:** ${format !== false ? `\`${value}\`` : value}`;
   }
 
-  static InformationComponent(
-    discord: DiscordManagerWithClient,
-    ownerId: string
-  ): NonNullable<BaseMessageOptions['components']> {
-    const { commit, dirty, startTime } = discord.application.getRuntimeInformation();
+  static InformationComponent(ownerId: string): NonNullable<BaseMessageOptions['components']> {
+    const { commit, dirty, startTime } = Application.getRuntimeInformation();
     return [
       new PatchedContainerBuilder()
         .addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`# ${discord.application.package.name}`),
-          new TextDisplayBuilder().setContent(discord.application.package.description)
+          new TextDisplayBuilder().setContent(`# ${Application.package.name}`),
+          new TextDisplayBuilder().setContent(Application.package.description)
         )
         .addTextDisplayComponents(
           new TextDisplayBuilder().setContent(
             [
               '## Runtime Info',
               ...[
-                { name: 'Version', value: discord.application.package.version },
+                { name: 'Version', value: Application.package.version },
                 { name: 'Online since', value: `<t:${startTime}:F> (<t:${startTime}:R>)`, format: false },
                 { name: 'Git Hash', value: commit ?? 'UNKNOWN' },
                 {
@@ -62,7 +59,7 @@ class InformationCommand extends DiscordCommand {
 
   override async execute(interaction: ChatInputCommandInteraction) {
     await interaction.followUp({
-      components: InformationCommand.InformationComponent(this.discord, interaction.user.id),
+      components: InformationCommand.InformationComponent(interaction.user.id),
       flags: MessageFlags.IsComponentsV2,
       allowedMentions: { parse: [] }
     });

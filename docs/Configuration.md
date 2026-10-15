@@ -31,6 +31,7 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 | `support`       | `string` | Discord role id |
 | `noCounting`    | `string` | Discord role id |
 | `noGiveaway`    | `string` | Discord role id |
+| `devAccess`     | `string` | Discord role id |
 
 ### channels
 
@@ -64,7 +65,7 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 ---
 
 This document is [auto generated](/scripts/docs/Configuration.ts) and was last updated on
-`Thu, 15 Oct 2026 13:04:11 GMT` (`1792069451269`)
+`Thu, 15 Oct 2026 15:36:43 GMT` (`1792078603909`)
 
 To update this document please run `pnpm docgen` or contact a maintainer and ask them to update it.
 
