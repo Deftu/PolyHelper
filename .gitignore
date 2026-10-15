@@ -1,4 +1,4 @@
-node_modules
-.env
-db
-*.tsbuildinfo
+/node_modules/
+/build/
+/data/
+/config.json

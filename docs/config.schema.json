@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string", "description": "!IMPORTANT DO NOT TOUCH\nConfig schema format path" },
+    "configVersion": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991,
+      "description": "!IMPORTANT DO NOT TOUCH\nConfig format version number"
+    },
+    "discord": {
+      "type": "object",
+      "properties": {
+        "token": { "type": "string", "description": "The Discord bot token used to authenticate" },
+        "embeds": {
+          "type": "object",
+          "properties": {
+            "colors": {
+              "type": "object",
+              "propertyNames": { "type": "string", "enum": ["Pink", "Red", "Green", "Yellow"] },
+              "additionalProperties": { "type": "string" },
+              "required": ["Pink", "Red", "Green", "Yellow"],
+              "description": "The default colors for embeds"
+            }
+          },
+          "required": ["colors"],
+          "additionalProperties": false,
+          "description": "Configuration options for embeds. Note that embeds aren't normally used in this project but the colors are used still"
+        }
+      },
+      "required": ["token", "embeds"],
+      "additionalProperties": false,
+      "description": "Configuration options for discord related stuff"
+    },
+    "logger": {
+      "type": "object",
+      "properties": {
+        "saveToFiles": { "type": "boolean", "description": "Whether log output should be written to files" },
+        "location": { "type": "string", "description": "The location of where these files should be saved" },
+        "errorLogChannel": {
+          "description": "A discord channel id where error logs will be sent. Not providing one disables logging to a channel",
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["saveToFiles", "location", "errorLogChannel"],
+      "additionalProperties": false,
+      "description": "Configuration options for the logger"
+    },
+    "other": {
+      "type": "object",
+      "properties": {
+        "backupConfigs": {
+          "type": "boolean",
+          "description": "Whether backup copies of config files should be created"
+        },
+        "sqlitedb": { "type": "string", "description": "Path to the sqlite database" }
+      },
+      "required": ["backupConfigs", "sqlitedb"],
+      "additionalProperties": false,
+      "description": "Configuration options for misc/other stuff or things that don't have a good location"
+    }
+  },
+  "required": ["$schema", "configVersion", "discord", "logger", "other"],
+  "additionalProperties": false
+}

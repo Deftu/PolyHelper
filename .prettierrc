@@ -1,1 +1,15 @@
-{}
+{
+  "quoteProps": "consistent",
+  "objectWrap": "collapse",
+  "bracketSameLine": true,
+  "trailingComma": "none",
+  "arrowParens": "always",
+  "bracketSpacing": true,
+  "proseWrap": "always",
+  "singleQuote": true,
+  "printWidth": 120,
+  "endOfLine": "lf",
+  "useTabs": false,
+  "tabWidth": 2,
+  "semi": true
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "./docs/config.schema.json",
+  "configVersion": 1,
+  "discord": {
+    "token": "DICORD_TOKEN",
+    "embeds": {
+      "colors": {
+        "Pink": "#F5C2E7",
+        "Red": "#ED4245",
+        "Green": "#57F287",
+        "Yellow": "#FFD700"
+      }
+    }
+  },
+  "logger": {
+    "saveToFiles": true,
+    "location": "./data/logs/{timestamp}",
+    "errorLogChannel": null
+  },
+  "other": {
+    "backupConfigs": true,
+    "sqlitedb": "./data/db.sqlite3"
+  }
+}
