@@ -1,7 +1,6 @@
-node_modules/
+/node_modules/
 /build/
 /data/
-config.json
-config.example.json
-Dockerfile
-pnpm-lock.yaml
+/config.json
+/config.example.json
+/pnpm-lock.yaml

@@ -1,18 +1,27 @@
 import {
+  type APIInteractionGuildMember,
   type ButtonInteraction,
   type ChatInputCommandInteraction,
   type Client,
+  GuildMember,
   InteractionType,
   ModalSubmitInteraction,
+  Role,
   type SendableChannels,
   Team,
   type User
 } from 'discord.js';
+import { isGuildMember } from '@sapphire/discord.js-utilities';
 import type {
   ButtonInteractionWithGuild,
   ChatInputCommandInteractionWithGuild,
   ModalSubmitInteractionWithGuild
 } from '../types/discord.ts';
+
+export async function getRoles(member: GuildMember): Promise<Role[]> {
+  member = await member.fetch();
+  return member.roles.cache.map((role) => role);
+}
 
 export async function getApplicationOwners(client: Client<true>): Promise<string[]> {
   const app = await client.application.fetch();
@@ -25,8 +34,38 @@ export async function isApplicationOwner(user: User): Promise<boolean> {
   return adminUsers.includes(user.id);
 }
 
+export function isDiscordServerOwner(user: User): boolean {
+  if (!user.client.discordManager.isGuildReady()) return false;
+  return user.id === user.client.discordManager.guild.ownerId;
+}
+
 export async function isAdminMember(user: User): Promise<boolean> {
   if (await isApplicationOwner(user)) return true;
+  if (isDiscordServerOwner(user)) return true;
+  return false;
+}
+
+export async function isPolyfrostTeamMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
+  if (!isGuildMember(member)) return false;
+  if (await isAdminMember(member.user)) return true;
+  const userRoles = await getRoles(member).then((roles) => roles.map((role) => role.id));
+  if (userRoles.includes(member.client.config.discord.roles.polyfrostTeam)) return true;
+  return false;
+}
+
+export async function isModeratorMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
+  if (!isGuildMember(member)) return false;
+  if (await isPolyfrostTeamMember(member)) return true;
+  const userRoles = await getRoles(member).then((roles) => roles.map((role) => role.id));
+  if (userRoles.includes(member.client.config.discord.roles.moderator)) return true;
+  return false;
+}
+
+export async function isSupportMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
+  if (!isGuildMember(member)) return false;
+  if (await isModeratorMember(member)) return true;
+  const userRoles = await getRoles(member).then((roles) => roles.map((role) => role.id));
+  if (userRoles.includes(member.client.config.discord.roles.support)) return true;
   return false;
 }
 

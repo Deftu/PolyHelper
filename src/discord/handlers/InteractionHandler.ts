@@ -5,7 +5,10 @@ import {
   isAdminMember,
   isButtonInteractionInsideOfGuild,
   isChatInputCommandInteractionInsideOfGuild,
-  isModalSubmitInteractionInsideOfGuild
+  isModalSubmitInteractionInsideOfGuild,
+  isModeratorMember,
+  isPolyfrostTeamMember,
+  isSupportMember
 } from '../../utils/discordUtils.ts';
 import type BasicInteractionData from '../private/BasicInteractionData.ts';
 import type DiscordManager from '../DiscordManager.ts';
@@ -21,11 +24,29 @@ class InteractionHandler {
   }
 
   async checkPerms(interaction: BaseInteraction, data: BasicInteractionData<DiscordManager>) {
-    const [isAdminMemberCheck] = await Promise.all([isAdminMember(interaction.user)]);
+    const [isAdminMemberCheck, isPolyfrostTeamMemberCheck, isModeratorMemberCheck, isSupportMemberCheck] =
+      await Promise.all([
+        isAdminMember(interaction.user),
+        isPolyfrostTeamMember(interaction.member),
+        isModeratorMember(interaction.member),
+        isSupportMember(interaction.member)
+      ]);
 
     const checks: Array<[boolean, string]> = [
       [
         data.permission === CommandPermission.Admin && !isAdminMemberCheck,
+        "You don't have permission to use this command. You are required to own the bot."
+      ],
+      [
+        data.permission === CommandPermission.PolyfrostTeam && !isPolyfrostTeamMemberCheck,
+        "You don't have permission to use this command. You are required to own the bot."
+      ],
+      [
+        data.permission === CommandPermission.Moderator && !isModeratorMemberCheck,
+        "You don't have permission to use this command. You are required to own the bot."
+      ],
+      [
+        data.permission === CommandPermission.Support && !isSupportMemberCheck,
         "You don't have permission to use this command. You are required to own the bot."
       ],
       [

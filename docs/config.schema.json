@@ -13,6 +13,41 @@
       "type": "object",
       "properties": {
         "token": { "type": "string", "description": "The Discord bot token used to authenticate" },
+        "serverId": { "type": "string", "description": "The Discord server (guild) ID" },
+        "roles": {
+          "type": "object",
+          "properties": {
+            "polyfrostTeam": { "type": "string", "description": "Discord role id" },
+            "moderator": { "type": "string", "description": "Discord role id" },
+            "support": { "type": "string", "description": "Discord role id" },
+            "noCounting": { "type": "string", "description": "Discord role id" },
+            "noGiveaway": { "type": "string", "description": "Discord role id" }
+          },
+          "required": ["polyfrostTeam", "moderator", "support", "noCounting", "noGiveaway"],
+          "additionalProperties": false,
+          "description": "Configuration options the discord roles"
+        },
+        "channels": {
+          "type": "object",
+          "properties": {
+            "errorLog": {
+              "description": "Discord channel id. If null, an auto-generated channel will be used",
+              "type": ["string", "null"]
+            },
+            "support": { "type": "string", "description": "Discord channel id" },
+            "ticketLogs": {
+              "description": "Discord channel id. If null, an auto-generated channel will be used",
+              "type": ["string", "null"]
+            },
+            "botLogs": {
+              "description": "Discord channel id. If null, an auto-generated channel will be used",
+              "type": ["string", "null"]
+            }
+          },
+          "required": ["errorLog", "support", "ticketLogs", "botLogs"],
+          "additionalProperties": false,
+          "description": "Configuration options the discord channels"
+        },
         "embeds": {
           "type": "object",
           "properties": {
@@ -29,7 +64,7 @@
           "description": "Configuration options for embeds. Note that embeds aren't normally used in this project but the colors are used still"
         }
       },
-      "required": ["token", "embeds"],
+      "required": ["token", "serverId", "roles", "channels", "embeds"],
       "additionalProperties": false,
       "description": "Configuration options for discord related stuff"
     },
@@ -37,13 +72,9 @@
       "type": "object",
       "properties": {
         "saveToFiles": { "type": "boolean", "description": "Whether log output should be written to files" },
-        "location": { "type": "string", "description": "The location of where these files should be saved" },
-        "errorLogChannel": {
-          "description": "A discord channel id where error logs will be sent. Not providing one disables logging to a channel",
-          "type": ["string", "null"]
-        }
+        "location": { "type": "string", "description": "The location of where these files should be saved" }
       },
-      "required": ["saveToFiles", "location", "errorLogChannel"],
+      "required": ["saveToFiles", "location"],
       "additionalProperties": false,
       "description": "Configuration options for the logger"
     },

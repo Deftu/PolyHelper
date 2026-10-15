@@ -27,7 +27,11 @@ class CommandHandler {
     try {
       if (command.response !== BasicInteractionResponse.None) {
         await interaction.deferReply({
-          flags: command.response === BasicInteractionResponse.Ephemeral ? MessageFlags.Ephemeral : undefined
+          flags:
+            (interaction.options.getBoolean('hidden-response') ??
+            command.response === BasicInteractionResponse.Ephemeral)
+              ? MessageFlags.Ephemeral
+              : undefined
         });
       }
       console.discord(
@@ -80,14 +84,17 @@ class CommandHandler {
     );
 
     const commands = [];
+    const guildCommands = [];
     for (const file of commandFiles) {
       const command: DiscordCommand = new (await import(`../commands/${file}`)).default(this.discord);
       if (command.data.name) {
         if (command.flags.includes(InteractionFlags.GuildCommand)) {
           command.data.setContexts(InteractionContextType.Guild);
           command.data.setIntegrationTypes(ApplicationIntegrationType.GuildInstall);
+          guildCommands.push(command.data.toJSON());
+        } else {
+          commands.push(command.data.toJSON());
         }
-        commands.push(command.data.toJSON());
         this.commands.set(command.data.name, command);
       }
     }
@@ -101,6 +108,13 @@ class CommandHandler {
     await rest
       .put(Routes.applicationCommands(clientId), { body: commands })
       .then(() => console.discord(`Successfully reloaded ${commands.length} application command(s).`));
+    await rest
+      .put(Routes.applicationCommands(clientId), { body: commands })
+      .then(() =>
+        console.discord(
+          `Successfully reloaded ${guildCommands.length} application guilds command(s) into ${this.discord.application.config.discord.serverId}.`
+        )
+      );
   }
 }
 

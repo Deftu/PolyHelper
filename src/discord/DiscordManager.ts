@@ -10,14 +10,18 @@ import {
   Client,
   Events,
   GatewayIntentBits,
+  Guild,
   MessageFlags,
-  ModalSubmitInteraction
+  ModalSubmitInteraction,
+  type SendableChannels
 } from 'discord.js';
 import { ErrorEmbed } from './private/EmbedHelper.ts';
-import { getErrorEmbed, toError } from '../utils/miscUtils.ts';
 import { parseInteractionType } from '../utils/discordUtils.ts';
+import { toError } from '../utils/miscUtils.ts';
+import { writeFile } from 'node:fs/promises';
 import type Application from '../Application.ts';
-import type { DiscordManagerWithClient, EmbedHelperField } from '../types/discord.ts';
+import type { Config } from '../types/config.ts';
+import type { DiscordManagerWithClient, DiscordManagerWithGuild, EmbedHelperField } from '../types/discord.ts';
 import type { ValidErrors } from '../types/application.ts';
 
 class DiscordManager {
@@ -26,6 +30,7 @@ class DiscordManager {
   readonly interactionHandler: InteractionHandler;
   readonly modalHandler: ModalHandler;
   client?: Client;
+  guild?: Guild;
   constructor(readonly application: Application) {
     this.buttonHandler = new ButtonHandler(this);
     this.commandHandler = new CommandHandler(this);
@@ -43,12 +48,32 @@ class DiscordManager {
     this.client.login(this.application.config.discord.token).catch((e) => this.handleError(toError(e)));
   }
 
-  isClientOnline(): this is DiscordManagerWithClient {
-    return this.client?.isReady() !== undefined;
+  async loadGuild(): Promise<DiscordManagerWithGuild> {
+    if (!this.isClientOnline()) {
+      throw new PolyHelperError("The discord bot doesn't seam to be online? Please restart the application");
+    }
+    this.guild = await this.client.guilds.fetch(this.application.config.discord.serverId);
+    console.discord(`Guild ready, successfully fetched ${this.guild.name} (${this.guild.id})`);
+    if (!this.isGuildReady()) throw new PolyHelperError('Something went wrong loading the guild');
+    return this;
   }
 
-  private onReady(client: Client<true>) {
+  isGuildReady(): this is DiscordManagerWithGuild {
+    if (!this.isClientOnline()) return false;
+    return this.guild?.id !== undefined;
+  }
+
+  isClientOnline(): this is DiscordManagerWithClient {
+    return this.client?.isReady() === true;
+  }
+
+  hasClient(): this is DiscordManager & { client: Client } {
+    return this.client !== undefined;
+  }
+
+  private async onReady(client: Client<true>) {
     console.discord(`Logged in as ${client.user.username} (${client.user.id})!`);
+    await this.loadGuild();
   }
 
   async handleError(
@@ -76,7 +101,7 @@ class DiscordManager {
 
     const embed = new ErrorEmbed();
     if (error instanceof PolyHelperError) embed.setDescription(`\`\`\`${error.message}\`\`\``);
-    else embed.setDescription('This error has been reported to the owner. Please try again later.');
+    else embed.setDescription('This error has been reported to the devs. Please try again later.');
 
     try {
       if (interaction.replied || interaction.deferred) {
@@ -84,12 +109,31 @@ class DiscordManager {
       } else {
         await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
-      if (!(error instanceof PolyHelperError)) {
-        await interaction.followUp({ embeds: [getErrorEmbed(error)], flags: MessageFlags.Ephemeral });
-      }
     } catch (e: unknown) {
       this.application.logError(toError(e));
     }
+  }
+
+  async getChannel(type: keyof Config['discord']['channels']): Promise<SendableChannels | null> {
+    if (!this.isGuildReady()) {
+      await this.loadGuild();
+      throw new PolyHelperError("The discord server isn't ready. Please try again later");
+    }
+    const config = this.application.config.discord.channels[type];
+    if (config === null) {
+      if (!this.isGuildReady()) {
+        throw new PolyHelperError("The discord server isn't ready. Please try again later");
+      }
+
+      const channel = await this.guild.channels.create({ name: type });
+      this.application.config.discord.channels[type] = channel.id;
+      await writeFile('config.json', JSON.stringify(this.application.config, null, 2), 'utf-8');
+      return channel;
+    }
+
+    const channel = await this.client.channels.fetch(config);
+    if (channel === null || !channel.isSendable()) throw new PolyHelperError(`Channel "${type}" not found!`);
+    return channel;
   }
 }
 

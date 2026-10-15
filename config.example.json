@@ -1,8 +1,22 @@
 {
   "$schema": "./docs/config.schema.json",
-  "configVersion": 1,
+  "configVersion": 2,
   "discord": {
     "token": "DICORD_TOKEN",
+    "serverId": "DISCORD_SERVER_ID",
+    "roles": {
+      "polyfrostTeam": "DISCORD_ROLE_ID",
+      "moderator": "DISCORD_ROLE_ID",
+      "support": "DISCORD_ROLE_ID",
+      "noCounting":"DISCORD_ROLE_ID",
+      "noGiveaway":"DISCORD_ROLE_ID"
+    },
+    "channels": {
+      "errorLog": null,
+      "support": "DISCORD_CHANNEL_ID",
+      "ticketLogs": null,
+      "botLogs": null
+    },
     "embeds": {
       "colors": {
         "Pink": "#F5C2E7",
@@ -14,8 +28,7 @@
   },
   "logger": {
     "saveToFiles": true,
-    "location": "./data/logs/{timestamp}",
-    "errorLogChannel": null
+    "location": "./data/logs/{timestamp}"
   },
   "other": {
     "backupConfigs": true,

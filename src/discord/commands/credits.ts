@@ -6,7 +6,6 @@ import {
   ButtonBuilder,
   type ChatInputCommandInteraction,
   MessageFlags,
-  SectionBuilder,
   TextDisplayBuilder
 } from 'discord.js';
 import { CommonDevs, getParsedMiscCredits } from '../../private/constants.ts';
@@ -22,9 +21,7 @@ class CreditsCommand extends DiscordCommand {
   static CreditsComponent(ownerId: string): NonNullable<BaseMessageOptions['components']> {
     return [
       new PatchedContainerBuilder()
-        .addSectionComponents(
-          new SectionBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent('# Credits'))
-        )
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Credits'))
         .addTextDisplayComponents(
           ...DevTypes.filter((type) => Object.values(CommonDevs).filter((data) => data.type === type).length > 0).map(
             (type) =>

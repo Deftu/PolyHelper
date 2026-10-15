@@ -29,12 +29,12 @@ class Application {
   }
 
   async logError(error: ValidErrors, extraData: EmbedHelperField[] = []) {
+    console.log(error);
     console.error(error);
     if (!this.discord.isClientOnline()) return;
 
     try {
-      if (!this.config.logger.errorLogChannel) return;
-      const channel = await this.discord.client.channels.fetch(this.config.logger.errorLogChannel);
+      const channel = await this.discord.getChannel('errorLog');
       if (channel === null || !channel.isSendable()) {
         throw new PolyHelperError('Error logs channel could not be found');
       }

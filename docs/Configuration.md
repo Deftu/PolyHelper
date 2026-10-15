@@ -14,10 +14,32 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 
 ## discord
 
-| Key      | Type     | Description                                                                                                           |
-| -------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
-| `token`  | `string` | The Discord bot token used to authenticate                                                                            |
-| `embeds` | `object` | Configuration options for embeds. Note that embeds aren't normally used in this project but the colors are used still |
+| Key        | Type     | Description                                                                                                           |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `token`    | `string` | The Discord bot token used to authenticate                                                                            |
+| `serverId` | `string` | The Discord server (guild) ID                                                                                         |
+| `roles`    | `object` | Configuration options the discord roles                                                                               |
+| `channels` | `object` | Configuration options the discord channels                                                                            |
+| `embeds`   | `object` | Configuration options for embeds. Note that embeds aren't normally used in this project but the colors are used still |
+
+### roles
+
+| Key             | Type     | Description     |
+| --------------- | -------- | --------------- |
+| `polyfrostTeam` | `string` | Discord role id |
+| `moderator`     | `string` | Discord role id |
+| `support`       | `string` | Discord role id |
+| `noCounting`    | `string` | Discord role id |
+| `noGiveaway`    | `string` | Discord role id |
+
+### channels
+
+| Key          | Type             | Description                                                         |
+| ------------ | ---------------- | ------------------------------------------------------------------- |
+| `errorLog`   | `string OR null` | Discord channel id. If null, an auto-generated channel will be used |
+| `support`    | `string`         | Discord channel id                                                  |
+| `ticketLogs` | `string OR null` | Discord channel id. If null, an auto-generated channel will be used |
+| `botLogs`    | `string OR null` | Discord channel id. If null, an auto-generated channel will be used |
 
 ### embeds
 
@@ -27,11 +49,10 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 
 ## logger
 
-| Key               | Type             | Description                                                                                         |
-| ----------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
-| `saveToFiles`     | `boolean`        | Whether log output should be written to files                                                       |
-| `location`        | `string`         | The location of where these files should be saved                                                   |
-| `errorLogChannel` | `string OR null` | A discord channel id where error logs will be sent. Not providing one disables logging to a channel |
+| Key           | Type      | Description                                       |
+| ------------- | --------- | ------------------------------------------------- |
+| `saveToFiles` | `boolean` | Whether log output should be written to files     |
+| `location`    | `string`  | The location of where these files should be saved |
 
 ## other
 
@@ -43,7 +64,7 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 ---
 
 This document is [auto generated](/scripts/docs/Configuration.ts) and was last updated on
-`Thu, 15 Oct 2026 11:03:13 GMT` (`1792062193325`)
+`Thu, 15 Oct 2026 13:04:11 GMT` (`1792069451269`)
 
 To update this document please run `pnpm docgen` or contact a maintainer and ask them to update it.
 

@@ -1,6 +1,7 @@
 import {
   ApplicationIntegrationType,
   InteractionContextType,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
   type SlashCommandAttachmentOption,
   type SlashCommandBooleanOption,
   SlashCommandBuilder,
@@ -16,6 +17,7 @@ import {
 } from 'discord.js';
 
 class DiscordCommandDataBuilder extends SlashCommandBuilder {
+  private shouldAddHiddenOption: boolean = true;
   constructor() {
     super();
     this.setContexts(InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel);
@@ -112,6 +114,20 @@ class DiscordCommandDataBuilder extends SlashCommandBuilder {
   ): this {
     super.addUserOption(input);
     return this;
+  }
+
+  hideHiddenOption(): this {
+    this.shouldAddHiddenOption = false;
+    return this;
+  }
+
+  override toJSON(): RESTPostAPIChatInputApplicationCommandsJSONBody {
+    if (this.shouldAddHiddenOption) {
+      this.addBooleanOption((option) =>
+        option.setName('hidden-response').setDescription('Should the command response be hidden')
+      );
+    }
+    return super.toJSON();
   }
 }
 

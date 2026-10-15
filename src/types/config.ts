@@ -14,42 +14,85 @@ export interface JsonObject {
 
 export type TransformFunction = (value: JsonValue, config: JsonObject) => JsonValue;
 
-export interface MigrationRule {
-  key?: string;
-  change: ConfigChangeType;
-  transform?: TransformFunction;
+export interface MigrationRuleMove {
+  key: string;
+  change: ConfigChangeType.Move;
 }
 
+export interface MigrationRuleDelete {
+  change: ConfigChangeType.Delete;
+}
+
+export interface MigrationRuleTransform {
+  key: string;
+  change: ConfigChangeType.Transform;
+  transform: TransformFunction;
+}
+
+export type MigrationRule = MigrationRuleMove | MigrationRuleDelete | MigrationRuleTransform;
 export type MigrationMap = Record<string, MigrationRule>;
+
+export const ConfigDiscordRoleId = zod.string().meta({ description: 'Discord role id' });
+export const ConfigDiscordChannelId = zod.string().meta({ description: 'Discord channel id' });
+export const ConfigDiscordChannelIdGenerate = zod
+  .string()
+  .nullable()
+  .meta({ description: 'Discord channel id. If null, an auto-generated channel will be used' });
+export const ConfigDiscordChannelIdGenerateThread = zod
+  .string()
+  .nullable()
+  .meta({ description: 'Discord channel id. If null, an auto-generated thread will be used' });
 
 export const ConfigDiscordEmbedsColors = zod.enum(['Pink', 'Red', 'Green', 'Yellow']);
 export type ConfigDiscordEmbedsColors = zod.infer<typeof ConfigDiscordEmbedsColors>;
-export const ConfigDiscordEmbeds = zod.object({
-  colors: zod.record(ConfigDiscordEmbedsColors, zod.string()).meta({ description: 'The default colors for embeds' })
-});
-export const ConfigDiscord = zod.object({
-  token: zod.string().meta({ description: 'The Discord bot token used to authenticate' }),
-  embeds: ConfigDiscordEmbeds.meta({
+export const ConfigDiscordEmbeds = zod
+  .object({
+    colors: zod.record(ConfigDiscordEmbedsColors, zod.string()).meta({ description: 'The default colors for embeds' })
+  })
+  .meta({
     description:
       "Configuration options for embeds. Note that embeds aren't normally used in this project but the colors are used still"
+  });
+export const ConfigDiscordRoles = zod
+  .object({
+    polyfrostTeam: ConfigDiscordRoleId,
+    moderator: ConfigDiscordRoleId,
+    support: ConfigDiscordRoleId,
+    noCounting: ConfigDiscordRoleId,
+    noGiveaway: ConfigDiscordRoleId
   })
-});
+  .meta({ description: 'Configuration options the discord roles' });
+export const ConfigDiscordChannels = zod
+  .object({
+    errorLog: ConfigDiscordChannelIdGenerate,
+    support: ConfigDiscordChannelId,
+    ticketLogs: ConfigDiscordChannelIdGenerate,
+    botLogs: ConfigDiscordChannelIdGenerate
+  })
+  .meta({ description: 'Configuration options the discord channels' });
+export const ConfigDiscord = zod
+  .object({
+    token: zod.string().meta({ description: 'The Discord bot token used to authenticate' }),
+    serverId: zod.string().meta({ description: 'The Discord server (guild) ID' }),
+    roles: ConfigDiscordRoles,
+    channels: ConfigDiscordChannels,
+    embeds: ConfigDiscordEmbeds
+  })
+  .meta({ description: 'Configuration options for discord related stuff' });
 
-export const ConfigLogger = zod.object({
-  saveToFiles: zod.boolean().meta({ description: 'Whether log output should be written to files' }),
-  location: zod.string().meta({ description: 'The location of where these files should be saved' }),
-  errorLogChannel: zod
-    .string()
-    .nullable()
-    .meta({
-      description: 'A discord channel id where error logs will be sent. Not providing one disables logging to a channel'
-    })
-});
+export const ConfigLogger = zod
+  .object({
+    saveToFiles: zod.boolean().meta({ description: 'Whether log output should be written to files' }),
+    location: zod.string().meta({ description: 'The location of where these files should be saved' })
+  })
+  .meta({ description: 'Configuration options for the logger' });
 
-export const ConfigOther = zod.object({
-  backupConfigs: zod.boolean().meta({ description: 'Whether backup copies of config files should be created' }),
-  sqlitedb: zod.string().meta({ description: 'Path to the sqlite database' })
-});
+export const ConfigOther = zod
+  .object({
+    backupConfigs: zod.boolean().meta({ description: 'Whether backup copies of config files should be created' }),
+    sqlitedb: zod.string().meta({ description: 'Path to the sqlite database' })
+  })
+  .meta({ description: "Configuration options for misc/other stuff or things that don't have a good location" });
 
 export const Config = zod.object({
   $schema: zod.string().meta({ description: '!IMPORTANT DO NOT TOUCH\nConfig schema format path' }),
@@ -58,10 +101,8 @@ export const Config = zod.object({
     .int()
     .positive()
     .meta({ description: '!IMPORTANT DO NOT TOUCH\nConfig format version number' }),
-  discord: ConfigDiscord.meta({ description: 'Configuration options for discord related stuff' }),
-  logger: ConfigLogger.meta({ description: 'Configuration options for the logger' }),
-  other: ConfigOther.meta({
-    description: "Configuration options for misc/other stuff or things that don't have a good location"
-  })
+  discord: ConfigDiscord,
+  logger: ConfigLogger,
+  other: ConfigOther
 });
 export type Config = zod.infer<typeof Config>;

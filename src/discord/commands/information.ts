@@ -6,7 +6,6 @@ import {
   ButtonBuilder,
   type ChatInputCommandInteraction,
   MessageFlags,
-  SectionBuilder,
   TextDisplayBuilder
 } from 'discord.js';
 import { PatchedContainerBuilder, ViewCreditsButton, ViewSourceCodeButton } from '../private/ComponentHelper.ts';
@@ -36,11 +35,9 @@ class InformationCommand extends DiscordCommand {
     const { commit, dirty, startTime } = discord.application.getRuntimeInformation();
     return [
       new PatchedContainerBuilder()
-        .addSectionComponents(
-          new SectionBuilder().addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`# ${discord.application.package.name}`),
-            new TextDisplayBuilder().setContent(discord.application.package.description)
-          )
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(`# ${discord.application.package.name}`),
+          new TextDisplayBuilder().setContent(discord.application.package.description)
         )
         .addTextDisplayComponents(
           new TextDisplayBuilder().setContent(

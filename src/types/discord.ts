@@ -11,9 +11,16 @@ import type {
   ModalMessageModalSubmitInteraction,
   ModalSubmitInteraction
 } from 'discord.js';
-import type { ConfigDiscordEmbedsColors } from './config.ts';
+import type { Config, ConfigDiscordEmbedsColors } from './config.ts';
 import type { DevData, DevName } from './application.ts';
 import type { EmbedStyles } from '../private/constants.ts';
+
+declare module 'discord.js' {
+  export interface Client {
+    config: Config;
+    discordManager: DiscordManager;
+  }
+}
 
 export enum InteractionFlags {
   GuildCommand,
@@ -23,7 +30,8 @@ export enum InteractionFlags {
 
 export enum CommandPermission {
   Admin,
-  Staff,
+  PolyfrostTeam,
+  Moderator,
   Support,
   Anyone
 }
@@ -42,6 +50,7 @@ export enum ButtonResponse {
 }
 
 export type DiscordManagerWithClient = DiscordManager & { client: Client<true> };
+export type DiscordManagerWithGuild = DiscordManagerWithClient & { guild: Guild };
 
 export interface AutocompleteOption {
   name: string;
