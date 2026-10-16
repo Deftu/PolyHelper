@@ -13,3 +13,5 @@ export interface LogData {
   background: ChalkInstance;
   color: ChalkInstance;
 }
+
+export type Nullish = null | undefined;

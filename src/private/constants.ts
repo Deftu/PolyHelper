@@ -2,10 +2,10 @@ import type { CreditData, DevData } from '../types/application.ts';
 import type { EmbedStyleData } from '../types/discord.ts';
 
 export const EmbedStyles = {
-  Generic: { color: 'Blue', footer: 'Amber' },
-  Warning: { author: { name: 'An Warning has occurred' }, color: 'Yellow', footer: 'Amber' },
-  Error: { author: { name: 'An Error has occurred' }, color: 'Red', footer: 'Amber' },
-  Success: { author: { name: 'Success' }, color: 'Green', footer: 'Amber' }
+  Generic: { color: 'Blue' },
+  Warning: { author: { name: 'An Warning has occurred' }, color: 'Yellow' },
+  Error: { author: { name: 'An Error has occurred' }, color: 'Red' },
+  Success: { author: { name: 'Success' }, color: 'Green' }
 } satisfies Record<string, EmbedStyleData>;
 
 export const CommonDevs = {

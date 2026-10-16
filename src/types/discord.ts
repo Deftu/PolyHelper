@@ -9,7 +9,8 @@ import type {
   Guild,
   GuildMember,
   ModalMessageModalSubmitInteraction,
-  ModalSubmitInteraction
+  ModalSubmitInteraction,
+  TextBasedChannel
 } from 'discord.js';
 import type { Config, ConfigDiscordEmbedsColors } from './config.ts';
 import type { DevData, DevName } from './application.ts';
@@ -63,8 +64,9 @@ export interface GuildInteractionData {
   member: GuildMember;
 }
 
-export type ChatInputCommandInteractionWithGuild = ChatInputCommandInteraction & GuildInteractionData;
-export type ButtonInteractionWithGuild = ButtonInteraction & GuildInteractionData;
+export type ChatInputCommandInteractionWithGuild = ChatInputCommandInteraction &
+  GuildInteractionData & { channel: TextBasedChannel };
+export type ButtonInteractionWithGuild = ButtonInteraction & GuildInteractionData & { channel: TextBasedChannel };
 export type ModalSubmitInteractionWithGuild = ModalSubmitInteraction & GuildInteractionData;
 export type ModalMessageModalSubmitInteractionWithGuild = ModalMessageModalSubmitInteraction & GuildInteractionData;
 

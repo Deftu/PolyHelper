@@ -19,7 +19,7 @@ abstract class DiscordCommand<
     return [];
   }
 
-  abstract execute(interaction: ChatInputCommandInteraction): Promise<void>;
+  abstract execute(interaction: ChatInputCommandInteraction): Promise<any>;
 }
 
 export default DiscordCommand;

@@ -41,8 +41,7 @@ class CountingBlockCommand extends DiscordCommand {
       );
     } catch (error) {
       await this.discord.handleError(toError(error), interaction);
-      await interaction.followUp({ content: 'Failed to unblock user from counting' });
-      return;
+      return await interaction.followUp({ content: 'Failed to unblock user from counting' });
     }
 
     await interaction.followUp({ content: `${member.toString()} has been unblocked from counting`, embeds: [embed] });

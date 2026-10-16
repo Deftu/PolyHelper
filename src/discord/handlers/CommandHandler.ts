@@ -109,7 +109,9 @@ class CommandHandler {
       .put(Routes.applicationCommands(clientId), { body: commands })
       .then(() => console.discord(`Successfully reloaded ${commands.length} application command(s).`));
     await rest
-      .put(Routes.applicationCommands(clientId), { body: commands })
+      .put(Routes.applicationGuildCommands(clientId, this.discord.application.config.discord.serverId), {
+        body: guildCommands
+      })
       .then(() =>
         console.discord(
           `Successfully reloaded ${guildCommands.length} application guilds command(s) into ${this.discord.application.config.discord.serverId}.`

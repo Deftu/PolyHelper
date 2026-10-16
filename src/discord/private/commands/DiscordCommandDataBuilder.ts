@@ -116,7 +116,7 @@ class DiscordCommandDataBuilder extends SlashCommandBuilder {
     return this;
   }
 
-  hideHiddenOption(): this {
+  removeHidddenOption(): this {
     this.shouldAddHiddenOption = false;
     return this;
   }

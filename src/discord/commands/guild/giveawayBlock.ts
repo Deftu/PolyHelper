@@ -41,8 +41,7 @@ class GiveawayBlockCommand extends DiscordCommand {
       );
     } catch (error) {
       await this.discord.handleError(toError(error), interaction);
-      await interaction.followUp({ content: 'Failed to block user from giveaways' });
-      return;
+      return await interaction.followUp({ content: 'Failed to block user from giveaways' });
     }
 
     await interaction.followUp({ content: `${member.toString()} has been blocked from giveawys`, embeds: [embed] });
