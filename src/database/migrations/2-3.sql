@@ -1,0 +1,2 @@
+ALTER TABLE panels ADD COLUMN maxOpenTickets INT NOT NULL DEFAULT 1;
+ALTER TABLE panels DROP COLUMN channel;

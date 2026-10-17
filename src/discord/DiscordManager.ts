@@ -1,11 +1,13 @@
 import ButtonHandler from './handlers/ButtonHandler.ts';
 import CommandHandler from './handlers/CommandHandler.ts';
 import InteractionHandler from './handlers/InteractionHandler.ts';
+import MessageHandler from './handlers/MessageHandler.ts';
 import ModalHandler from './handlers/ModalHandler.ts';
 import PolyHelperError from '../private/error.ts';
 import {
   AutocompleteInteraction,
   ButtonInteraction,
+  ChannelType,
   ChatInputCommandInteraction,
   Client,
   Events,
@@ -13,7 +15,8 @@ import {
   Guild,
   MessageFlags,
   ModalSubmitInteraction,
-  type SendableChannels
+  type SendableChannels,
+  TextChannel
 } from 'discord.js';
 import { ErrorEmbed } from './private/EmbedHelper.ts';
 import { parseInteractionType } from '../utils/discordUtils.ts';
@@ -28,6 +31,7 @@ class DiscordManager {
   readonly buttonHandler: ButtonHandler;
   readonly commandHandler: CommandHandler;
   readonly interactionHandler: InteractionHandler;
+  readonly messageHandler: MessageHandler;
   readonly modalHandler: ModalHandler;
   client?: Client;
   guild?: Guild;
@@ -35,6 +39,7 @@ class DiscordManager {
     this.buttonHandler = new ButtonHandler(this);
     this.commandHandler = new CommandHandler(this);
     this.interactionHandler = new InteractionHandler(this);
+    this.messageHandler = new MessageHandler(this);
     this.modalHandler = new ModalHandler(this);
   }
 
@@ -44,6 +49,7 @@ class DiscordManager {
     await this.buttonHandler.loadButtons();
     await this.modalHandler.loadModals();
     this.client.on(Events.ClientReady, (client) => this.onReady(client));
+    this.client.on(Events.MessageCreate, (message) => this.messageHandler.onMessage(message));
     this.client.on(Events.InteractionCreate, (interaction) => this.interactionHandler.onInteraction(interaction));
     this.client.login(this.application.config.discord.token).catch((e) => this.handleError(toError(e)));
   }
@@ -133,6 +139,12 @@ class DiscordManager {
 
     const channel = await this.client.channels.fetch(config);
     if (channel === null || !channel.isSendable()) throw new PolyHelperError(`Channel "${type}" not found!`);
+    return channel;
+  }
+
+  async getSupportChannel(): Promise<TextChannel> {
+    const channel = await this.getChannel('support');
+    if (channel.type !== ChannelType.GuildText) throw new PolyHelperError('Could not find the support channel?');
     return channel;
   }
 }

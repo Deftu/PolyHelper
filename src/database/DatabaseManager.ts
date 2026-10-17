@@ -1,11 +1,13 @@
 import BasicDatabaseManager from './BasicDatabaseManager.ts';
+import Panel from './private/Panel.ts';
 import PolyHelperError from '../private/error.ts';
+import Ticket from './private/ticket/Ticket.ts';
 import type Application from '../Application.ts';
-import type { DatabasePanel } from '../types/database.ts';
+import type { DatabasePanel, DatabaseTicket } from '../types/database.ts';
 import type { Message } from 'discord.js';
 
 class DatabaseManager extends BasicDatabaseManager {
-  protected override currentDatabaseSchemaVersion: number = 1;
+  protected override currentDatabaseSchemaVersion: number = 3;
   protected override databaseMigrationsPath: string = 'src/database/migrations';
   constructor(readonly application: Application) {
     super(application.config.other.sqlitedb);
@@ -30,26 +32,21 @@ class DatabaseManager extends BasicDatabaseManager {
     return message;
   }
 
-  getPanelIds(): DatabasePanel['id'][] {
-    return this.db
-      .prepare<[], Pick<DatabasePanel, 'id'>>('SELECT id FROM panels')
-      .all()
-      .map((row) => row.id);
-  }
-
   getPanels(): DatabasePanel[] {
     return this.db.prepare<[], DatabasePanel>('SELECT * FROM panels').all();
   }
 
-  getPanel(id: DatabasePanel['id']): DatabasePanel | undefined {
-    return this.db.prepare<[DatabasePanel['id']], DatabasePanel>('SELECT * FROM panels WHERE id = ?').get(id);
+  getPanel(id: DatabasePanel['id']): Panel | undefined {
+    const data = this.db.prepare<[DatabasePanel['id']], DatabasePanel>('SELECT * FROM panels WHERE id = ?').get(id);
+    if (!data) return data;
+    return new Panel(data, this);
   }
 
-  async insertPanel(panelData: Omit<DatabasePanel, 'id'>): Promise<DatabasePanel> {
+  async insertPanel(panelData: Omit<DatabasePanel, 'id'>): Promise<Panel> {
     const id: DatabasePanel['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabasePanel>(
-        'INSERT INTO panels (id, name, title, description, channel, buttonLabel, buttonEmoji, openingMessage, pingSupportRoleOnOpen, enabled) VALUES (@id, @name, @title, @description, @channel, @buttonLabel, @buttonEmoji, @openingMessage, @pingSupportRoleOnOpen, @enabled)'
+        'INSERT INTO panels (id, name, title, description, buttonLabel, buttonEmoji, openingMessage, maxOpenTickets, pingSupportRoleOnOpen, enabled) VALUES (@id, @name, @title, @description, @buttonLabel, @buttonEmoji, @openingMessage, @maxOpenTickets, @pingSupportRoleOnOpen, @enabled)'
       )
       .run({ ...panelData, id });
     const panel = this.getPanel(id);
@@ -63,18 +60,68 @@ class DatabaseManager extends BasicDatabaseManager {
     await this.application.tickets.updatePanelsMessage();
   }
 
-  async updatePanel(data: DatabasePanel): Promise<DatabasePanel> {
+  async updatePanel(data: DatabasePanel): Promise<Panel> {
     const panel = this.getPanel(data.id);
     if (!panel) throw new PolyHelperError('Could not find this panel?');
     this.db
       .prepare<DatabasePanel>(
-        'UPDATE panels SET name = @name, title = @title, description = @description, channel = @channel, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, pingSupportRoleOnOpen = @pingSupportRoleOnOpen, enabled = @enabled WHERE id = @id'
+        'UPDATE panels SET name = @name, title = @title, description = @description, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, maxOpenTickets = @maxOpenTickets, pingSupportRoleOnOpen = @pingSupportRoleOnOpen, enabled = @enabled WHERE id = @id'
       )
       .run(data);
     const newPanel = this.getPanel(data.id);
     if (!newPanel) throw new PolyHelperError('Something went wrong while updating a panel');
     await this.application.tickets.updatePanelsMessage();
     return newPanel;
+  }
+
+  getTicketIds(): DatabaseTicket['id'][] {
+    return this.db
+      .prepare<[], Pick<DatabaseTicket, 'id'>>('SELECT id FROM tickets')
+      .all()
+      .map((row) => row.id);
+  }
+
+  getTicketsByPanel(panelId: DatabaseTicket['panelId'], closed: DatabaseTicket['closed'] = 0): Ticket[] {
+    return this.db
+      .prepare<[DatabaseTicket['panelId'], DatabaseTicket['closed']], Pick<DatabaseTicket, 'id'>>(
+        'SELECT id FROM tickets WHERE panelId = ? AND closed = ?'
+      )
+      .all(panelId, closed)
+      .map(({ id }) => this.getTicket(id))
+      .filter((ticket) => ticket !== undefined);
+  }
+
+  getTicketsByPanelUser(
+    panelId: DatabaseTicket['panelId'],
+    owner: DatabaseTicket['owner'],
+    closed: DatabaseTicket['closed'] = 0
+  ): Ticket[] {
+    return this.db
+      .prepare<
+        [DatabaseTicket['panelId'], DatabaseTicket['owner'], DatabaseTicket['closed']],
+        Pick<DatabaseTicket, 'id'>
+      >('SELECT id FROM tickets WHERE panelId = ? AND owner = ? AND closed = ?')
+      .all(panelId, owner, closed)
+      .map(({ id }) => this.getTicket(id))
+      .filter((ticket) => ticket !== undefined);
+  }
+
+  getTicket(id: DatabaseTicket['id']): Ticket | undefined {
+    const data = this.db.prepare<[DatabaseTicket['id']], DatabaseTicket>('SELECT * FROM tickets WHERE id = ?').get(id);
+    if (!data) return data;
+    return new Ticket(data, this);
+  }
+
+  insertTicket(panelData: Omit<DatabaseTicket, 'id'>): Ticket {
+    const id: DatabaseTicket['id'] = crypto.randomUUID();
+    this.db
+      .prepare<DatabaseTicket>(
+        'INSERT INTO tickets (id, panelId, threadId, owner, pinned, closed) VALUES (@id, @panelId, @threadId, @owner, @pinned, @closed)'
+      )
+      .run({ ...panelData, id });
+    const ticket = this.getTicket(id);
+    if (!ticket) throw new PolyHelperError('Something went wrong while inserting a ticket');
+    return ticket;
   }
 }
 

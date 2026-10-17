@@ -28,7 +28,7 @@ abstract class DiscordButton<
     return userId;
   }
 
-  abstract execute(interaction: ButtonInteraction): Promise<void>;
+  abstract execute(interaction: ButtonInteraction): Promise<any>;
 }
 
 export default DiscordButton;

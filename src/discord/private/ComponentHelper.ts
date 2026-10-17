@@ -2,8 +2,6 @@ import config from '../../../config.json' with { type: 'json' };
 import {
   ButtonBuilder,
   ButtonStyle,
-  ChannelSelectMenuBuilder,
-  ChannelType,
   CheckboxBuilder,
   ContainerBuilder,
   type HexColorString,
@@ -16,6 +14,7 @@ import {
 } from 'discord.js';
 import { ConfigDiscordEmbedsColors } from '../../types/config.ts';
 import { hexToRgb } from '../../utils/miscUtils.ts';
+import type Panel from '../../database/private/Panel.ts';
 import type { DatabasePanel } from '../../types/database.ts';
 
 export class PatchedContainerBuilder extends ContainerBuilder {
@@ -68,14 +67,7 @@ export function OpenTicketButton({ id, buttonLabel, buttonEmoji, enabled }: Data
   return button;
 }
 
-export function BasicPanelModal(panel?: DatabasePanel): ModalBuilder {
-  const channel = new ChannelSelectMenuBuilder()
-    .setCustomId('channel')
-    .setRequired(true)
-    .setChannelTypes(ChannelType.GuildText)
-    .setMaxValues(1);
-  if (panel) channel.setDefaultChannels(panel.channel);
-
+export function BasicPanelModal(panel?: Panel | DatabasePanel): ModalBuilder {
   return new ModalBuilder().addLabelComponents(
     new LabelBuilder().setLabel('Panel Name').setTextInputComponent(
       new TextInputBuilder()
@@ -98,23 +90,22 @@ export function BasicPanelModal(panel?: DatabasePanel): ModalBuilder {
         .setRequired(true)
         .setValue(panel?.description ?? '')
     ),
-    new LabelBuilder().setLabel('Staff Channel').setChannelSelectMenuComponent(channel),
+    new LabelBuilder().setLabel('Button Label').setTextInputComponent(
+      new TextInputBuilder()
+        .setCustomId('buttonLabel')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setValue(panel?.buttonLabel ?? '')
+    ),
     new LabelBuilder()
       .setLabel('Enabled')
       .setCheckboxComponent(new CheckboxBuilder().setCustomId('enabled').setDefault(Boolean(panel?.enabled ?? 1)))
   );
 }
 
-export function MiscPanelModal(panel?: DatabasePanel): ModalBuilder {
+export function MiscPanelModal(panel?: Panel | DatabasePanel): ModalBuilder {
   return new ModalBuilder()
     .addLabelComponents(
-      new LabelBuilder().setLabel('Button Label').setTextInputComponent(
-        new TextInputBuilder()
-          .setCustomId('buttonLabel')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true)
-          .setValue(panel?.buttonLabel ?? '')
-      ),
       new LabelBuilder().setLabel('Button Emoji (emoji id)').setTextInputComponent(
         new TextInputBuilder()
           .setCustomId('buttonEmoji')
@@ -130,9 +121,7 @@ export function MiscPanelModal(panel?: DatabasePanel): ModalBuilder {
           '',
           "- `{mention}` - Ticket Opener's mention",
           "- `{username}` - Ticket Opener's username",
-          "- `{id}` - Ticket Opener's id",
-          '- `{serverName}` - the discord server name',
-          '- `{panelName}` - panel name'
+          "- `{id}` - Ticket Opener's id"
         ].join('\n')
       )
     )
@@ -143,6 +132,13 @@ export function MiscPanelModal(panel?: DatabasePanel): ModalBuilder {
           .setStyle(TextInputStyle.Paragraph)
           .setRequired(true)
           .setValue(panel?.openingMessage ?? '')
+      ),
+      new LabelBuilder().setLabel('Max Open Tickets Open Simultaneously ').setTextInputComponent(
+        new TextInputBuilder()
+          .setCustomId('maxOpenTickets')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true)
+          .setValue(String(panel?.maxOpenTickets ?? 1))
       ),
       new LabelBuilder()
         .setLabel('Ping Support Role On Open')

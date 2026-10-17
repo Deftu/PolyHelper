@@ -1,7 +1,7 @@
-import DiscordCommand from '../../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../../private/commands/DiscordCommandDataBuilder.ts';
-import EmbedHelper from '../../private/EmbedHelper.ts';
-import PolyHelperError from '../../../private/error.ts';
+import DiscordCommand from '../../../private/commands/DiscordCommand.ts';
+import DiscordCommandDataBuilder from '../../../private/commands/DiscordCommandDataBuilder.ts';
+import EmbedHelper from '../../../private/EmbedHelper.ts';
+import PolyHelperError from '../../../../private/error.ts';
 import {
   ActionRowBuilder,
   AutocompleteInteraction,
@@ -16,12 +16,12 @@ import {
   BasicInteractionResponse,
   type ChatInputCommandInteractionWithGuild,
   InteractionFlags
-} from '../../../types/discord.ts';
-import { BasicPanelModal } from '../../private/ComponentHelper.ts';
+} from '../../../../types/discord.ts';
+import { BasicPanelModal } from '../../../private/ComponentHelper.ts';
 
-class PanelsCommand extends DiscordCommand {
+class TicketPanelsCommand extends DiscordCommand {
   override readonly data = new DiscordCommandDataBuilder()
-    .setName('panels')
+    .setName('ticket-panels')
     .addSubcommand((option) => option.setName('refresh').setDescription('refresh the panels message'))
     .addSubcommand((option) => option.setName('add').setDescription('add a panel'))
     .addSubcommand((option) =>
@@ -95,4 +95,4 @@ class PanelsCommand extends DiscordCommand {
   }
 }
 
-export default PanelsCommand;
+export default TicketPanelsCommand;

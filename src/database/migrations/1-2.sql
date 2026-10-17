@@ -1,0 +1,8 @@
+CREATE TABLE tickets (
+  id TEXT PRIMARY KEY,
+  panelId TEXT NOT NULL,
+  threadId TEXT NOT NULL,
+  owner TEXT NOT NULL,
+  pinned INT NOT NULL DEFAULT 0,
+  closed INT NOT NULL DEFAULT 0
+);

@@ -4,7 +4,7 @@ import PolyHelperError from '../../../private/error.ts';
 import { BasicPanelModal, MiscPanelModal } from '../../private/ComponentHelper.ts';
 import { type ButtonInteractionWithGuild, ButtonResponse, InteractionFlags } from '../../../types/discord.ts';
 
-class ShowDevEntryButton extends DiscordButton {
+class PanelEditButton extends DiscordButton {
   override readonly data = new DiscordButtonData('panelEdit');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildButton];
   override response: ButtonResponse = ButtonResponse.None;
@@ -22,4 +22,4 @@ class ShowDevEntryButton extends DiscordButton {
   }
 }
 
-export default ShowDevEntryButton;
+export default PanelEditButton;

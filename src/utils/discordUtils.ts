@@ -111,3 +111,13 @@ export function parseInteractionType(type: InteractionType): string {
       return 'Ping';
   }
 }
+
+export function getDisplayNameUser(user: User): string {
+  return user.globalName ?? user.username;
+}
+
+export function getDisplayName(user: GuildMember | User | null): string {
+  if (!user) return 'UNKNOWN';
+  if (user instanceof GuildMember) return user.nickname ?? getDisplayNameUser(user.user);
+  return getDisplayNameUser(user);
+}

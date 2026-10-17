@@ -18,18 +18,14 @@ class PanelEditModal extends DiscordModal {
       name: this.getTextInputValue(interaction, 'name') ?? panel.name,
       title: this.getTextInputValue(interaction, 'title') ?? panel.title,
       description: this.getTextInputValue(interaction, 'description') ?? panel.description,
-      channel: this.getSelectedChannels(interaction, 'channel')[0] ?? panel.channel,
       buttonLabel: this.getTextInputValue(interaction, 'buttonLabel') ?? panel.buttonLabel,
       buttonEmoji: (this.getTextInputValue(interaction, 'buttonEmoji') ?? panel.buttonEmoji)?.trim() || null,
       openingMessage: this.getTextInputValue(interaction, 'openingMessage') ?? panel.openingMessage,
-      pingSupportRoleOnOpen: this.getCheckbox(
-        interaction,
-        'pingSupportRoleOnOpen',
-        Boolean(panel.pingSupportRoleOnOpen)
-      )
+      maxOpenTickets: parseInt(this.getTextInputValue(interaction, 'maxOpenTickets') ?? String(panel.maxOpenTickets)),
+      pingSupportRoleOnOpen: this.getCheckbox(interaction, 'pingSupportRoleOnOpen', panel.pingSupportRoleOnOpen)
         ? 1
         : 0,
-      enabled: this.getCheckbox(interaction, 'enabled', Boolean(panel.enabled)) ? 1 : 0
+      enabled: this.getCheckbox(interaction, 'enabled', panel.enabled) ? 1 : 0
     });
     await interaction.followUp({ content: `Panel "${updated.name}" updated.` });
   }

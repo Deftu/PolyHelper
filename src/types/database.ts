@@ -14,11 +14,21 @@ export const DatabasePanel = zod.object({
   name: zod.string(),
   title: zod.string(),
   description: zod.string(),
-  channel: zod.string(),
   buttonLabel: zod.string(),
   buttonEmoji: zod.string().nullable(),
   openingMessage: zod.string(),
+  maxOpenTickets: zod.int().positive(),
   pingSupportRoleOnOpen: DatabaseBoolean,
   enabled: DatabaseBoolean
 });
 export type DatabasePanel = zod.infer<typeof DatabasePanel>;
+
+export const DatabaseTicket = zod.object({
+  id: zod.string(),
+  panelId: zod.string(),
+  threadId: zod.string(),
+  owner: zod.string(),
+  pinned: DatabaseBoolean,
+  closed: DatabaseBoolean
+});
+export type DatabaseTicket = zod.infer<typeof DatabaseTicket>;
