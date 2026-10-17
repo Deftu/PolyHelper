@@ -26,7 +26,7 @@ class InteractionHandler {
   async checkPerms(interaction: BaseInteraction, data: BasicInteractionData<DiscordManager>) {
     const [isAdminMemberCheck, isPolyfrostTeamMemberCheck, isModeratorMemberCheck, isSupportMemberCheck] =
       await Promise.all([
-        data.permission === CommandPermission.Admin ? isAdminMember(interaction.user) : false,
+        data.permission === CommandPermission.Admin ? isAdminMember(interaction.member) : false,
         data.permission === CommandPermission.PolyfrostTeam ? isPolyfrostTeamMember(interaction.member) : false,
         data.permission === CommandPermission.Moderator ? isModeratorMember(interaction.member) : false,
         data.permission === CommandPermission.Support ? isSupportMember(interaction.member) : false

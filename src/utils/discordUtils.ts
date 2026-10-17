@@ -44,15 +44,17 @@ export function isDiscordServerOwner(user: User): boolean {
   return user.id === user.client.discordManager.guild.ownerId;
 }
 
-export async function isAdminMember(user: User): Promise<boolean> {
-  if (await isApplicationOwner(user)) return true;
-  if (isDiscordServerOwner(user)) return true;
+export async function isAdminMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
+  if (!isGuildMember(member)) return false;
+  if (member.permissions.has('Administrator')) return true;
+  if (await isApplicationOwner(member.user)) return true;
+  if (isDiscordServerOwner(member.user)) return true;
   return false;
 }
 
 export async function isPolyfrostTeamMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
   if (!isGuildMember(member)) return false;
-  if (await isAdminMember(member.user)) return true;
+  if (await isAdminMember(member)) return true;
   return await hasRole(member, member.client.config.discord.roles.polyfrostTeam);
 }
 

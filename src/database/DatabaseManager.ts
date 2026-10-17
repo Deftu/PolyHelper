@@ -112,6 +112,14 @@ class DatabaseManager extends BasicDatabaseManager {
     return new Ticket(data, this);
   }
 
+  getTicketByThreadId(id: DatabaseTicket['threadId']): Ticket | undefined {
+    const data = this.db
+      .prepare<[DatabaseTicket['threadId']], Pick<DatabaseTicket, 'id'>>('SELECT id FROM tickets WHERE threadId = ?')
+      .get(id);
+    if (data === undefined) return data;
+    return this.getTicket(data.id);
+  }
+
   insertTicket(panelData: Omit<DatabaseTicket, 'id'>): Ticket {
     const id: DatabaseTicket['id'] = crypto.randomUUID();
     this.db
