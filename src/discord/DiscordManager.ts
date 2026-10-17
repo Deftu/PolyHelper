@@ -39,7 +39,7 @@ class DiscordManager {
   }
 
   async connect() {
-    this.client = new Client({ intents: [GatewayIntentBits.Guilds] });
+    this.client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
     await this.commandHandler.deployCommands();
     await this.buttonHandler.loadButtons();
     await this.modalHandler.loadModals();
@@ -114,7 +114,7 @@ class DiscordManager {
     }
   }
 
-  async getChannel(type: keyof Config['discord']['channels']): Promise<SendableChannels | null> {
+  async getChannel(type: keyof Config['discord']['channels']): Promise<SendableChannels> {
     if (!this.isGuildReady()) {
       await this.loadGuild();
       throw new PolyHelperError("The discord server isn't ready. Please try again later");

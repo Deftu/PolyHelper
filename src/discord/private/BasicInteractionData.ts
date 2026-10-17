@@ -4,6 +4,7 @@ import type DiscordManager from '../DiscordManager.ts';
 abstract class BasicInteractionData<Manager extends DiscordManager = DiscordManagerWithClient> {
   readonly permission: CommandPermission = CommandPermission.Anyone;
   readonly flags: readonly InteractionFlags[] = [];
+  readonly fetchGuildMember: boolean = true;
   constructor(protected readonly discord: Manager) {}
 }
 

@@ -96,6 +96,10 @@ abstract class BasicDatabaseManager {
   protected insertMetadataEntry<K extends string>(entry: MetadataEntry<K>) {
     this.db.prepare<MetadataEntry<K>>('INSERT INTO metadata(key, value) VALUES (@key, @value)').run(entry);
   }
+
+  protected deletgeMetadataEntry<K extends string>(key: K) {
+    this.db.prepare<string>('DELETE FROM metadata WHERE key = ?').run(key);
+  }
 }
 
 export default BasicDatabaseManager;

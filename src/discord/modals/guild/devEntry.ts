@@ -1,9 +1,9 @@
-import DiscordModal from '../private/modals/DiscordModal.ts';
-import DiscordModalData from '../private/modals/DiscordModalData.ts';
-import PolyHelperError from '../../private/error.ts';
-import { InteractionFlags, type ModalMessageModalSubmitInteractionWithGuild } from '../../types/discord.ts';
-import { getRepoCount } from '../../utils/githubAPIUtils.ts';
-import { hasRole } from '../../utils/discordUtils.ts';
+import DiscordModal from '../../private/modals/DiscordModal.ts';
+import DiscordModalData from '../../private/modals/DiscordModalData.ts';
+import PolyHelperError from '../../../private/error.ts';
+import { InteractionFlags, type ModalMessageModalSubmitInteractionWithGuild } from '../../../types/discord.ts';
+import { getRepoCount } from '../../../utils/githubAPIUtils.ts';
+import { hasRole } from '../../../utils/discordUtils.ts';
 
 class DevEntryModal extends DiscordModal {
   override readonly data = new DiscordModalData('dev-entry');

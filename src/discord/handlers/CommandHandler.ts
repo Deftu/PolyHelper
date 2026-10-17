@@ -42,7 +42,9 @@ class CommandHandler {
 
       if (command.flags.includes(InteractionFlags.GuildCommand)) {
         assert(interaction.guild);
-        interaction.member = await interaction.guild.members.fetch(interaction.user.id);
+        if (command.fetchGuildMember) {
+          interaction.member = await interaction.guild.members.fetch(interaction.user.id);
+        }
       }
 
       const subcommand = this.checkForSubcommand(interaction);
@@ -71,7 +73,14 @@ class CommandHandler {
     if (!command) return;
     try {
       const options = await command.autocomplete(interaction);
-      await interaction.respond(options.map((choice) => ({ name: choice.name, value: choice.value ?? choice.name })));
+      if (options.length === 0) options.push({ name: 'No choices found', value: 'UNKNOWN' });
+      const focusedOption = interaction.options.getFocused(true);
+      await interaction.respond(
+        options
+          .filter((choice) => choice.name.toLowerCase().startsWith(focusedOption.value.toLowerCase()))
+          .slice(0, 25)
+          .map((choice) => ({ name: choice.name, value: choice.value ?? choice.name }))
+      );
     } catch (error) {
       await this.discord.handleError(toError(error), interaction);
     }

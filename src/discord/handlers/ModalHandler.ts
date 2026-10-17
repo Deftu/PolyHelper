@@ -11,7 +11,8 @@ class ModalHandler {
   constructor(private readonly discord: DiscordManager) {}
 
   async onSubmit(interaction: ModalSubmitInteraction) {
-    const modal = this.modals.get(interaction.customId);
+    const modalId = interaction.customId.split(':', 1)[0] ?? interaction.customId;
+    const modal = this.modals.get(interaction.customId) ?? this.modals.get(modalId);
     if (!modal) return;
 
     try {
