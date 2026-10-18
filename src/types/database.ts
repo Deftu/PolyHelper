@@ -32,3 +32,13 @@ export const DatabaseTicket = zod.object({
   closed: DatabaseBoolean
 });
 export type DatabaseTicket = zod.infer<typeof DatabaseTicket>;
+
+export const DatabaseCloseRequest = zod.object({
+  id: zod.string(),
+  ticketId: zod.string(),
+  messageId: zod.string(),
+  reason: zod.string(),
+  closer: zod.string(),
+  autoClose: zod.int().positive().nullable()
+});
+export type DatabaseCloseRequest = zod.infer<typeof DatabaseCloseRequest>;

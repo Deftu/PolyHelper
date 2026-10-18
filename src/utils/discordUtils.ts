@@ -55,19 +55,19 @@ export async function isAdminMember(member: GuildMember | APIInteractionGuildMem
 export async function isPolyfrostTeamMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
   if (!isGuildMember(member)) return false;
   if (await isAdminMember(member)) return true;
-  return await hasRole(member, member.client.config.discord.roles.polyfrostTeam);
+  return await hasRole(member, member.client.discordManager.application.config.discord.roles.polyfrostTeam);
 }
 
 export async function isModeratorMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
   if (!isGuildMember(member)) return false;
   if (await isPolyfrostTeamMember(member)) return true;
-  return await hasRole(member, member.client.config.discord.roles.moderator);
+  return await hasRole(member, member.client.discordManager.application.config.discord.roles.moderator);
 }
 
 export async function isSupportMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
   if (!isGuildMember(member)) return false;
   if (await isModeratorMember(member)) return true;
-  return await hasRole(member, member.client.config.discord.roles.support);
+  return await hasRole(member, member.client.discordManager.application.config.discord.roles.support);
 }
 
 export function isChatInputCommandInteractionInsideOfGuild(

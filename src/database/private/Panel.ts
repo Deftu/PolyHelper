@@ -53,6 +53,21 @@ class Panel {
       ]
     };
   }
+
+  toJSON(): DatabasePanel {
+    return {
+      id: this.id,
+      name: this.name,
+      title: this.title,
+      description: this.description,
+      buttonLabel: this.buttonLabel,
+      buttonEmoji: this.buttonEmoji,
+      openingMessage: this.openingMessage,
+      maxOpenTickets: this.maxOpenTickets,
+      pingSupportRoleOnOpen: this.#pingSupportRoleOnOpen,
+      enabled: this.#enabled
+    };
+  }
 }
 
 export default Panel;

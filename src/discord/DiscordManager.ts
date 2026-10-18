@@ -44,7 +44,11 @@ class DiscordManager {
   }
 
   async connect() {
-    this.client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
+    const client = new Client({
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+    });
+    client.discordManager = this;
+    this.client = client;
     await this.commandHandler.deployCommands();
     await this.buttonHandler.loadButtons();
     await this.modalHandler.loadModals();

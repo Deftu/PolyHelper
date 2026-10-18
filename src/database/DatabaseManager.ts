@@ -1,13 +1,13 @@
 import BasicDatabaseManager from './BasicDatabaseManager.ts';
+import CloseRequest from './private/CloseRequest.ts';
 import Panel from './private/Panel.ts';
 import PolyHelperError from '../private/error.ts';
-import Ticket from './private/ticket/Ticket.ts';
+import Ticket from './private/Ticket.ts';
 import type Application from '../Application.ts';
-import type { DatabasePanel, DatabaseTicket } from '../types/database.ts';
+import type { DatabaseCloseRequest, DatabasePanel, DatabaseTicket } from '../types/database.ts';
 import type { Message } from 'discord.js';
 
 class DatabaseManager extends BasicDatabaseManager {
-  protected override currentDatabaseSchemaVersion: number = 3;
   protected override databaseMigrationsPath: string = 'src/database/migrations';
   constructor(readonly application: Application) {
     super(application.config.other.sqlitedb);
@@ -120,16 +120,75 @@ class DatabaseManager extends BasicDatabaseManager {
     return this.getTicket(data.id);
   }
 
-  insertTicket(panelData: Omit<DatabaseTicket, 'id'>): Ticket {
+  insertTicket(ticketData: Omit<DatabaseTicket, 'id'>): Ticket {
     const id: DatabaseTicket['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabaseTicket>(
         'INSERT INTO tickets (id, panelId, threadId, owner, pinned, closed) VALUES (@id, @panelId, @threadId, @owner, @pinned, @closed)'
       )
-      .run({ ...panelData, id });
+      .run({ ...ticketData, id });
     const ticket = this.getTicket(id);
     if (!ticket) throw new PolyHelperError('Something went wrong while inserting a ticket');
     return ticket;
+  }
+
+  updateTicket(data: DatabaseTicket): Ticket {
+    const ticket = this.getTicket(data.id);
+    if (!ticket) throw new PolyHelperError('Could not find this ticket?');
+    this.db
+      .prepare<DatabaseTicket>(
+        'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinned = @pinned, closed = @closed WHERE id = @id'
+      )
+      .run(data);
+    const newTicket = this.getTicket(data.id);
+    if (!newTicket) throw new PolyHelperError('Something went wrong while updating a ticket');
+    return newTicket;
+  }
+
+  getCloseRequest(id: DatabaseCloseRequest['id']): CloseRequest | undefined {
+    const data = this.db
+      .prepare<[DatabaseCloseRequest['id']], DatabaseCloseRequest>('SELECT * FROM closeRequests WHERE id = ?')
+      .get(id);
+    if (!data) return data;
+    return new CloseRequest(data, this);
+  }
+
+  getCloseRequestByTicketId(id: DatabaseCloseRequest['ticketId']): CloseRequest | undefined {
+    const data = this.db
+      .prepare<[DatabaseCloseRequest['ticketId']], Pick<DatabaseCloseRequest, 'id'>>(
+        'SELECT id FROM closeRequests WHERE ticketId = ?'
+      )
+      .get(id);
+    if (data === undefined) return data;
+    return this.getCloseRequest(data.id);
+  }
+
+  getCloseRequestByAutoClose(timestamp: number = Date.now()): CloseRequest[] {
+    return this.db
+      .prepare<[number], DatabaseCloseRequest>(
+        'SELECT * FROM closeRequests WHERE autoClose IS NOT NULL AND autoClose <= ?'
+      )
+      .all(timestamp)
+      .map((closeRequest) => new CloseRequest(closeRequest, this));
+  }
+
+  insertCloseRequest(closeRequestData: Omit<DatabaseCloseRequest, 'id'>): CloseRequest {
+    const id: DatabaseCloseRequest['id'] = crypto.randomUUID();
+    this.db
+      .prepare<DatabaseCloseRequest>(
+        'INSERT INTO closeRequests (id, ticketId, messageId, reason, closer, autoClose) VALUES (@id, @ticketId, @messageId, @reason, @closer, @autoClose)'
+      )
+      .run({ ...closeRequestData, id });
+    const closeRequest = this.getCloseRequest(id);
+    if (!closeRequest) throw new PolyHelperError('Something went wrong while inserting a close request');
+    return closeRequest;
+  }
+
+  async deleteCloseRequest(id: DatabaseCloseRequest['id']) {
+    const closeRequest = this.getCloseRequest(id);
+    if (closeRequest) await closeRequest.updateMessageButtons(true);
+    this.db.prepare<DatabaseCloseRequest['id']>('DELETE FROM closeRequests WHERE id = ?').run(id);
+    await this.application.tickets.updatePanelsMessage();
   }
 }
 

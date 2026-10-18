@@ -1,8 +1,8 @@
-import DiscordButton from '../../private/buttons/DiscordButton.ts';
-import DiscordButtonData from '../../private/buttons/DiscordButtonData.ts';
-import EmbedHelper from '../../private/EmbedHelper.ts';
-import PolyHelperError from '../../../private/error.ts';
-import { type ButtonInteractionWithGuild, InteractionFlags } from '../../../types/discord.ts';
+import DiscordButton from '../../../private/buttons/DiscordButton.ts';
+import DiscordButtonData from '../../../private/buttons/DiscordButtonData.ts';
+import EmbedHelper from '../../../private/EmbedHelper.ts';
+import PolyHelperError from '../../../../private/error.ts';
+import { type ButtonInteractionWithGuild, InteractionFlags } from '../../../../types/discord.ts';
 
 class PanelButton extends DiscordButton {
   override readonly data = new DiscordButtonData('panel');

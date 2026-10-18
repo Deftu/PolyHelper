@@ -1,4 +1,4 @@
-import ms, { type StringValue } from 'ms';
+import ms from 'ms';
 import prettyMilliseconds from 'pretty-ms';
 import { schedule } from 'node-cron';
 import { toError } from '../utils/miscUtils.ts';
@@ -17,7 +17,7 @@ class BasicScript {
     const { id, cron, interval, enabled } = options;
     this.id = id;
     this.cron = cron;
-    this.interval = interval ? ms(interval as StringValue) : undefined;
+    this.interval = interval ? ms(interval) : undefined;
     this.enabled = enabled ?? this.enabled;
     this.init();
   }

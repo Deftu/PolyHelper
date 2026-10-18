@@ -15,7 +15,7 @@ import {
 import { ConfigDiscordEmbedsColors } from '../../types/config.ts';
 import { hexToRgb } from '../../utils/miscUtils.ts';
 import type Panel from '../../database/private/Panel.ts';
-import type { DatabasePanel } from '../../types/database.ts';
+import type { DatabaseCloseRequest, DatabasePanel } from '../../types/database.ts';
 
 export class PatchedContainerBuilder extends ContainerBuilder {
   constructor() {
@@ -148,4 +148,24 @@ export function MiscPanelModal(panel?: Panel | DatabasePanel): ModalBuilder {
             .setDefault(Boolean(panel?.pingSupportRoleOnOpen ?? 1))
         )
     );
+}
+
+export function CloseRequestButtons(
+  id: DatabaseCloseRequest['id'] = 'UNKNOWN',
+  disabled: boolean = false
+): ButtonBuilder[] {
+  return [
+    new ButtonBuilder()
+      .setLabel('Accept & Close')
+      .setCustomId(`closeRequestAccept:${id}`)
+      .setEmoji('☑️')
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(disabled || id === 'UNKNOWN'),
+    new ButtonBuilder()
+      .setLabel('Deny & Keep Open')
+      .setCustomId(`closeRequestDeny:${id}`)
+      .setEmoji('❌')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(disabled || id === 'UNKNOWN')
+  ];
 }

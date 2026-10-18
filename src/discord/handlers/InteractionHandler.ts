@@ -35,19 +35,19 @@ class InteractionHandler {
     const checks: Array<[boolean, string]> = [
       [
         data.permission === CommandPermission.Admin && !isAdminMemberCheck,
-        "You don't have permission to use this command. You are required to own the bot."
+        "You don't have permission to use this command. You are required to be an admin."
       ],
       [
         data.permission === CommandPermission.PolyfrostTeam && !isPolyfrostTeamMemberCheck,
-        "You don't have permission to use this command. You are required to own the bot."
+        "You don't have permission to use this command. You are required to be appart of the Polyfrost Team."
       ],
       [
         data.permission === CommandPermission.Moderator && !isModeratorMemberCheck,
-        "You don't have permission to use this command. You are required to own the bot."
+        "You don't have permission to use this command. You are required to be appart of the Moderation Team."
       ],
       [
         data.permission === CommandPermission.Support && !isSupportMemberCheck,
-        "You don't have permission to use this command. You are required to own the bot."
+        "You don't have permission to use this command. You are required to be appart of the Support Team."
       ],
       [
         data.flags.includes(InteractionFlags.GuildCommand) && !interaction.isChatInputCommand(),

@@ -4,12 +4,12 @@ import plugin from './scripts/eslint/plugin.js';
 import prettier from 'eslint-config-prettier';
 import sortImports from '@j4cobi/eslint-plugin-sort-imports';
 import stylistic from '@stylistic/eslint-plugin';
-import ts from 'typescript-eslint';
+import { configs } from 'typescript-eslint';
 import { globalIgnores } from 'eslint/config';
 
 // eslint-disable-next-line import/no-anonymous-default-export
 export default [
-  ...ts.configs.recommended,
+  ...configs.recommended,
   importPlugin.flatConfigs.recommended,
   importPlugin.flatConfigs.typescript,
   prettier,

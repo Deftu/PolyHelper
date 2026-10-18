@@ -12,13 +12,12 @@ import type {
   ModalSubmitInteraction,
   TextBasedChannel
 } from 'discord.js';
-import type { Config, ConfigDiscordEmbedsColors } from './config.ts';
+import type { ConfigDiscordEmbedsColors } from './config.ts';
 import type { DevData, DevName } from './application.ts';
 import type { EmbedStyles } from '../private/constants.ts';
 
 declare module 'discord.js' {
   export interface Client {
-    config: Config;
     discordManager: DiscordManager;
   }
 }
