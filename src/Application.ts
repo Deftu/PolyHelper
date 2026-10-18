@@ -3,28 +3,26 @@ import DatabaseManager from './database/DatabaseManager.ts';
 import DiscordManager from './discord/DiscordManager.ts';
 import PolyHelperError from './private/error.ts';
 import ScriptManager from './scripts/ScriptManager.ts';
-import TicketsManager from './tickets/TicketsManager.ts';
 import axios, { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import packageJson from '../package.json' with { type: 'json' };
 import { canSendMessages, getApplicationOwners } from './utils/discordUtils.ts';
 import { execSync } from 'node:child_process';
-import { getErrorEmbed, getErrorTypeName } from './utils/miscUtils.ts';
+import { getErrorTypeName, getFullErrorEmbed } from './utils/miscUtils.ts';
 import type { Config } from './types/config.ts';
 import type { EmbedHelperField } from './types/discord.ts';
 import type { RuntimeInformation, ValidErrors } from './types/application.ts';
 
 class Application {
   static readonly package: typeof packageJson = packageJson;
+  static readonly runtimeInformation = Object.freeze({ commit: this.getGitCommit(), dirty: this.getGitDirty() });
   readonly database: DatabaseManager;
   readonly discord: DiscordManager;
   readonly scripts: ScriptManager;
-  readonly tickets: TicketsManager;
   static readonly cache: CacheHandler = new CacheHandler();
   constructor(readonly config: Config) {
     this.database = new DatabaseManager(this);
     this.discord = new DiscordManager(this);
     this.scripts = new ScriptManager(this);
-    this.tickets = new TicketsManager(this);
   }
 
   static async request<T>(url: string, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
@@ -47,7 +45,7 @@ class Application {
       const owners = await getApplicationOwners(this.discord.client);
       await channel.send({
         content: getErrorTypeName(error) === 'Generic Error' ? owners.map((id) => `<@${id}>`).join(' ') : '',
-        embeds: [getErrorEmbed(error, extraData)]
+        embeds: [getFullErrorEmbed(error, extraData)]
       });
     } catch (error) {
       console.error(error);
@@ -77,12 +75,11 @@ class Application {
   }
 
   static getRuntimeInformation(): RuntimeInformation {
-    return { commit: this.getGitCommit(), dirty: this.getGitDirty(), startTime: this.startTime };
+    return { commit: this.runtimeInformation.commit, dirty: this.runtimeInformation.dirty, startTime: this.startTime };
   }
 
   static getUserAgent() {
-    const runtime = this.getRuntimeInformation();
-    return `${this.package.name}/g${runtime.commit} (github:Polyfrost/PolyHelper)`;
+    return `${this.package.name}/g${this.runtimeInformation.commit} (github:Polyfrost/PolyHelper)`;
   }
 }
 

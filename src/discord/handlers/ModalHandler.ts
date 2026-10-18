@@ -27,7 +27,7 @@ class ModalHandler {
 
       await this.discord.interactionHandler.checkPerms(interaction, modal);
 
-      if (modal.flags.includes(InteractionFlags.GuildButton)) {
+      if (modal.flags.includes(InteractionFlags.GuildModal)) {
         assert(interaction.guild);
         interaction.member = await interaction.guild.members.fetch(interaction.user.id);
       }

@@ -1,6 +1,7 @@
 import type DiscordManager from '../discord/DiscordManager.ts';
 import type {
   APIEmbedField,
+  AutocompleteInteraction,
   ButtonInteraction,
   ChatInputCommandInteraction,
   Client,
@@ -68,6 +69,13 @@ export type ChatInputCommandInteractionWithGuild = ChatInputCommandInteraction &
 export type ButtonInteractionWithGuild = ButtonInteraction & GuildInteractionData & { channel: TextBasedChannel };
 export type ModalSubmitInteractionWithGuild = ModalSubmitInteraction & GuildInteractionData;
 export type ModalMessageModalSubmitInteractionWithGuild = ModalMessageModalSubmitInteraction & GuildInteractionData;
+
+export type InteractionTypes =
+  | AutocompleteInteraction
+  | ButtonInteraction
+  | ChatInputCommandInteraction
+  | ModalMessageModalSubmitInteraction
+  | ModalSubmitInteraction;
 
 export type EmbedStyleName = keyof typeof EmbedStyles;
 export interface EmbedStyleData {

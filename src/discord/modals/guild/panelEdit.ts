@@ -13,6 +13,11 @@ class PanelEditModal extends DiscordModal {
     const panel = this.discord.application.database.getPanel(id);
     if (!panel) throw new PolyHelperError('Could not find this panel?');
 
+    const maxOpenTickets = Number(this.getTextInputValue(interaction, 'maxOpenTickets') ?? panel.maxOpenTickets);
+    if (!Number.isSafeInteger(maxOpenTickets) || maxOpenTickets < 1) {
+      throw new PolyHelperError('The maximum open tickets value must be a whole number greater than zero.');
+    }
+
     const updated = await this.discord.application.database.updatePanel({
       id: panel.id,
       name: this.getTextInputValue(interaction, 'name') ?? panel.name,
@@ -21,7 +26,7 @@ class PanelEditModal extends DiscordModal {
       buttonLabel: this.getTextInputValue(interaction, 'buttonLabel') ?? panel.buttonLabel,
       buttonEmoji: (this.getTextInputValue(interaction, 'buttonEmoji') ?? panel.buttonEmoji)?.trim() || null,
       openingMessage: this.getTextInputValue(interaction, 'openingMessage') ?? panel.openingMessage,
-      maxOpenTickets: parseInt(this.getTextInputValue(interaction, 'maxOpenTickets') ?? String(panel.maxOpenTickets)),
+      maxOpenTickets,
       pingSupportRoleOnOpen: this.getCheckbox(interaction, 'pingSupportRoleOnOpen', panel.pingSupportRoleOnOpen)
         ? 1
         : 0,

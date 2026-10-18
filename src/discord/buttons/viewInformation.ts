@@ -1,7 +1,12 @@
 import DiscordButton from '../private/buttons/DiscordButton.ts';
 import DiscordButtonData from '../private/buttons/DiscordButtonData.ts';
 import InformationCommand from '../commands/information.ts';
-import { type ButtonInteraction, MessageFlags } from 'discord.js';
+import {
+  type ButtonInteraction,
+  MessageFlags,
+  type MessageEditOptions,
+  type InteractionReplyOptions
+} from 'discord.js';
 import { ButtonResponse } from '../../types/discord.ts';
 
 class ViewInformationButton extends DiscordButton {
@@ -9,20 +14,14 @@ class ViewInformationButton extends DiscordButton {
   override response: ButtonResponse = ButtonResponse.None;
 
   override async execute(interaction: ButtonInteraction) {
-    const ownerId = this.getOwnerId(interaction);
-    if (ownerId === interaction.user.id) {
-      await interaction.update({
-        components: InformationCommand.InformationComponent(ownerId),
-        flags: MessageFlags.IsComponentsV2,
-        allowedMentions: { parse: [] }
-      });
-    } else {
-      await interaction.reply({
-        components: InformationCommand.InformationComponent(interaction.user.id),
-        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
-        allowedMentions: { parse: [] }
-      });
-    }
+    const [ownerId] = this.getArgs(interaction);
+    const message: MessageEditOptions & InteractionReplyOptions = {
+      components: InformationCommand.InformationComponent(interaction.user.id),
+      flags: MessageFlags.IsComponentsV2,
+      allowedMentions: { parse: [] }
+    };
+    if (ownerId === interaction.user.id) await interaction.update(message);
+    else await interaction.reply(message);
   }
 }
 

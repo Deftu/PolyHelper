@@ -18,7 +18,8 @@ class CloseRequestCommand extends DiscordCommand {
     .setDescription('Request to close a ticket')
     .addStringOption((option) => option.setName('reason').setDescription('The reason for closing the ticket'))
     .addStringOption((option) => option.setName('auto-close').setDescription('The auto close time (e.g. 1d, 72h, 2w)'))
-    .removeHidddenOption();
+    .removeHidddenOption()
+    .setCleanErrorName('close request this ticket');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override permission: CommandPermission = CommandPermission.Support;
 
@@ -36,9 +37,11 @@ class CloseRequestCommand extends DiscordCommand {
     }
 
     const autoCloseTime = interaction.options.getString('auto-close');
-    const autoClose: DatabaseCloseRequest['autoClose'] = autoCloseTime
-      ? Date.now() + ms(autoCloseTime as StringValue)
-      : null;
+    const autoCloseDuration = autoCloseTime ? ms(autoCloseTime as StringValue) : undefined;
+    if (autoCloseTime && (!Number.isFinite(autoCloseDuration) || autoCloseDuration! <= 0)) {
+      throw new PolyHelperError('The auto-close time must be a valid duration greater than zero.');
+    }
+    const autoClose: DatabaseCloseRequest['autoClose'] = autoCloseDuration ? Date.now() + autoCloseDuration : null;
 
     const ticketOwner = await ticket.getDiscord();
     const reason = interaction.options.getString('reason') ?? 'No reason provided';

@@ -16,7 +16,8 @@ class RemoveCommand extends DiscordCommand {
     .setDescription('Remove a user from a ticket')
     .addUserOption((option) =>
       option.setName('user').setDescription('The user you want to remove from the ticket').setRequired(true)
-    );
+    )
+    .setCleanErrorName('remove this user to the ticket');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override permission: CommandPermission = CommandPermission.Support;
 

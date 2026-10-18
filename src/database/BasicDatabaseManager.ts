@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
-import { access, readFile, readdir } from 'node:fs/promises';
-import type { MetadataEntry } from '../types/database.ts';
+import { readFile, readdir } from 'node:fs/promises';
+import type { DatabaseMigrationFile, MetadataEntry } from '../types/database.ts';
 
 abstract class BasicDatabaseManager {
   protected abstract readonly databaseMigrationsPath: string;
@@ -9,7 +9,7 @@ abstract class BasicDatabaseManager {
     this.db = new Database(this.databasePath);
   }
 
-  async checkForDatabase() {
+  checkForDatabase() {
     const metadataTable = this.db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'metadata'")
       .get();
@@ -18,8 +18,6 @@ abstract class BasicDatabaseManager {
       console.other(`Will set up ${this.databasePath}`);
       this.initNewDB();
     }
-
-    await access(this.databasePath);
   }
 
   private initNewDB() {
@@ -31,54 +29,86 @@ abstract class BasicDatabaseManager {
     this.insertMetadataEntry<'SchemaVersion'>({ key: 'SchemaVersion', value: '0' });
   }
 
+  private async getMigrationFiles(): Promise<Map<number, DatabaseMigrationFile>> {
+    const regex = /^(?<start>[0-9]+)-(?<end>[0-9]+)\.sql$/;
+    const rawMigrationFiles = await readdir(this.databaseMigrationsPath, { encoding: 'utf-8' });
+    const migrations = new Map<number, DatabaseMigrationFile>();
+    for (const file of rawMigrationFiles) {
+      const match = file.match(regex);
+      if (!match?.groups) continue;
+      const migration = { start: Number(match.groups.start), end: Number(match.groups.end), path: file };
+      if (
+        !Number.isSafeInteger(migration.start) ||
+        !Number.isSafeInteger(migration.end) ||
+        migration.end <= migration.start ||
+        migrations.has(migration.start)
+      ) {
+        throw new Error(`Invalid or duplicate database migration at ${migration.path}`);
+      }
+      migrations.set(migration.start, migration);
+    }
+    return migrations;
+  }
+
+  getMetadataVersion(): number {
+    let version: MetadataEntry<'SchemaVersion'> | undefined;
+    try {
+      version = this.getMetadataEntry('SchemaVersion');
+    } catch {
+      return 0;
+    }
+    if (!version) return 0;
+    if (!/^\d+$/.test(version.value)) throw new Error(`Invalid database schema version - ${version.value}`);
+    const dbversion = Number(version.value);
+    if (!Number.isSafeInteger(dbversion)) throw new Error(`Invalid database schema version - ${version.value}`);
+    return dbversion;
+  }
+
   async checkForMigrations() {
     console.other('Checking whether DB needs migrations...');
 
-    let dbversion = 0;
-    try {
-      const version = this.getMetadataEntry('SchemaVersion');
-      if (!version) console.error('Metadata table has no SchemaVersion. DB Version is 0 and applying all migrations.');
-      else dbversion = Number.parseInt(version.value);
-    } catch (e) {
-      console.error(e);
-      console.error('There is likely no metadata table. Assuming our DB Version is 0 and applying all migrations.');
+    const migrationFiles = await this.getMigrationFiles();
+    const dbversion = this.getMetadataVersion();
+    const latestVersion = Math.max(0, ...[...migrationFiles.values()].map((migration) => migration.end));
+    if (dbversion > latestVersion) {
+      throw new Error(
+        `Database schema version ${dbversion} is newer than this application's version ${latestVersion}.`
+      );
     }
 
-    const regex = /^(?<start>[0-9]+)-(?<end>[0-9]+)\.sql$/;
-    const migrationFiles = (await readdir(this.databaseMigrationsPath, { encoding: 'utf-8' }))
-      .map((file) => {
-        const match = file.match(regex);
-        if (!match?.groups) return null;
-        return { start: Number(match.groups.start), end: Number(match.groups.end), path: file };
-      })
-      .filter((file) => file !== null)
-      .sort((a, b) => a.start - b.start || a.end - b.end);
+    const pendingMigrations: DatabaseMigrationFile[] = [];
+    let expectedVersion = dbversion;
+    while (expectedVersion < latestVersion) {
+      const migration = migrationFiles.get(expectedVersion);
+      if (!migration) throw new Error(`Missing database migration starting at schema version ${expectedVersion}.`);
+      pendingMigrations.push(migration);
+      expectedVersion = migration.end;
+    }
 
-    const pendingMigrations = migrationFiles.filter((migration) => migration.start >= dbversion);
     if (pendingMigrations.length === 0) return console.other('Database is already up to date.');
+    for (const migration of pendingMigrations) await this.doDatabaseMigration(migration);
 
-    for (const migration of pendingMigrations) {
-      console.other(`Applying database migration ${migration.path}...`);
-      await this.doDatabaseMigration(migration.path);
-      dbversion = migration.end;
-    }
-
-    console.other('Done with migrations. Setting SchemaVersion to new value...');
-    this.updateMetadataEntry<'SchemaVersion'>({ key: 'SchemaVersion', value: dbversion.toString() });
+    console.other('Done with migrations.');
   }
 
-  private async doDatabaseMigration(file: string) {
-    const data = await readFile(`${this.databaseMigrationsPath}/${file}`);
-    if (!data) throw new Error(`The ${file} file does not exist.`);
+  private async doDatabaseMigration(migration: DatabaseMigrationFile) {
+    console.other(`Applying database migration ${migration.path}...`);
+    const data = await readFile(`${this.databaseMigrationsPath}/${migration.path}`);
+    if (!data) throw new Error(`The ${migration.path} file does not exist.`);
     this.db.exec(data.toString('utf-8'));
+    this.updateMetadataEntry<'SchemaVersion'>({ key: 'SchemaVersion', value: migration.end.toString() });
   }
 
-  getMetadataEntry<K extends string>(key: K): MetadataEntry<K> | null {
-    return this.db.prepare<string, MetadataEntry<K>>('SELECT * FROM metadata WHERE key = ?').get(key) ?? null;
+  getMetadataEntry<K extends string>(key: K): MetadataEntry<K> | undefined {
+    return this.db.prepare<string, MetadataEntry<K>>('SELECT * FROM metadata WHERE key = ?').get(key);
   }
 
   protected updateMetadataEntry<K extends string>(entry: MetadataEntry<K>) {
-    this.db.prepare<MetadataEntry<K>>('UPDATE metadata SET value = @value WHERE key = @key').run(entry);
+    this.db
+      .prepare<MetadataEntry<K>>(
+        'INSERT INTO metadata(key, value) VALUES (@key, @value) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+      )
+      .run(entry);
   }
 
   protected insertMetadataEntry<K extends string>(entry: MetadataEntry<K>) {

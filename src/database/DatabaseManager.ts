@@ -3,6 +3,7 @@ import CloseRequest from './private/CloseRequest.ts';
 import Panel from './private/Panel.ts';
 import PolyHelperError from '../private/error.ts';
 import Ticket from './private/Ticket.ts';
+import TicketPanelsCommand from '../discord/commands/guild/tickets/panels.ts';
 import type Application from '../Application.ts';
 import type { DatabaseCloseRequest, DatabasePanel, DatabaseTicket } from '../types/database.ts';
 import type { Message } from 'discord.js';
@@ -51,13 +52,15 @@ class DatabaseManager extends BasicDatabaseManager {
       .run({ ...panelData, id });
     const panel = this.getPanel(id);
     if (!panel) throw new PolyHelperError('Something went wrong while inserting a panel');
-    await this.application.tickets.updatePanelsMessage();
+    const message = await this.getPanelsMessage();
+    await TicketPanelsCommand.updatePanelsMessage(message);
     return panel;
   }
 
   async deletePanel(id: DatabasePanel['id']) {
     this.db.prepare<DatabasePanel['id']>('DELETE FROM panels WHERE id = ?').run(id);
-    await this.application.tickets.updatePanelsMessage();
+    const message = await this.getPanelsMessage();
+    await TicketPanelsCommand.updatePanelsMessage(message);
   }
 
   async updatePanel(data: DatabasePanel): Promise<Panel> {
@@ -70,7 +73,8 @@ class DatabaseManager extends BasicDatabaseManager {
       .run(data);
     const newPanel = this.getPanel(data.id);
     if (!newPanel) throw new PolyHelperError('Something went wrong while updating a panel');
-    await this.application.tickets.updatePanelsMessage();
+    const message = await this.getPanelsMessage();
+    await TicketPanelsCommand.updatePanelsMessage(message);
     return newPanel;
   }
 
@@ -82,20 +86,18 @@ class DatabaseManager extends BasicDatabaseManager {
 
   getTickets(closed: DatabaseTicket['closed'] = 0): Ticket[] {
     return this.db
-      .prepare<[DatabaseTicket['closed']], Pick<DatabaseTicket, 'id'>>('SELECT id FROM tickets WHERE closed = ?')
+      .prepare<[DatabaseTicket['closed']], DatabaseTicket>('SELECT * FROM tickets WHERE closed = ?')
       .all(closed)
-      .map(({ id }) => this.getTicket(id))
-      .filter((ticket) => ticket !== undefined);
+      .map((data) => new Ticket(data, this));
   }
 
   getTicketsByPanel(panelId: DatabaseTicket['panelId'], closed: DatabaseTicket['closed'] = 0): Ticket[] {
     return this.db
-      .prepare<[DatabaseTicket['panelId'], DatabaseTicket['closed']], Pick<DatabaseTicket, 'id'>>(
-        'SELECT id FROM tickets WHERE panelId = ? AND closed = ?'
+      .prepare<[DatabaseTicket['panelId'], DatabaseTicket['closed']], DatabaseTicket>(
+        'SELECT * FROM tickets WHERE panelId = ? AND closed = ?'
       )
       .all(panelId, closed)
-      .map(({ id }) => this.getTicket(id))
-      .filter((ticket) => ticket !== undefined);
+      .map((data) => new Ticket(data, this));
   }
 
   getTicketsByPanelUser(
@@ -104,21 +106,19 @@ class DatabaseManager extends BasicDatabaseManager {
     closed: DatabaseTicket['closed'] = 0
   ): Ticket[] {
     return this.db
-      .prepare<
-        [DatabaseTicket['panelId'], DatabaseTicket['owner'], DatabaseTicket['closed']],
-        Pick<DatabaseTicket, 'id'>
-      >('SELECT id FROM tickets WHERE panelId = ? AND owner = ? AND closed = ?')
+      .prepare<[DatabaseTicket['panelId'], DatabaseTicket['owner'], DatabaseTicket['closed']], DatabaseTicket>(
+        'SELECT * FROM tickets WHERE panelId = ? AND owner = ? AND closed = ?'
+      )
       .all(panelId, owner, closed)
-      .map(({ id }) => this.getTicket(id))
-      .filter((ticket) => ticket !== undefined);
+      .map((data) => new Ticket(data, this));
   }
 
   getTicketByThreadId(id: DatabaseTicket['threadId']): Ticket | undefined {
     const data = this.db
-      .prepare<[DatabaseTicket['threadId']], Pick<DatabaseTicket, 'id'>>('SELECT id FROM tickets WHERE threadId = ?')
+      .prepare<[DatabaseTicket['threadId']], DatabaseTicket>('SELECT * FROM tickets WHERE threadId = ?')
       .get(id);
     if (data === undefined) return data;
-    return this.getTicket(data.id);
+    return new Ticket(data, this);
   }
 
   insertTicket(ticketData: Omit<DatabaseTicket, 'id'>): Ticket {
@@ -128,22 +128,17 @@ class DatabaseManager extends BasicDatabaseManager {
         'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, closed) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @closed)'
       )
       .run({ ...ticketData, id });
-    const ticket = this.getTicket(id);
-    if (!ticket) throw new PolyHelperError('Something went wrong while inserting a ticket');
-    return ticket;
+    return new Ticket({ ...ticketData, id }, this);
   }
 
   updateTicket(data: DatabaseTicket): Ticket {
-    const ticket = this.getTicket(data.id);
-    if (!ticket) throw new PolyHelperError('Could not find this ticket?');
-    this.db
+    const update = this.db
       .prepare<DatabaseTicket>(
         'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinMessageId = @pinMessageId, closed = @closed WHERE id = @id'
       )
       .run(data);
-    const newTicket = this.getTicket(data.id);
-    if (!newTicket) throw new PolyHelperError('Something went wrong while updating a ticket');
-    return newTicket;
+    if (update.changes === 0) throw new PolyHelperError('Could not find this ticket?');
+    return new Ticket(data, this);
   }
 
   getCloseRequest(id: DatabaseCloseRequest['id']): CloseRequest | undefined {
@@ -156,12 +151,12 @@ class DatabaseManager extends BasicDatabaseManager {
 
   getCloseRequestByTicketId(id: DatabaseCloseRequest['ticketId']): CloseRequest | undefined {
     const data = this.db
-      .prepare<[DatabaseCloseRequest['ticketId']], Pick<DatabaseCloseRequest, 'id'>>(
-        'SELECT id FROM closeRequests WHERE ticketId = ?'
+      .prepare<[DatabaseCloseRequest['ticketId']], DatabaseCloseRequest>(
+        'SELECT * FROM closeRequests WHERE ticketId = ?'
       )
       .get(id);
     if (data === undefined) return data;
-    return this.getCloseRequest(data.id);
+    return new CloseRequest(data, this);
   }
 
   getCloseRequestByAutoClose(timestamp: number = Date.now()): CloseRequest[] {
@@ -180,16 +175,13 @@ class DatabaseManager extends BasicDatabaseManager {
         'INSERT INTO closeRequests (id, ticketId, messageId, reason, closer, autoClose) VALUES (@id, @ticketId, @messageId, @reason, @closer, @autoClose)'
       )
       .run({ ...closeRequestData, id });
-    const closeRequest = this.getCloseRequest(id);
-    if (!closeRequest) throw new PolyHelperError('Something went wrong while inserting a close request');
-    return closeRequest;
+    return new CloseRequest({ ...closeRequestData, id }, this);
   }
 
   async deleteCloseRequest(id: DatabaseCloseRequest['id']) {
     const closeRequest = this.getCloseRequest(id);
     if (closeRequest) await closeRequest.updateMessageButtons(true);
     this.db.prepare<DatabaseCloseRequest['id']>('DELETE FROM closeRequests WHERE id = ?').run(id);
-    await this.application.tickets.updatePanelsMessage();
   }
 }
 

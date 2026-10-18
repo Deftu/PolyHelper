@@ -18,6 +18,7 @@ import {
 
 class DiscordCommandDataBuilder extends SlashCommandBuilder {
   private shouldAddHiddenOption: boolean = true;
+  #cleanErrorName: string | null = null;
   constructor() {
     super();
     this.setContexts(InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel);
@@ -114,6 +115,15 @@ class DiscordCommandDataBuilder extends SlashCommandBuilder {
   ): this {
     super.addUserOption(input);
     return this;
+  }
+
+  setCleanErrorName(name: string | null): this {
+    this.#cleanErrorName = name;
+    return this;
+  }
+
+  get cleanErrorName(): string | null {
+    return this.#cleanErrorName;
   }
 
   removeHidddenOption(): this {

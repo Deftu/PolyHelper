@@ -15,17 +15,8 @@ abstract class DiscordButton<
     const split = interaction.customId.split(':');
     const id = split[0];
     if (!id) throw new PolyHelperError('Could not get the args of this button interaction');
-    if (!this.data.ids.includes(id)) {
-      throw new PolyHelperError('Could not get the args of this button interaction');
-    }
+    if (!this.data.ids.includes(id)) throw new PolyHelperError('Could not get the args of this button interaction');
     return split.slice(1);
-  }
-
-  protected getOwnerId(interaction: ButtonInteraction): string | undefined {
-    const [id, userId] = interaction.customId.split(':');
-    if (!id) return undefined;
-    if (!this.data.ids.includes(id)) return undefined;
-    return userId;
   }
 
   abstract execute(interaction: ButtonInteraction): Promise<any>;

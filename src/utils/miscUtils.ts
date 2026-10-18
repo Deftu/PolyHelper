@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { DiscordjsError, type HexColorString, type RGBTuple } from 'discord.js';
 import { ErrorEmbed } from '../discord/private/EmbedHelper.ts';
 import type { DevData, ValidErrors } from '../types/application.ts';
-import type { EmbedHelperField } from '../types/discord.ts';
+import type { EmbedHelperField, InteractionTypes } from '../types/discord.ts';
 
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -42,7 +42,21 @@ export function getErrorTypeName(error: ValidErrors): string {
   return 'Generic Error';
 }
 
-export function getErrorEmbed(error: ValidErrors, extraData: EmbedHelperField[] = []): ErrorEmbed {
+export function getCleanErrorEmbed(error: ValidErrors, interaction: InteractionTypes | null = null) {
+  const embed = new ErrorEmbed();
+  if (!(error instanceof PolyHelperError)) {
+    return embed.setDescription('This error has been reported to the devs. Please try again later.');
+  }
+  embed.setDescription(`\`\`\`${error.message}\`\`\``);
+  if (!interaction?.isCommand()) return embed;
+  const metadata = interaction.client.discordManager.commandHandler.getCommandData(interaction);
+  if (metadata?.cleanErrorName) {
+    embed.setTitle(`Unable to ${metadata.cleanErrorName}`).setDescription(error.message).setAuthor(null);
+  }
+  return embed;
+}
+
+export function getFullErrorEmbed(error: ValidErrors, extraData: EmbedHelperField[] = []): ErrorEmbed {
   const errorStack = error instanceof Error ? (error.stack ?? error.message) : String(error ?? 'Unknown');
   return new ErrorEmbed()
     .setDescription(`\`\`\`${errorStack}\`\`\``)

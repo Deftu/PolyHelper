@@ -13,7 +13,8 @@ class PinTicketCommand extends DiscordCommand {
     .setName('pinticket')
     .setDescription('Pin a ticket')
     .addStringOption((option) => option.setName('reason').setDescription('The reason for pinning the ticket'))
-    .removeHidddenOption();
+    .removeHidddenOption()
+    .setCleanErrorName('pin this ticket');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override response: BasicInteractionResponse = BasicInteractionResponse.Ephemeral;
   override permission: CommandPermission = CommandPermission.Support;

@@ -5,26 +5,26 @@ import MessageHandler from './handlers/MessageHandler.ts';
 import ModalHandler from './handlers/ModalHandler.ts';
 import PolyHelperError from '../private/error.ts';
 import {
-  AutocompleteInteraction,
-  ButtonInteraction,
   ChannelType,
-  ChatInputCommandInteraction,
   Client,
   Events,
   GatewayIntentBits,
   Guild,
   MessageFlags,
-  ModalSubmitInteraction,
   type SendableChannels,
   TextChannel
 } from 'discord.js';
-import { ErrorEmbed } from './private/EmbedHelper.ts';
+import { getCleanErrorEmbed, toError } from '../utils/miscUtils.ts';
 import { parseInteractionType } from '../utils/discordUtils.ts';
-import { toError } from '../utils/miscUtils.ts';
 import { writeFile } from 'node:fs/promises';
 import type Application from '../Application.ts';
 import type { Config } from '../types/config.ts';
-import type { DiscordManagerWithClient, DiscordManagerWithGuild, EmbedHelperField } from '../types/discord.ts';
+import type {
+  DiscordManagerWithClient,
+  DiscordManagerWithGuild,
+  EmbedHelperField,
+  InteractionTypes
+} from '../types/discord.ts';
 import type { ValidErrors } from '../types/application.ts';
 
 class DiscordManager {
@@ -88,8 +88,7 @@ class DiscordManager {
 
   async handleError(
     error: ValidErrors,
-    interaction:
-      ChatInputCommandInteraction | ButtonInteraction | AutocompleteInteraction | ModalSubmitInteraction | null = null,
+    interaction: InteractionTypes | null = null,
     extraErrorData: EmbedHelperField[] = []
   ) {
     if (interaction) {
@@ -107,13 +106,19 @@ class DiscordManager {
       }
     }
     await this.application.logError(error, extraErrorData);
-    if (!interaction || interaction.isAutocomplete()) return;
+    if (!interaction) return;
 
-    const embed = new ErrorEmbed();
-    if (error instanceof PolyHelperError) embed.setDescription(`\`\`\`${error.message}\`\`\``);
-    else embed.setDescription('This error has been reported to the devs. Please try again later.');
+    if (interaction.isAutocomplete()) {
+      try {
+        await interaction.respond([]);
+      } catch (e: unknown) {
+        this.application.logError(toError(e));
+      }
+      return;
+    }
 
     try {
+      const embed = getCleanErrorEmbed(error, interaction);
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
       } else {

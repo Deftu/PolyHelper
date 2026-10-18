@@ -13,7 +13,8 @@ class UnpinTicketCommand extends DiscordCommand {
     .setName('unpinticket')
     .setDescription('Unpin a ticket')
     .addStringOption((option) => option.setName('reason').setDescription('The reason for pinning the ticket'))
-    .removeHidddenOption();
+    .removeHidddenOption()
+    .setCleanErrorName('unpin this ticket');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override response: BasicInteractionResponse = BasicInteractionResponse.Ephemeral;
   override permission: CommandPermission = CommandPermission.Support;

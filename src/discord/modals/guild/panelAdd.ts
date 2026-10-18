@@ -12,7 +12,7 @@ class PanelAddModal extends DiscordModal {
       name: interaction.fields.getTextInputValue('name'),
       title: interaction.fields.getTextInputValue('title'),
       description: interaction.fields.getTextInputValue('description'),
-      buttonLabel: interaction.fields.getTextInputValue('title'),
+      buttonLabel: interaction.fields.getTextInputValue('buttonLabel'),
       buttonEmoji: null,
       openingMessage: interaction.fields.getTextInputValue('title'),
       maxOpenTickets: 2,

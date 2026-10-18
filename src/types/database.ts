@@ -1,5 +1,11 @@
 import zod from 'zod';
 
+export interface DatabaseMigrationFile {
+  start: number;
+  end: number;
+  path: string;
+}
+
 export interface MetadataEntry<K extends string> {
   key: K;
   value: string;

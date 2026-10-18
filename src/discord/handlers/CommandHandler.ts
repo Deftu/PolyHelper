@@ -14,11 +14,16 @@ import { readdir } from 'node:fs/promises';
 import { toCamelCase, upperFirst } from '../../utils/stringUtils.ts';
 import { toError } from '../../utils/miscUtils.ts';
 import type DiscordCommand from '../private/commands/DiscordCommand.ts';
+import type DiscordCommandDataBuilder from '../private/commands/DiscordCommandDataBuilder.ts';
 import type DiscordManager from '../DiscordManager.ts';
 
 class CommandHandler {
   readonly commands: Collection<string, DiscordCommand> = new Collection<string, DiscordCommand>();
   constructor(private readonly discord: DiscordManager) {}
+
+  getCommandData(interaction: ChatInputCommandInteraction): DiscordCommandDataBuilder | undefined {
+    return this.commands.get(interaction.commandName)?.data;
+  }
 
   async onCommand(interaction: ChatInputCommandInteraction) {
     const command = this.commands.get(interaction.commandName);
