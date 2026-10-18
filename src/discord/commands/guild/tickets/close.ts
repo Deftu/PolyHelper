@@ -23,7 +23,7 @@ class CloseCommand extends DiscordCommand {
     const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
     if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');
     await interaction.followUp({ content: 'Attempting to close this ticket...' });
-    await this.discord.application.tickets.closeTicket({ id: ticket.id, reason, closer: interaction.user.id });
+    await ticket.close({ reason, runner: interaction.user.id });
   }
 }
 

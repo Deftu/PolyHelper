@@ -2,6 +2,7 @@ import DiscordButton from '../../../private/buttons/DiscordButton.ts';
 import DiscordButtonData from '../../../private/buttons/DiscordButtonData.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
+import Ticket from '../../../../database/private/Ticket.ts';
 import { type ButtonInteractionWithGuild, InteractionFlags } from '../../../../types/discord.ts';
 
 class PanelButton extends DiscordButton {
@@ -38,14 +39,14 @@ class PanelButton extends DiscordButton {
     }
 
     const channel = await this.discord.application.discord.getSupportChannel();
-    const thread = await channel.threads.create({ name: `[${panel.name}] ticket-${interaction.user.username}` });
+    const thread = await channel.threads.create({ name: Ticket.getThreadName(panel.name, interaction.user.username) });
     await thread.members.add(interaction.user);
     await thread.send(panel.getOpeningMessage(interaction.user));
     this.discord.application.database.insertTicket({
       panelId: panel.id,
       threadId: thread.id,
       owner: interaction.user.id,
-      pinned: 0,
+      pinMessageId: null,
       closed: 0
     });
     await interaction.followUp({

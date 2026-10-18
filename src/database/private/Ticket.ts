@@ -1,15 +1,17 @@
+import EmbedHelper from '../../discord/private/EmbedHelper.ts';
 import PolyHelperError from '../../private/error.ts';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Panel from './Panel.ts';
 import type { DatabaseTicket } from '../../types/database.ts';
-import type { GuildMember, TextThreadChannel } from 'discord.js';
+import type { GuildMember, Message, TextThreadChannel } from 'discord.js';
+import type { TicketAction } from '../../types/misc.ts';
 
 class Ticket {
   readonly id: DatabaseTicket['id'];
   readonly panelId: DatabaseTicket['panelId'];
   readonly threadId: DatabaseTicket['threadId'];
   readonly owner: DatabaseTicket['owner'];
-  readonly #pinned: DatabaseTicket['pinned'];
+  readonly pinMessageId: DatabaseTicket['pinMessageId'];
   readonly #closed: DatabaseTicket['closed'];
   constructor(
     data: DatabaseTicket,
@@ -19,12 +21,12 @@ class Ticket {
     this.panelId = data.panelId;
     this.threadId = data.threadId;
     this.owner = data.owner;
-    this.#pinned = data.pinned;
+    this.pinMessageId = data.pinMessageId;
     this.#closed = data.closed;
   }
 
   get pinned(): boolean {
-    return Boolean(this.#pinned);
+    return this.pinMessageId !== null;
   }
 
   get closed(): boolean {
@@ -53,10 +55,79 @@ class Ticket {
     return thread;
   }
 
+  static getThreadName(panelName: string, username: string, pinned: boolean = false) {
+    return `${pinned ? '[📌]' : ''} [${panelName}] ticket-${username}`.trim();
+  }
+
+  async updateThreadName(): Promise<this> {
+    const thread = await this.getThread();
+    const discord = await this.getDiscord();
+    await thread.setName(Ticket.getThreadName(this.panel.name, discord.user.username, this.pinned));
+    return this;
+  }
+
   async mentionOwnerInThread(message?: string) {
     const thread = await this.getThread();
     const user = await this.getDiscord();
     await thread.send({ content: `<@${user.user.id}>\n${message}`.trim() });
+  }
+
+  async close({ reason, runner }: TicketAction) {
+    if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
+    const thread = await this.getThread();
+    await thread.send({
+      embeds: [
+        new EmbedHelper()
+          .setTitle('Ticket Closed')
+          .setDescription(`This ticket has been closeed by <@${runner}>`)
+          .setFields({ name: 'Reason', value: reason, blockValue: true })
+      ]
+    });
+    const closeRequest = this.manager.getCloseRequestByTicketId(this.id);
+    if (closeRequest) await this.manager.deleteCloseRequest(closeRequest.id);
+    await thread.setArchived(true);
+    this.manager.updateTicket({ ...this.toJSON(), closed: 1 });
+  }
+
+  async pin({ reason, runner }: TicketAction) {
+    if (this.pinned) throw new PolyHelperError('This ticket is already pinned. Please unpin it to pin it');
+    const thread = await this.getThread();
+    const message = await thread.send({
+      embeds: [
+        new EmbedHelper()
+          .setTitle('Ticket Pinned')
+          .setDescription(`This ticket has been pinned by <@${runner}>`)
+          .setFields({ name: 'Reason', value: reason, blockValue: true })
+      ]
+    });
+    await message.pin();
+    return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: message.id }).updateThreadName();
+  }
+
+  async getPinMessage(): Promise<Message> {
+    if (!this.pinMessageId) {
+      throw new PolyHelperError('This ticket isnt pinned. Please pin it to unpin it');
+    }
+    const thread = await this.getThread();
+    const message = await thread.messages.fetch(this.pinMessageId).catch(() => null);
+    if (!message) throw new PolyHelperError('Could not find the matching pin message?');
+    return message;
+  }
+
+  async unpin({ reason, runner }: TicketAction) {
+    if (!this.pinned) throw new PolyHelperError('This ticket isnt pinned. Please pin it to unpin it');
+    const thread = await this.getThread();
+    const pinMessage = await this.getPinMessage();
+    await pinMessage.unpin();
+    await thread.send({
+      embeds: [
+        new EmbedHelper()
+          .setTitle('Ticket Unpinned')
+          .setDescription(`This ticket has been unpinned by <@${runner}>`)
+          .setFields({ name: 'Reason', value: reason, blockValue: true })
+      ]
+    });
+    return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: null }).updateThreadName();
   }
 
   toJSON(): DatabaseTicket {
@@ -65,7 +136,7 @@ class Ticket {
       panelId: this.panelId,
       threadId: this.threadId,
       owner: this.owner,
-      pinned: this.#pinned,
+      pinMessageId: this.pinMessageId,
       closed: this.#closed
     };
   }

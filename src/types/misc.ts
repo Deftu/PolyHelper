@@ -14,4 +14,7 @@ export interface LogData {
   color: ChalkInstance;
 }
 
-export type Nullish = null | undefined;
+export interface TicketAction {
+  reason: string;
+  runner: string;
+}

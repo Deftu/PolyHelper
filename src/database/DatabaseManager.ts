@@ -74,11 +74,18 @@ class DatabaseManager extends BasicDatabaseManager {
     return newPanel;
   }
 
-  getTicketIds(): DatabaseTicket['id'][] {
+  getTicket(id: DatabaseTicket['id']): Ticket | undefined {
+    const data = this.db.prepare<[DatabaseTicket['id']], DatabaseTicket>('SELECT * FROM tickets WHERE id = ?').get(id);
+    if (!data) return data;
+    return new Ticket(data, this);
+  }
+
+  getTickets(closed: DatabaseTicket['closed'] = 0): Ticket[] {
     return this.db
-      .prepare<[], Pick<DatabaseTicket, 'id'>>('SELECT id FROM tickets')
-      .all()
-      .map((row) => row.id);
+      .prepare<[DatabaseTicket['closed']], Pick<DatabaseTicket, 'id'>>('SELECT id FROM tickets WHERE closed = ?')
+      .all(closed)
+      .map(({ id }) => this.getTicket(id))
+      .filter((ticket) => ticket !== undefined);
   }
 
   getTicketsByPanel(panelId: DatabaseTicket['panelId'], closed: DatabaseTicket['closed'] = 0): Ticket[] {
@@ -106,12 +113,6 @@ class DatabaseManager extends BasicDatabaseManager {
       .filter((ticket) => ticket !== undefined);
   }
 
-  getTicket(id: DatabaseTicket['id']): Ticket | undefined {
-    const data = this.db.prepare<[DatabaseTicket['id']], DatabaseTicket>('SELECT * FROM tickets WHERE id = ?').get(id);
-    if (!data) return data;
-    return new Ticket(data, this);
-  }
-
   getTicketByThreadId(id: DatabaseTicket['threadId']): Ticket | undefined {
     const data = this.db
       .prepare<[DatabaseTicket['threadId']], Pick<DatabaseTicket, 'id'>>('SELECT id FROM tickets WHERE threadId = ?')
@@ -124,7 +125,7 @@ class DatabaseManager extends BasicDatabaseManager {
     const id: DatabaseTicket['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabaseTicket>(
-        'INSERT INTO tickets (id, panelId, threadId, owner, pinned, closed) VALUES (@id, @panelId, @threadId, @owner, @pinned, @closed)'
+        'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, closed) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @closed)'
       )
       .run({ ...ticketData, id });
     const ticket = this.getTicket(id);
@@ -137,7 +138,7 @@ class DatabaseManager extends BasicDatabaseManager {
     if (!ticket) throw new PolyHelperError('Could not find this ticket?');
     this.db
       .prepare<DatabaseTicket>(
-        'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinned = @pinned, closed = @closed WHERE id = @id'
+        'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinMessageId = @pinMessageId, closed = @closed WHERE id = @id'
       )
       .run(data);
     const newTicket = this.getTicket(data.id);

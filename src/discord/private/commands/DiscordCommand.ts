@@ -14,6 +14,10 @@ abstract class DiscordCommand<
   abstract readonly data: DiscordCommandDataBuilder;
   readonly response: BasicInteractionResponse = BasicInteractionResponse.Public;
 
+  shouldEphemeral(interaction: ChatInputCommandInteraction): boolean {
+    return interaction.options.getBoolean('hidden-response') ?? this.response === BasicInteractionResponse.Ephemeral;
+  }
+
   // eslint-disable-next-line require-await
   async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
     return [];

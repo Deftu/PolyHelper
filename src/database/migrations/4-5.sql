@@ -1,0 +1,2 @@
+ALTER TABLE tickets ADD COLUMN pinMessageId TEXT DEFAULT NULL;
+ALTER TABLE tickets DROP COLUMN pinned;

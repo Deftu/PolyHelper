@@ -4,7 +4,7 @@ import type ScriptManager from '../ScriptManager.ts';
 
 class CheckCloseRequestsScript extends BasicScript {
   constructor(scripts: ScriptManager) {
-    super(scripts, { id: 'checkCloseRequets', interval: '1m' });
+    super(scripts, { id: 'checkCloseRequests', interval: '1m' });
   }
 
   override async execute() {
@@ -13,13 +13,9 @@ class CheckCloseRequestsScript extends BasicScript {
       if (closeRequest.ticket.pinned) this.scripts.application.database.deleteCloseRequest(closeRequest.id);
       const message = await closeRequest.getMessage();
       await message.reply({
-        embeds: [new EmbedHelper().setTitle('Closeing...').setDescription('Close request has expired. Auto closing')]
+        embeds: [new EmbedHelper().setTitle('Closing').setDescription('Close requests have expired. Auto-closing...')]
       });
-      await this.scripts.application.tickets.closeTicket({
-        id: closeRequest.ticket.id,
-        reason: closeRequest.reason,
-        closer: closeRequest.closer
-      });
+      await closeRequest.ticket.close({ reason: closeRequest.reason, runner: closeRequest.closer });
     }
   }
 }

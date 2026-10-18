@@ -27,11 +27,7 @@ class CommandHandler {
     try {
       if (command.response !== BasicInteractionResponse.None) {
         await interaction.deferReply({
-          flags:
-            (interaction.options.getBoolean('hidden-response') ??
-            command.response === BasicInteractionResponse.Ephemeral)
-              ? MessageFlags.Ephemeral
-              : undefined
+          flags: command.shouldEphemeral(interaction) ? MessageFlags.Ephemeral : undefined
         });
       }
       console.discord(

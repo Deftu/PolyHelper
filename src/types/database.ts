@@ -28,7 +28,7 @@ export const DatabaseTicket = zod.object({
   panelId: zod.string(),
   threadId: zod.string(),
   owner: zod.string(),
-  pinned: DatabaseBoolean,
+  pinMessageId: zod.string().nullable(),
   closed: DatabaseBoolean
 });
 export type DatabaseTicket = zod.infer<typeof DatabaseTicket>;
