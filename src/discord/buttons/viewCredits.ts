@@ -3,9 +3,9 @@ import DiscordButton from '../private/buttons/DiscordButton.ts';
 import DiscordButtonData from '../private/buttons/DiscordButtonData.ts';
 import {
   type ButtonInteraction,
-  MessageFlags,
+  type InteractionReplyOptions,
   type MessageEditOptions,
-  type InteractionReplyOptions
+  MessageFlags
 } from 'discord.js';
 import { ButtonResponse } from '../../types/discord.ts';
 

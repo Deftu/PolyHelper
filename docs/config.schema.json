@@ -54,9 +54,9 @@
           "properties": {
             "colors": {
               "type": "object",
-              "propertyNames": { "type": "string", "enum": ["Pink", "Red", "Green", "Yellow"] },
+              "propertyNames": { "type": "string", "enum": ["Blue", "Green", "Pink", "Red", "Yellow"] },
               "additionalProperties": { "type": "string" },
-              "required": ["Pink", "Red", "Green", "Yellow"],
+              "required": ["Blue", "Green", "Pink", "Red", "Yellow"],
               "description": "The default colors for embeds"
             }
           },
@@ -82,13 +82,19 @@
     "other": {
       "type": "object",
       "properties": {
-        "backupConfigs": {
-          "type": "boolean",
-          "description": "Whether backup copies of config files should be created"
+        "configBackups": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "description": "Should config backups be made" },
+            "location": { "type": "string", "description": "The location of where these files should be saved" }
+          },
+          "required": ["enabled", "location"],
+          "additionalProperties": false,
+          "description": "Configuration options for config backup system"
         },
         "sqlitedb": { "type": "string", "description": "Path to the sqlite database" }
       },
-      "required": ["backupConfigs", "sqlitedb"],
+      "required": ["configBackups", "sqlitedb"],
       "additionalProperties": false,
       "description": "Configuration options for misc/other stuff or things that don't have a good location"
     }

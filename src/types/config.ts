@@ -43,7 +43,7 @@ export const ConfigDiscordChannelIdGenerateThread = zod
   .nullable()
   .meta({ description: 'Discord channel id. If null, an auto-generated thread will be used' });
 
-export const ConfigDiscordEmbedsColors = zod.enum(['Pink', 'Red', 'Green', 'Yellow']);
+export const ConfigDiscordEmbedsColors = zod.enum(['Blue', 'Green', 'Pink', 'Red', 'Yellow']);
 export type ConfigDiscordEmbedsColors = zod.infer<typeof ConfigDiscordEmbedsColors>;
 export const ConfigDiscordEmbeds = zod
   .object({
@@ -88,9 +88,15 @@ export const ConfigLogger = zod
   })
   .meta({ description: 'Configuration options for the logger' });
 
+export const ConfigOtherConfigBackups = zod
+  .object({
+    enabled: zod.boolean().meta({ description: 'Should config backups be made' }),
+    location: zod.string().meta({ description: 'The location of where these files should be saved' })
+  })
+  .meta({ description: 'Configuration options for config backup system' });
 export const ConfigOther = zod
   .object({
-    backupConfigs: zod.boolean().meta({ description: 'Whether backup copies of config files should be created' }),
+    configBackups: ConfigOtherConfigBackups,
     sqlitedb: zod.string().meta({ description: 'Path to the sqlite database' })
   })
   .meta({ description: "Configuration options for misc/other stuff or things that don't have a good location" });

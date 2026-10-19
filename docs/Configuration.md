@@ -57,15 +57,22 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 
 ## other
 
-| Key             | Type      | Description                                             |
-| --------------- | --------- | ------------------------------------------------------- |
-| `backupConfigs` | `boolean` | Whether backup copies of config files should be created |
-| `sqlitedb`      | `string`  | Path to the sqlite database                             |
+| Key             | Type     | Description                                    |
+| --------------- | -------- | ---------------------------------------------- |
+| `configBackups` | `object` | Configuration options for config backup system |
+| `sqlitedb`      | `string` | Path to the sqlite database                    |
+
+### configBackups
+
+| Key        | Type      | Description                                       |
+| ---------- | --------- | ------------------------------------------------- |
+| `enabled`  | `boolean` | Should config backups be made                     |
+| `location` | `string`  | The location of where these files should be saved |
 
 ---
 
 This document is [auto generated](/scripts/docs/Configuration.ts) and was last updated on
-`Thu, 15 Oct 2026 15:36:43 GMT` (`1792078603909`)
+`Mon, 19 Oct 2026 08:07:37 GMT` (`1792397257841`)
 
 To update this document please run `pnpm docgen` or contact a maintainer and ask them to update it.
 

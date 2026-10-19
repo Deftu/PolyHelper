@@ -1,7 +1,9 @@
 import PolyHelperError from './error.ts';
 import { ConfigChangeType, type JsonObject, type JsonValue, type MigrationMap } from '../types/config.ts';
+import { dirname } from 'node:path';
 import { displayBigMessage, getNestedValue } from '../utils/miscUtils.ts';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { replaceVariables } from '../utils/stringUtils.ts';
 import type { ZodType } from 'zod';
 
 abstract class BasicConfigManager<TypedConfig extends JsonObject> {
@@ -63,12 +65,13 @@ abstract class BasicConfigManager<TypedConfig extends JsonObject> {
     if (skipCheck === false && getNestedValue(config, 'other.backupConfigs') === false) {
       return console.warn('Config backup is disabled');
     }
-    await mkdir('./data/backup/config', { recursive: true });
-    await writeFile(
-      `./data/backup/config/config_${new Date().toISOString()}.json`,
-      JSON.stringify(config, null, 2),
-      'utf-8'
+    const configuredLocation = getNestedValue(config, 'other.configBackups.location');
+    const backupPath = replaceVariables(
+      typeof configuredLocation === 'string' ? configuredLocation : './data/backup/config/config_{timestamp}.json',
+      { timestamp: new Date().toISOString() }
     );
+    await mkdir(dirname(backupPath), { recursive: true });
+    await writeFile(backupPath, JSON.stringify(config, null, 2), 'utf-8');
     console.other('Saved config backup');
   }
 

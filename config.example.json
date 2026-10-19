@@ -1,6 +1,6 @@
 {
   "$schema": "./docs/config.schema.json",
-  "configVersion": 2,
+  "configVersion": 3,
   "discord": {
     "token": "DICORD_TOKEN",
     "serverId": "DISCORD_SERVER_ID",
@@ -20,10 +20,11 @@
     },
     "embeds": {
       "colors": {
+        "Blue": "#266FDD",
+        "Green": "#3CAF77",
         "Pink": "#F5C2E7",
-        "Red": "#ED4245",
-        "Green": "#57F287",
-        "Yellow": "#FFD700"
+        "Red": "#F2545A",
+        "Yellow": "#FFCB47"
       }
     }
   },
@@ -32,7 +33,10 @@
     "location": "./data/logs/{timestamp}"
   },
   "other": {
-    "backupConfigs": true,
+    "configBackups": {
+      "enabled": true,
+      "location": "./data/backup/config/config_{timestamp}.json"
+    },
     "sqlitedb": "./data/db.sqlite3"
   }
 }
