@@ -21,6 +21,7 @@
     "embeds": {
       "colors": {
         "Blue": "#266FDD",
+        "Gray": "#2D3943",
         "Green": "#3CAF77",
         "Pink": "#F5C2E7",
         "Red": "#F2545A",

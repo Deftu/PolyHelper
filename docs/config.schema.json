@@ -54,9 +54,9 @@
           "properties": {
             "colors": {
               "type": "object",
-              "propertyNames": { "type": "string", "enum": ["Blue", "Green", "Pink", "Red", "Yellow"] },
+              "propertyNames": { "type": "string", "enum": ["Blue", "Gray", "Green", "Pink", "Red", "Yellow"] },
               "additionalProperties": { "type": "string" },
-              "required": ["Blue", "Green", "Pink", "Red", "Yellow"],
+              "required": ["Blue", "Gray", "Green", "Pink", "Red", "Yellow"],
               "description": "The default colors for embeds"
             }
           },

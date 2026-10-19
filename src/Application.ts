@@ -28,7 +28,7 @@ class Application {
   static async request<T>(url: string, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
     const headers = new AxiosHeaders(config.headers as AxiosHeaders | undefined);
     if (!headers.has('User-Agent')) headers.set('User-Agent', this.getUserAgent());
-    return await axios.get<T>(url, { ...config, headers });
+    return await axios.request<T>({ ...config, url, method: config.method ?? 'GET', headers });
   }
 
   async logError(error: ValidErrors, extraData: EmbedHelperField[] = []) {

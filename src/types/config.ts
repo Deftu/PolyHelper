@@ -43,7 +43,7 @@ export const ConfigDiscordChannelIdGenerateThread = zod
   .nullable()
   .meta({ description: 'Discord channel id. If null, an auto-generated thread will be used' });
 
-export const ConfigDiscordEmbedsColors = zod.enum(['Blue', 'Green', 'Pink', 'Red', 'Yellow']);
+export const ConfigDiscordEmbedsColors = zod.enum(['Blue', 'Gray', 'Green', 'Pink', 'Red', 'Yellow']);
 export type ConfigDiscordEmbedsColors = zod.infer<typeof ConfigDiscordEmbedsColors>;
 export const ConfigDiscordEmbeds = zod
   .object({
