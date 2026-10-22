@@ -9,7 +9,7 @@ const config = await configManager.init();
 
 const { default: Application } = await import('./src/Application.ts');
 const application = new Application(config);
-await application.database.checkForDatabase();
+application.database.checkForDatabase();
 await application.database.checkForMigrations();
 await application.scripts.init();
 await application.discord.connect();

@@ -32,6 +32,8 @@ class PanelEditModal extends DiscordModal {
       pingSupportRoleOnOpen: this.getCheckbox(interaction, 'pingSupportRoleOnOpen', panel.pingSupportRoleOnOpen)
         ? 1
         : 0,
+      pinnedTicketPrefix: this.getTextInputValue(interaction, 'pinnedTicketPrefix') ?? panel.pinnedTicketPrefix,
+      defaultTicketName: this.getTextInputValue(interaction, 'defaultTicketName') ?? panel.defaultTicketName,
       enabled: this.getCheckbox(interaction, 'enabled', panel.enabled) ? 1 : 0
     });
     await interaction.followUp({ content: `Panel "${updated.name}" updated.` });

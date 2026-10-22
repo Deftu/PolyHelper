@@ -9,9 +9,9 @@ import {
   type Message,
   type TextThreadChannel
 } from 'discord.js';
+import { replaceVariables } from '../../utils/stringUtils.ts';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Panel from './Panel.ts';
-import type { AutocompleteOptionWithValue } from '../../types/discord.ts';
 import type { DatabaseTicket } from '../../types/database.ts';
 import type { TicketAction } from '../../types/misc.ts';
 
@@ -23,6 +23,7 @@ class Ticket {
   readonly pinMessageId: DatabaseTicket['pinMessageId'];
   readonly startingMessageId: DatabaseTicket['startingMessageId'];
   readonly openingTimestamp: DatabaseTicket['openingTimestamp'];
+  readonly name: DatabaseTicket['name'];
   readonly #closed: DatabaseTicket['closed'];
   constructor(
     data: DatabaseTicket,
@@ -35,6 +36,7 @@ class Ticket {
     this.pinMessageId = data.pinMessageId;
     this.startingMessageId = data.startingMessageId;
     this.openingTimestamp = data.openingTimestamp;
+    this.name = data.name;
     this.#closed = data.closed;
   }
 
@@ -75,15 +77,20 @@ class Ticket {
     return message;
   }
 
-  static getThreadName(panelName: string, username: string, pinned: boolean = false, closed = false) {
-    return `${closed ? '[Closed]' : ''} ${pinned ? '[📌]' : ''} [${panelName}] ticket-${username}`.trim();
-  }
-
-  async updateThreadName(): Promise<this> {
+  async rename(name: string = this.panel.defaultTicketName): Promise<Ticket> {
     const thread = await this.getThread();
     const discord = await this.getDiscord();
-    await thread.setName(Ticket.getThreadName(this.panel.name, discord.user.username, this.pinned, this.closed));
-    return this;
+    name = replaceVariables(name, {
+      username: discord.user.username,
+      id: discord.user.id,
+      panelName: this.panel.name,
+      cleanPanelName: this.panel.cleanName
+    })
+      .replaceAll(this.panel.fullPinnedTicketPrefix, '')
+      .trim();
+    if (this.pinned) name = `${this.panel.fullPinnedTicketPrefix} ${name}`;
+    await thread.setName(name);
+    return this.manager.updateTicket({ ...this.toJSON(), name });
   }
 
   async mentionOwnerInThread(message?: string) {
@@ -94,8 +101,8 @@ class Ticket {
 
   async close({ reason, runner }: TicketAction) {
     if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
+    await this.rename(`[Closed] ${this.name}`);
     const thread = await this.getThread();
-    await thread.setName(`[Closed] ${thread.name}`);
     await thread.send({
       embeds: [
         new EmbedHelper()
@@ -122,7 +129,7 @@ class Ticket {
       ]
     });
     await message.pin();
-    return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: message.id }).updateThreadName();
+    return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: message.id }).rename();
   }
 
   async getPinMessage(): Promise<Message | undefined> {
@@ -146,7 +153,7 @@ class Ticket {
           .setFields({ name: 'Reason', value: reason, format: 'Block' })
       ]
     });
-    return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: null }).updateThreadName();
+    return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: null }).rename();
   }
 
   async getMessageData(): Promise<BaseMessageOptions> {
@@ -184,15 +191,6 @@ class Ticket {
     };
   }
 
-  async getAutocompleteOption(): Promise<AutocompleteOptionWithValue> {
-    const user = await this.getDiscord();
-    const startingMessage = await this.getStartingMessage();
-    return {
-      name: `${this.closed ? 'Closed' : 'Open'} Ticket form @${user.user.username} (${this.panel.name}) - ${startingMessage.createdAt.toISOString().split('T')[0]}`,
-      value: this.id
-    };
-  }
-
   toJSON(): DatabaseTicket {
     return {
       id: this.id,
@@ -202,6 +200,7 @@ class Ticket {
       pinMessageId: this.pinMessageId,
       startingMessageId: this.startingMessageId,
       openingTimestamp: this.openingTimestamp,
+      name: this.name,
       closed: this.#closed
     };
   }

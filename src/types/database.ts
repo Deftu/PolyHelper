@@ -26,6 +26,8 @@ export const DatabasePanel = zod.object({
   openingMessage: zod.string(),
   maxOpenTickets: zod.int().positive(),
   pingSupportRoleOnOpen: DatabaseBoolean,
+  pinnedTicketPrefix: zod.string(),
+  defaultTicketName: zod.string(),
   enabled: DatabaseBoolean
 });
 export type DatabasePanel = zod.infer<typeof DatabasePanel>;
@@ -38,6 +40,7 @@ export const DatabaseTicket = zod.object({
   pinMessageId: zod.string().nullable(),
   startingMessageId: zod.string(),
   openingTimestamp: zod.int().positive(),
+  name: zod.string(),
   closed: DatabaseBoolean
 });
 export type DatabaseTicket = zod.infer<typeof DatabaseTicket>;

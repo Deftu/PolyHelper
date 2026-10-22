@@ -14,8 +14,7 @@ class BumpCommand extends DiscordCommand {
   override permission: InteractionPermission = InteractionPermission.Support;
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
-    const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
-    if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');
+    const ticket = this.getTicket(interaction);
     if (ticket.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before bumping');
     await interaction.followUp({
       content: `Hey <@${ticket.owner}>:`,

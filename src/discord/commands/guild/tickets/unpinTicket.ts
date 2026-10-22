@@ -1,6 +1,5 @@
 import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
-import PolyHelperError from '../../../../private/error.ts';
 import {
   BasicInteractionResponse,
   InteractionFlags,
@@ -22,10 +21,8 @@ class UnpinTicketCommand extends DiscordCommand {
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const reason = interaction.options.getString('reason') || 'No reason provided';
-    const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
-    if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');
     await interaction.followUp({ content: 'Attempting to unpin this ticket...' });
-    await ticket.unpin({ reason, runner: interaction.user.id });
+    await this.getTicket(interaction).unpin({ reason, runner: interaction.user.id });
   }
 }
 

@@ -17,8 +17,10 @@ class PanelAddModal extends DiscordModal {
       buttonLabel: interaction.fields.getTextInputValue('buttonLabel'),
       buttonEmoji: null,
       openingMessage: interaction.fields.getTextInputValue('title'),
-      maxOpenTickets: 2,
+      maxOpenTickets: 1,
       pingSupportRoleOnOpen: 1,
+      pinnedTicketPrefix: '📌',
+      defaultTicketName: '[{cleanPanelName}] ticket-{username}',
       enabled: this.getCheckbox(interaction, 'enabled') ? 1 : 0
     };
 

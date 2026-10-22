@@ -15,6 +15,8 @@ class Panel {
   readonly openingMessage: DatabasePanel['openingMessage'];
   readonly maxOpenTickets: DatabasePanel['maxOpenTickets'];
   readonly #pingSupportRoleOnOpen: DatabasePanel['pingSupportRoleOnOpen'];
+  readonly pinnedTicketPrefix: DatabasePanel['pinnedTicketPrefix'];
+  readonly defaultTicketName: DatabasePanel['defaultTicketName'];
   readonly #enabled: DatabasePanel['enabled'];
   constructor(
     data: DatabasePanel,
@@ -30,11 +32,17 @@ class Panel {
     this.openingMessage = data.openingMessage;
     this.maxOpenTickets = data.maxOpenTickets;
     this.#pingSupportRoleOnOpen = data.pingSupportRoleOnOpen;
+    this.pinnedTicketPrefix = data.pinnedTicketPrefix;
+    this.defaultTicketName = data.defaultTicketName;
     this.#enabled = data.enabled;
   }
 
   get pingSupportRoleOnOpen(): boolean {
     return Boolean(this.#pingSupportRoleOnOpen);
+  }
+
+  get fullPinnedTicketPrefix(): string {
+    return `[${this.pinnedTicketPrefix}]`;
   }
 
   get enabled(): boolean {
@@ -68,6 +76,8 @@ class Panel {
       openingMessage: this.openingMessage,
       maxOpenTickets: this.maxOpenTickets,
       pingSupportRoleOnOpen: this.#pingSupportRoleOnOpen,
+      pinnedTicketPrefix: this.pinnedTicketPrefix,
+      defaultTicketName: this.defaultTicketName,
       enabled: this.#enabled
     };
   }

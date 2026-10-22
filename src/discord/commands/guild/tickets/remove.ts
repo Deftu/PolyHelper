@@ -21,8 +21,7 @@ class RemoveCommand extends DiscordCommand {
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const member = interaction.options.getMember('user');
     if (!isGuildMember(member)) throw new PolyHelperError('Could not find that user');
-    const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
-    if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');
+    const ticket = this.getTicket(interaction);
     if (ticket.owner === member.user.id) {
       throw new PolyHelperError('You cannot remove the ticket owner from the ticket');
     }

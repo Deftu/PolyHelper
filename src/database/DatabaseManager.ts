@@ -54,7 +54,7 @@ class DatabaseManager extends BasicDatabaseManager {
     const id: DatabasePanel['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabasePanel>(
-        'INSERT INTO panels (id, name, cleanName, title, description, buttonLabel, buttonEmoji, openingMessage, maxOpenTickets, pingSupportRoleOnOpen, enabled) VALUES (@id, @name, @cleanName, @title, @description, @buttonLabel, @buttonEmoji, @openingMessage, @maxOpenTickets, @pingSupportRoleOnOpen, @enabled)'
+        'INSERT INTO panels (id, name, cleanName, title, description, buttonLabel, buttonEmoji, openingMessage, maxOpenTickets, pingSupportRoleOnOpen, pinnedTicketPrefix, defaultTicketName, enabled) VALUES (@id, @name, @cleanName, @title, @description, @buttonLabel, @buttonEmoji, @openingMessage, @maxOpenTickets, @pingSupportRoleOnOpen, @pinnedTicketPrefix, @defaultTicketName, @enabled)'
       )
       .run({ ...panelData, id });
     const panel = this.getPanel(id);
@@ -75,7 +75,7 @@ class DatabaseManager extends BasicDatabaseManager {
     if (!panel) throw new PolyHelperError('Could not find this panel?');
     this.db
       .prepare<DatabasePanel>(
-        'UPDATE panels SET name = @name, cleanName = @cleanName, title = @title, description = @description, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, maxOpenTickets = @maxOpenTickets, pingSupportRoleOnOpen = @pingSupportRoleOnOpen, enabled = @enabled WHERE id = @id'
+        'UPDATE panels SET name = @name, cleanName = @cleanName, title = @title, description = @description, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, maxOpenTickets = @maxOpenTickets, pingSupportRoleOnOpen = @pingSupportRoleOnOpen, pinnedTicketPrefix = @pinnedTicketPrefix, defaultTicketName = @defaultTicketName, enabled = @enabled WHERE id = @id'
       )
       .run(data);
     const newPanel = this.getPanel(data.id);
@@ -138,7 +138,7 @@ class DatabaseManager extends BasicDatabaseManager {
     const id: DatabaseTicket['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabaseTicket>(
-        'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, startingMessageId, openingTimestamp, closed) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @startingMessageId, @openingTimestamp, @closed)'
+        'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, startingMessageId, openingTimestamp, name, closed) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @startingMessageId, @openingTimestamp, @name, @closed)'
       )
       .run({ ...ticketData, id });
     return new Ticket({ ...ticketData, id }, this);
@@ -147,7 +147,7 @@ class DatabaseManager extends BasicDatabaseManager {
   updateTicket(data: DatabaseTicket): Ticket {
     const update = this.db
       .prepare<DatabaseTicket>(
-        'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinMessageId = @pinMessageId, startingMessageId = @startingMessageId, openingTimestamp = @openingTimestamp, closed = @closed WHERE id = @id'
+        'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinMessageId = @pinMessageId, startingMessageId = @startingMessageId, openingTimestamp = @openingTimestamp, name = @name, closed = @closed WHERE id = @id'
       )
       .run(data);
     if (update.changes === 0) throw new PolyHelperError('Could not find this ticket?');

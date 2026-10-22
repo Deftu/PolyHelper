@@ -20,8 +20,7 @@ class CloseRequestCommand extends DiscordCommand {
   override permission: InteractionPermission = InteractionPermission.Support;
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
-    const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
-    if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket.');
+    const ticket = this.getTicket(interaction);
     if (ticket.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing.');
 
     const currentCloseRequest = this.discord.application.database.getCloseRequestByTicketId(ticket.id);

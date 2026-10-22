@@ -116,7 +116,8 @@ export class TicketEmbed extends SuccessEmbed {
     this.addFields(
       { name: 'Ticket ID', value: ticket.id, format: 'Block' },
       { name: 'Panel ID', value: ticket.panelId, format: 'Block' },
-      { name: 'Thread', value: `<#${ticket.threadId}>` }
+      { name: 'Thread', value: `<#${ticket.threadId}>` },
+      { name: 'Open Timestamp', value: Math.floor(ticket.openingTimestamp / 1000), format: 'Timestamp' }
     );
     this.addDiscordFields(ticket.owner, 'Opener');
     this.addFields(

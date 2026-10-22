@@ -1,0 +1,1 @@
+ALTER TABLE panels ADD COLUMN pinnedTicketPrefix TEXT NOT NULL DEFAULT '📌';

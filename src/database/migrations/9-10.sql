@@ -1,0 +1,1 @@
+ALTER TABLE tickets ADD COLUMN name TEXT NOT NULL DEFAULT 'Missing Name';

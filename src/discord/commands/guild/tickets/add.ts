@@ -20,9 +20,7 @@ class AddCommand extends DiscordCommand {
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const member = interaction.options.getMember('user');
     if (!isGuildMember(member)) throw new PolyHelperError('Could not find that user');
-    const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
-    if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');
-    const thread = await ticket.getThread();
+    const thread = await this.getTicket(interaction).getThread();
     await thread.members.add(member);
     await interaction.followUp({
       embeds: [new SuccessEmbed().setDescription(`Added <@${member.user.id}> to the ticket`)]

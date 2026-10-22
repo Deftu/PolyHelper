@@ -2,9 +2,8 @@ import BasicInteractionMetadata from '../../../private/interactions/basic/BasicI
 import DiscordButton from '../../../private/interactions/DiscordButton.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import Ticket from '../../../../database/private/Ticket.ts';
+import { type ButtonInteraction, ThreadAutoArchiveDuration } from 'discord.js';
 import { InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
-import type { ButtonInteraction } from 'discord.js';
 
 class OpenTicketButton extends DiscordButton {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('openTicket');
@@ -45,7 +44,10 @@ class OpenTicketButton extends DiscordButton {
     }
 
     const channel = await this.discord.application.discord.getSupportChannel();
-    const thread = await channel.threads.create({ name: Ticket.getThreadName(panel.name, interaction.user.username) });
+    const thread = await channel.threads.create({
+      name: `[${panel.cleanName}] ticket-${interaction.user.username}`,
+      autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek
+    });
     await thread.members.add(interaction.user);
     const startingMessage = await thread.send(panel.getStartingMessageData(interaction.user));
     await startingMessage.pin();
@@ -53,15 +55,17 @@ class OpenTicketButton extends DiscordButton {
     const pingMessage = await thread.send({ content: `<@&${this.discord.application.config.discord.roles.support}>` });
     await pingMessage.delete();
 
-    this.discord.application.database.insertTicket({
+    const ticket = this.discord.application.database.insertTicket({
       panelId: panel.id,
       threadId: thread.id,
       owner: interaction.user.id,
       pinMessageId: null,
       startingMessageId: startingMessage.id,
       openingTimestamp: Date.now(),
+      name: thread.name,
       closed: 0
     });
+    await ticket.rename();
     await interaction.followUp({
       embeds: [new EmbedHelper().setTitle('Ticket').setDescription(`Opened a ticket: <#${thread.id}>`)]
     });
