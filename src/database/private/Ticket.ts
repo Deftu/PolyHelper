@@ -73,14 +73,14 @@ class Ticket {
     return message;
   }
 
-  static getThreadName(panelName: string, username: string, pinned: boolean = false) {
-    return `${pinned ? '[📌]' : ''} [${panelName}] ticket-${username}`.trim();
+  static getThreadName(panelName: string, username: string, pinned: boolean = false, closed = false) {
+    return `${closed ? '[Closed]' : ''} ${pinned ? '[📌]' : ''} [${panelName}] ticket-${username}`.trim();
   }
 
   async updateThreadName(): Promise<this> {
     const thread = await this.getThread();
     const discord = await this.getDiscord();
-    await thread.setName(Ticket.getThreadName(this.panel.name, discord.user.username, this.pinned));
+    await thread.setName(Ticket.getThreadName(this.panel.name, discord.user.username, this.pinned, this.closed));
     return this;
   }
 
@@ -93,6 +93,7 @@ class Ticket {
   async close({ reason, runner }: TicketAction) {
     if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
     const thread = await this.getThread();
+    await thread.setName(`[Closed] ${thread.name}`);
     await thread.send({
       embeds: [
         new EmbedHelper()

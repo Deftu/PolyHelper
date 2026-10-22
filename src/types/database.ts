@@ -18,6 +18,7 @@ export const DatabaseBoolean = zod
 export const DatabasePanel = zod.object({
   id: zod.string(),
   name: zod.string(),
+  cleanName: zod.string(),
   title: zod.string(),
   description: zod.string(),
   buttonLabel: zod.string(),

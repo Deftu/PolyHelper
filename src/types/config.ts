@@ -77,7 +77,8 @@ export const ConfigDiscord = zod
     serverId: zod.string().meta({ description: 'The Discord server (guild) ID' }),
     roles: ConfigDiscordRoles,
     channels: ConfigDiscordChannels,
-    embeds: ConfigDiscordEmbeds
+    embeds: ConfigDiscordEmbeds,
+    minecraftLogCleaner: zod.boolean().meta({ description: 'Should uploaded minecraft logs be cleaned' })
   })
   .meta({ description: 'Configuration options for discord related stuff' });
 

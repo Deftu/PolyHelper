@@ -1,0 +1,1 @@
+ALTER TABLE panels ADD COLUMN cleanName TEXT TEXT NOT NULL DEFAULT 'Missing Clean Name';

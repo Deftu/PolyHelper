@@ -22,6 +22,7 @@ class PanelEditModal extends DiscordModal {
     const updated = await this.discord.application.database.updatePanel({
       id: panel.id,
       name: this.getTextInputValue(interaction, 'name') ?? panel.name,
+      cleanName: this.getTextInputValue(interaction, 'cleanName') ?? panel.cleanName,
       title: this.getTextInputValue(interaction, 'title') ?? panel.title,
       description: this.getTextInputValue(interaction, 'description') ?? panel.description,
       buttonLabel: this.getTextInputValue(interaction, 'buttonLabel') ?? panel.buttonLabel,

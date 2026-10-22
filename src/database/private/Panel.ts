@@ -7,6 +7,7 @@ import type { DatabasePanel } from '../../types/database.ts';
 class Panel {
   readonly id: DatabasePanel['id'];
   readonly name: DatabasePanel['name'];
+  readonly cleanName: DatabasePanel['cleanName'];
   readonly title: DatabasePanel['title'];
   readonly description: DatabasePanel['description'];
   readonly buttonLabel: DatabasePanel['buttonLabel'];
@@ -21,6 +22,7 @@ class Panel {
   ) {
     this.id = data.id;
     this.name = data.name;
+    this.cleanName = data.cleanName;
     this.title = data.title;
     this.description = data.description;
     this.buttonLabel = data.buttonLabel;
@@ -46,7 +48,7 @@ class Panel {
       embeds: [
         new EmbedHelper()
           .setColor('Green')
-          .setTitle(this.name)
+          .setTitle(this.cleanName)
           .setDescription(
             replaceVariables(this.openingMessage, { mention: `<@${user.id}>`, username: user.username, id: user.id })
           )
@@ -58,6 +60,7 @@ class Panel {
     return {
       id: this.id,
       name: this.name,
+      cleanName: this.cleanName,
       title: this.title,
       description: this.description,
       buttonLabel: this.buttonLabel,

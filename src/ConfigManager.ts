@@ -2,7 +2,7 @@ import BasicConfigManager from './private/BasicConfigManager.ts';
 import { Config, ConfigChangeType, type MigrationMap } from './types/config.ts';
 
 class ConfigManager extends BasicConfigManager<Config> {
-  protected readonly configPath = 'config.json';
+  protected readonly configPath = process.env.CONFIG_PATH ?? 'config.json';
   protected readonly defaultConfigPath = 'config.example.json';
   protected readonly schema = Config;
   protected readonly versions: Record<number, MigrationMap> = {

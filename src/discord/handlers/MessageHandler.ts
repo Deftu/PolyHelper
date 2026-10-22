@@ -11,6 +11,7 @@ class MessageHandler {
     if (message.type === MessageType.ThreadCreated) await this.onThreadCreated(message);
     if (message.type === MessageType.ChannelPinnedMessage) await this.onPinMessage(message);
     if (
+      this.discord.application.config.discord.minecraftLogCleaner &&
       !message.flags.has(MessageFlags.SuppressNotifications) &&
       !message.author.bot &&
       !['poly ignore', 'sky ignore'].some((phrase) => message.content.toLowerCase().includes(phrase))

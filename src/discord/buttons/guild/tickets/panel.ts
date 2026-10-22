@@ -49,6 +49,10 @@ class PanelButton extends DiscordButton {
     await thread.members.add(interaction.user);
     const startingMessage = await thread.send(panel.getStartingMessageData(interaction.user));
     await startingMessage.pin();
+
+    const pingMessage = await thread.send({ content: `<@&${this.discord.application.config.discord.roles.support}>` });
+    await pingMessage.delete();
+
     this.discord.application.database.insertTicket({
       panelId: panel.id,
       threadId: thread.id,

@@ -11,6 +11,7 @@ class PanelAddModal extends DiscordModal {
   override async execute(interaction: InteractionWithGuild<ModalMessageModalSubmitInteraction>) {
     const panelData: Omit<DatabasePanel, 'id'> = {
       name: interaction.fields.getTextInputValue('name'),
+      cleanName: interaction.fields.getTextInputValue('name'),
       title: interaction.fields.getTextInputValue('title'),
       description: interaction.fields.getTextInputValue('description'),
       buttonLabel: interaction.fields.getTextInputValue('buttonLabel'),

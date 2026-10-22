@@ -77,7 +77,7 @@ export const MclogsInsightsAnalysis = zod.object({
 
 export const MclogsInsights = zod.object({
   id: zod.string(),
-  name: zod.string(),
+  name: zod.string().nullable(),
   type: zod.string(),
   version: zod.string().nullable(),
   title: zod.string(),

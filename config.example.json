@@ -27,7 +27,8 @@
         "Red": "#F2545A",
         "Yellow": "#FFCB47"
       }
-    }
+    },
+    "minecraftLogCleaner": true
   },
   "logger": {
     "saveToFiles": true,
