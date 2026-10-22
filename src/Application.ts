@@ -5,9 +5,9 @@ import PolyHelperError from './private/error.ts';
 import ScriptManager from './scripts/ScriptManager.ts';
 import axios, { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import packageJson from '../package.json' with { type: 'json' };
-import { canSendMessages, getApplicationOwners } from './utils/discordUtils.ts';
+import { canSendMessages } from './utils/discordUtils.ts';
 import { execSync } from 'node:child_process';
-import { getErrorTypeName, getFullErrorEmbed } from './utils/miscUtils.ts';
+import { getFullErrorEmbed } from './utils/miscUtils.ts';
 import type { Config } from './types/config.ts';
 import type { EmbedHelperField } from './types/discord.ts';
 import type { RuntimeInformation, ValidErrors } from './types/application.ts';
@@ -42,11 +42,7 @@ class Application {
       }
       const hasPermission = await canSendMessages(channel);
       if (!hasPermission) return;
-      const owners = await getApplicationOwners(this.discord.client);
-      await channel.send({
-        content: getErrorTypeName(error) === 'Generic Error' ? owners.map((id) => `<@${id}>`).join(' ') : '',
-        embeds: [getFullErrorEmbed(error, extraData)]
-      });
+      await channel.send({ embeds: [getFullErrorEmbed(error, extraData)] });
     } catch (error) {
       console.error(error);
     }
