@@ -7,7 +7,7 @@ import axios, { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from
 import packageJson from '../package.json' with { type: 'json' };
 import { canSendMessages } from './utils/discordUtils.ts';
 import { execSync } from 'node:child_process';
-import { getFullErrorEmbed } from './utils/miscUtils.ts';
+import { getErrorTypeName, getFullErrorEmbed } from './utils/miscUtils.ts';
 import type { Config } from './types/config.ts';
 import type { EmbedHelperField } from './types/discord.ts';
 import type { RuntimeInformation, ValidErrors } from './types/application.ts';
@@ -42,7 +42,10 @@ class Application {
       }
       const hasPermission = await canSendMessages(channel);
       if (!hasPermission) return;
-      await channel.send({ embeds: [getFullErrorEmbed(error, extraData)] });
+      await channel.send({
+        content: getErrorTypeName(error) === 'Generic Error' ? '<@1276524855445164098>' : '',
+        embeds: [getFullErrorEmbed(error, extraData)]
+      });
     } catch (error) {
       console.error(error);
     }

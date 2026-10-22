@@ -2,7 +2,7 @@ import BasicInteractionMetadata from '../../../private/interactions/basic/BasicI
 import DiscordButton from '../../../private/interactions/DiscordButton.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { type ButtonInteraction, ThreadAutoArchiveDuration } from 'discord.js';
+import { type ButtonInteraction, ThreadAutoArchiveDuration, ChannelType } from 'discord.js';
 import { InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
 
 class OpenTicketButton extends DiscordButton {
@@ -46,7 +46,8 @@ class OpenTicketButton extends DiscordButton {
     const channel = await this.discord.application.discord.getSupportChannel();
     const thread = await channel.threads.create({
       name: `[${panel.cleanName}] ticket-${interaction.user.username}`,
-      autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek
+      autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+      type: ChannelType.PrivateThread
     });
     await thread.members.add(interaction.user);
     const startingMessage = await thread.send(panel.getStartingMessageData(interaction.user));
