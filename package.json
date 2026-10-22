@@ -24,13 +24,14 @@
     "docgen": "pnpm docgen:docs && pnpm docgen:packageScripts",
     "docgen:docs": "pnpm exec tsx scripts/generateDocs.ts",
     "docgen:packageScripts": "pnpm exec tsx scripts/generatePackageScripts.ts",
-    "docgen:docs:configuration": "pnpm exec tsx scripts/docs/Configuration.ts",
     "docgen:docs:config:schema": "pnpm exec tsx scripts/docs/config.schema.ts",
+    "docgen:docs:configuration": "pnpm exec tsx scripts/docs/Configuration.ts",
     "validate": "pnpm validate:config && pnpm validate:exampleConfig",
     "validate:config": "pnpm exec tsx scripts/validate/config.ts",
     "validate:exampleConfig": "pnpm exec tsx scripts/validate/exampleConfig.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.0.0",
     "@sapphire/discord.js-utilities": "7.3.3",
     "axios": "1.20.0",
     "better-sqlite3": "13.0.3",
