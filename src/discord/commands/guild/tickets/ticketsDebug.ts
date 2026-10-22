@@ -25,7 +25,7 @@ class DebugTickets extends DiscordCommand {
   override permission: CommandPermission = CommandPermission.Admin;
 
   async executeRefreshNames(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
-    const tickets = this.discord.application.database.getTickets(1);
+    const tickets = this.discord.application.database.getTickets({ closed: 1 });
     await interaction.followUp({ content: `refreshing the thread name of ${tickets.length} ticket(s)` });
     for (const ticket of tickets) await ticket.updateThreadName();
   }

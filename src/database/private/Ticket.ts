@@ -11,6 +11,7 @@ import {
 } from 'discord.js';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Panel from './Panel.ts';
+import type { AutocompleteOptionWithValue } from '../../types/discord.ts';
 import type { DatabaseTicket } from '../../types/database.ts';
 import type { TicketAction } from '../../types/misc.ts';
 
@@ -65,7 +66,7 @@ class Ticket {
     return thread;
   }
 
-  async getOpeningMesage(): Promise<Message> {
+  async getStartingMessage(): Promise<Message> {
     const thread = await this.getThread();
     const message = await thread.messages.fetch(this.startingMessageId).catch(() => null);
     if (!message) throw new PolyHelperError('Could not find the matching message?');
@@ -147,14 +148,14 @@ class Ticket {
 
   async getMessageData(): Promise<BaseMessageOptions> {
     const thread = await this.getThread();
-    const openingMessage = await this.getOpeningMesage();
+    const startingMessage = await this.getStartingMessage();
     const pinMessage = await this.getPinMessage();
     return {
       embeds: [new TicketEmbed(this)],
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder().setLabel('Go To Thread').setStyle(ButtonStyle.Link).setURL(thread.url),
-          new ButtonBuilder().setLabel('Go To Top of Thread').setStyle(ButtonStyle.Link).setURL(openingMessage.url),
+          new ButtonBuilder().setLabel('Go To Top of Thread').setStyle(ButtonStyle.Link).setURL(startingMessage.url),
           new ButtonBuilder()
             .setLabel('Go To Pin Message')
             .setStyle(ButtonStyle.Link)
@@ -177,6 +178,15 @@ class Ticket {
             .setCustomId(`refreshTicketEmbed:${this.id}`)
         )
       ]
+    };
+  }
+
+  async getAutocompleteOption(): Promise<AutocompleteOptionWithValue> {
+    const user = await this.getDiscord();
+    const startingMessage = await this.getStartingMessage();
+    return {
+      name: `${this.closed ? 'Closed' : 'Open'} Ticket form @${user.user.username} (${this.panel.name}) - ${startingMessage.createdAt.toISOString().split('T')[0]}`,
+      value: this.id
     };
   }
 

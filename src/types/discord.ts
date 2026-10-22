@@ -61,6 +61,10 @@ export interface AutocompleteOption {
   value?: string;
 }
 
+export interface AutocompleteOptionWithValue extends AutocompleteOption {
+  value: string;
+}
+
 export interface GuildInteractionData {
   guildId: string;
   guild: Guild;

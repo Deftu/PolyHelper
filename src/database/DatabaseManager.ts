@@ -91,21 +91,7 @@ class DatabaseManager extends BasicDatabaseManager {
     return new Ticket(data, this);
   }
 
-  getTicketIds(): DatabaseTicket['id'][] {
-    return this.db
-      .prepare<[], Pick<DatabaseTicket, 'id'>>('SELECT id FROM tickets')
-      .all()
-      .map((row) => row.id);
-  }
-
-  getTickets(closed: DatabaseTicket['closed'] = 0): Ticket[] {
-    return this.db
-      .prepare<[DatabaseTicket['closed']], DatabaseTicket>('SELECT * FROM tickets WHERE closed = ?')
-      .all(closed)
-      .map((data) => new Ticket(data, this));
-  }
-
-  searchTickets(
+  getTickets(
     filters: {
       panelId?: DatabaseTicket['panelId'];
       owner?: DatabaseTicket['owner'];

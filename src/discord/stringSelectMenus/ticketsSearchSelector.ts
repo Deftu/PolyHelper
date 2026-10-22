@@ -1,7 +1,7 @@
-import PolyHelperError from '../../private/error.ts';
-import { ButtonResponse } from '../../types/discord.ts';
 import BasicInteractionMetadata from '../private/interactions/basic/BasicInteractionMetadata.ts';
 import DiscordStringSelectMenu from '../private/interactions/DiscordStringSelectMenu.ts';
+import PolyHelperError from '../../private/error.ts';
+import { ButtonResponse } from '../../types/discord.ts';
 import type { StringSelectMenuInteraction } from 'discord.js';
 
 class TicketSearchSelector extends DiscordStringSelectMenu {

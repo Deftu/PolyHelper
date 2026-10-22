@@ -18,7 +18,7 @@ class PanelButton extends DiscordButton {
     if (!panel) throw new PolyHelperError('Could not find this panel?');
     if (!panel.enabled) throw new PolyHelperError('This ticket panel is currently disabled.');
 
-    const tickets = this.discord.application.database.searchTickets({
+    const tickets = this.discord.application.database.getTickets({
       panelId: panel.id,
       owner: interaction.user.id,
       closed: 0

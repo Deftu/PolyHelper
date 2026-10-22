@@ -11,6 +11,7 @@ import {
 } from 'discord.js';
 import {
   type AutocompleteOption,
+  type AutocompleteOptionWithValue,
   CommandPermission,
   type EmbedHelperField,
   InteractionFlags,
@@ -46,13 +47,15 @@ class TicketsCommand extends DiscordCommand {
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override permission: CommandPermission = CommandPermission.Support;
 
-  // eslint-disable-next-line require-await
   override async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
     const focusedOption = interaction.options.getFocused(true);
 
     switch (focusedOption.name) {
       case 'ticket-id':
-        return this.discord.application.database.getTicketIds().map((name) => ({ name }));
+        const tickets = this.discord.application.database.getTickets({ limit: 25 });
+        const options: AutocompleteOptionWithValue[] = [];
+        for (const ticket of tickets) options.push(await ticket.getAutocompleteOption());
+        return options;
       case 'panel-id':
         return this.discord.application.database.getPanels().map((panel) => ({ name: panel.name, value: panel.id }));
       default:
@@ -82,7 +85,7 @@ class TicketsCommand extends DiscordCommand {
       throw new PolyHelperError('The closed and open filters conflict with each other');
     }
 
-    const tickets = this.discord.application.database.searchTickets({
+    const tickets = this.discord.application.database.getTickets({
       panelId: panelId ?? undefined,
       owner: opener?.id,
       pinned: pinned ?? (unpinned === null ? undefined : !unpinned),
@@ -103,18 +106,21 @@ class TicketsCommand extends DiscordCommand {
     if (panelId) embed.addFields({ name: 'Panel Id', value: panelId, format: 'Block' });
     if (opener) embed.addFields({ name: 'Opener', value: `<@${opener.id}> (${opener.id})` });
 
+    const options: AutocompleteOptionWithValue[] = [];
+    for (const ticket of tickets) options.push(await ticket.getAutocompleteOption());
+
     await interaction.followUp({
       embeds: [embed.setFields(embed.fields.map((field) => ({ ...field, inline: true })))],
       components: [
         new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
           new StringSelectMenuBuilder()
             .setCustomId(`ticketsSearch:${interaction.user.id}`)
-            .setPlaceholder(tickets.length === 0 ? 'No tickets found' : 'Select a ticket to view more')
-            .setDisabled(tickets.length === 0)
+            .setPlaceholder(options.length === 0 ? 'No tickets found' : 'Select a ticket to view more')
+            .setDisabled(options.length === 0)
             .setOptions(
-              tickets.length === 0
+              options.length === 0
                 ? [new StringSelectMenuOptionBuilder().setLabel('No tickets found').setValue('nothing')]
-                : tickets.map(({ id }) => new StringSelectMenuOptionBuilder().setLabel(id).setValue(id))
+                : options.map(({ name, value }) => new StringSelectMenuOptionBuilder().setLabel(name).setValue(value))
             )
         )
       ]
