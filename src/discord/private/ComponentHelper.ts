@@ -61,7 +61,7 @@ export function OpenTicketButton({ id, buttonLabel, buttonEmoji, enabled }: Data
   const button = new ButtonBuilder()
     .setStyle(ButtonStyle.Secondary)
     .setLabel(buttonLabel)
-    .setCustomId(`panel:${id}`)
+    .setCustomId(`openTicket:${id}`)
     .setDisabled(!Boolean(enabled));
   if (buttonEmoji) button.setEmoji(buttonEmoji);
   return button;

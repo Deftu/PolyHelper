@@ -37,6 +37,7 @@ export const DatabaseTicket = zod.object({
   owner: zod.string(),
   pinMessageId: zod.string().nullable(),
   startingMessageId: zod.string(),
+  openingTimestamp: zod.int().positive(),
   closed: DatabaseBoolean
 });
 export type DatabaseTicket = zod.infer<typeof DatabaseTicket>;

@@ -22,6 +22,7 @@ class Ticket {
   readonly owner: DatabaseTicket['owner'];
   readonly pinMessageId: DatabaseTicket['pinMessageId'];
   readonly startingMessageId: DatabaseTicket['startingMessageId'];
+  readonly openingTimestamp: DatabaseTicket['openingTimestamp'];
   readonly #closed: DatabaseTicket['closed'];
   constructor(
     data: DatabaseTicket,
@@ -33,6 +34,7 @@ class Ticket {
     this.owner = data.owner;
     this.pinMessageId = data.pinMessageId;
     this.startingMessageId = data.startingMessageId;
+    this.openingTimestamp = data.openingTimestamp;
     this.#closed = data.closed;
   }
 
@@ -199,6 +201,7 @@ class Ticket {
       owner: this.owner,
       pinMessageId: this.pinMessageId,
       startingMessageId: this.startingMessageId,
+      openingTimestamp: this.openingTimestamp,
       closed: this.#closed
     };
   }

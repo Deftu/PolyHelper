@@ -8,7 +8,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ChatInputCommandInteraction,
-  Message,
   MessageFlags,
   PermissionFlagsBits
 } from 'discord.js';
@@ -18,7 +17,7 @@ import {
   InteractionFlags,
   type InteractionWithGuild
 } from '../../../../types/discord.ts';
-import { BasicPanelModal, OpenTicketButton } from '../../../private/ComponentHelper.ts';
+import { BasicPanelModal } from '../../../private/ComponentHelper.ts';
 
 class TicketPanelsCommand extends DiscordCommand {
   override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
@@ -50,27 +49,6 @@ class TicketPanelsCommand extends DiscordCommand {
   // eslint-disable-next-line require-await
   override async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
     return this.discord.application.database.getPanels().map((panel) => ({ name: panel.name, value: panel.id }));
-  }
-
-  static async updatePanelsMessage(message: Message): Promise<Message> {
-    const panels = message.client.discordManager.application.database.getPanels();
-    return await message.edit({
-      content: '',
-      embeds: [
-        new EmbedHelper()
-          .setTitle(`${message.client.discordManager.guild?.name ?? 'UNKNOWN'} support tickets`)
-          .setColor('Blue')
-          .setFields(...panels.map((panel) => ({ name: `**${panel.title}**`, value: panel.description })))
-      ],
-      components: [new ActionRowBuilder<ButtonBuilder>().addComponents(panels.map((panel) => OpenTicketButton(panel)))]
-    });
-  }
-
-  async executeRefresh(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-    const message = await this.discord.application.database.getPanelsMessage();
-    await TicketPanelsCommand.updatePanelsMessage(message);
-    await interaction.followUp({ content: `Message updated - ${message.url}` });
   }
 
   async executeAdd(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {

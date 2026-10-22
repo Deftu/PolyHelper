@@ -1,0 +1,1 @@
+ALTER TABLE tickets ADD COLUMN openingTimestamp INT NOT NULL DEFAULT 0;

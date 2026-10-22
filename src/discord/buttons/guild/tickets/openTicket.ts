@@ -6,8 +6,8 @@ import Ticket from '../../../../database/private/Ticket.ts';
 import { InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { ButtonInteraction } from 'discord.js';
 
-class PanelButton extends DiscordButton {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panel');
+class OpenTicketButton extends DiscordButton {
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('openTicket');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildButton];
   override fetchGuildMember: boolean = false;
 
@@ -59,6 +59,7 @@ class PanelButton extends DiscordButton {
       owner: interaction.user.id,
       pinMessageId: null,
       startingMessageId: startingMessage.id,
+      openingTimestamp: Date.now(),
       closed: 0
     });
     await interaction.followUp({
@@ -67,4 +68,4 @@ class PanelButton extends DiscordButton {
   }
 }
 
-export default PanelButton;
+export default OpenTicketButton;

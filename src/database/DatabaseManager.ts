@@ -1,9 +1,9 @@
 import BasicDatabaseManager from './BasicDatabaseManager.ts';
 import CloseRequest from './private/CloseRequest.ts';
+import DebugTicketsCommand from '../discord/commands/guild/tickets/ticketsDebug.ts';
 import Panel from './private/Panel.ts';
 import PolyHelperError from '../private/error.ts';
 import Ticket from './private/Ticket.ts';
-import TicketPanelsCommand from '../discord/commands/guild/tickets/panels.ts';
 import type Application from '../Application.ts';
 import type { DatabaseCloseRequest, DatabasePanel, DatabaseTicket } from '../types/database.ts';
 import type { Message } from 'discord.js';
@@ -60,14 +60,14 @@ class DatabaseManager extends BasicDatabaseManager {
     const panel = this.getPanel(id);
     if (!panel) throw new PolyHelperError('Something went wrong while inserting a panel');
     const message = await this.getPanelsMessage();
-    await TicketPanelsCommand.updatePanelsMessage(message);
+    await DebugTicketsCommand.updatePanelsMessage(message);
     return panel;
   }
 
   async deletePanel(id: DatabasePanel['id']) {
     this.db.prepare<DatabasePanel['id']>('DELETE FROM panels WHERE id = ?').run(id);
     const message = await this.getPanelsMessage();
-    await TicketPanelsCommand.updatePanelsMessage(message);
+    await DebugTicketsCommand.updatePanelsMessage(message);
   }
 
   async updatePanel(data: DatabasePanel): Promise<Panel> {
@@ -81,7 +81,7 @@ class DatabaseManager extends BasicDatabaseManager {
     const newPanel = this.getPanel(data.id);
     if (!newPanel) throw new PolyHelperError('Something went wrong while updating a panel');
     const message = await this.getPanelsMessage();
-    await TicketPanelsCommand.updatePanelsMessage(message);
+    await DebugTicketsCommand.updatePanelsMessage(message);
     return newPanel;
   }
 
@@ -138,7 +138,7 @@ class DatabaseManager extends BasicDatabaseManager {
     const id: DatabaseTicket['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabaseTicket>(
-        'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, startingMessageId, closed) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @startingMessageId, @closed)'
+        'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, startingMessageId, openingTimestamp, closed) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @startingMessageId, @openingTimestamp, @closed)'
       )
       .run({ ...ticketData, id });
     return new Ticket({ ...ticketData, id }, this);
@@ -147,7 +147,7 @@ class DatabaseManager extends BasicDatabaseManager {
   updateTicket(data: DatabaseTicket): Ticket {
     const update = this.db
       .prepare<DatabaseTicket>(
-        'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinMessageId = @pinMessageId, startingMessageId = @startingMessageId, closed = @closed WHERE id = @id'
+        'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinMessageId = @pinMessageId, startingMessageId = @startingMessageId, openingTimestamp = @openingTimestamp, closed = @closed WHERE id = @id'
       )
       .run(data);
     if (update.changes === 0) throw new PolyHelperError('Could not find this ticket?');
