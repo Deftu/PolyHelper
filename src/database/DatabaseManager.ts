@@ -19,15 +19,15 @@ class DatabaseManager extends BasicDatabaseManager {
       throw new PolyHelperError("The discord bot doesn't seam to be online? Please restart the application");
     }
     const channel = await this.application.discord.getChannel('support');
-    const messageId = this.getMetadataEntry('PanelsMessage');
+    const messageId = this.getMetadataEntry('panels-message');
     if (!messageId) {
       const message = await channel.send({ content: 'Setting up panels message' });
-      this.insertMetadataEntry<'PanelsMessage'>({ key: 'PanelsMessage', value: message.id });
+      this.setMetadataEntry({ key: 'panels-message', value: message.id });
       return await this.getPanelsMessage();
     }
     const message = await channel.messages.fetch(messageId.value).catch(() => null);
     if (!message) {
-      this.deletgeMetadataEntry('PanelsMessage');
+      this.deleteMetadataEntry('panels-message');
       return await this.getPanelsMessage();
     }
     return message;
@@ -164,9 +164,10 @@ class DatabaseManager extends BasicDatabaseManager {
 
   getCloseRequestByTicketId(id: DatabaseCloseRequest['ticketId']): CloseRequest | undefined {
     const data = this.db
-      .prepare<[DatabaseCloseRequest['ticketId']], DatabaseCloseRequest>(
-        'SELECT * FROM closeRequests WHERE ticketId = ?'
-      )
+      .prepare<
+        [DatabaseCloseRequest['ticketId']],
+        DatabaseCloseRequest
+      >('SELECT * FROM closeRequests WHERE ticketId = ?')
       .get(id);
     if (data === undefined) return data;
     return new CloseRequest(data, this);

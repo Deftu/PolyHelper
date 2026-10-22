@@ -3,8 +3,8 @@ import DiscordCommandMetadata from '../../../private/interactions/commands/Disco
 import PolyHelperError from '../../../../private/error.ts';
 import {
   BasicInteractionResponse,
-  CommandPermission,
   InteractionFlags,
+  InteractionPermission,
   type InteractionWithGuild
 } from '../../../../types/discord.ts';
 import { ChatInputCommandInteraction, PermissionFlagsBits } from 'discord.js';
@@ -22,7 +22,7 @@ class DebugTickets extends DiscordCommand {
     .removeHidddenOption();
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override response: BasicInteractionResponse = BasicInteractionResponse.Ephemeral;
-  override permission: CommandPermission = CommandPermission.Admin;
+  override permission: InteractionPermission = InteractionPermission.Admin;
 
   async executeRefreshNames(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const tickets = this.discord.application.database.getTickets({ closed: 1 });

@@ -32,7 +32,8 @@ export enum InteractionFlags {
   GuildStringSelectMenu
 }
 
-export enum CommandPermission {
+export enum InteractionPermission {
+  Owner,
   Admin,
   PolyfrostTeam,
   Moderator,

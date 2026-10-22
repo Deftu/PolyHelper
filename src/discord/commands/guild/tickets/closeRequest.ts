@@ -5,7 +5,7 @@ import PolyHelperError from '../../../../private/error.ts';
 import ms, { type StringValue } from 'ms';
 import { ActionRowBuilder, ButtonBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { CloseRequestButtons } from '../../../private/ComponentHelper.ts';
-import { CommandPermission, InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlags, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { DatabaseCloseRequest } from '../../../../types/database.ts';
 
 class CloseRequestCommand extends DiscordCommand {
@@ -17,7 +17,7 @@ class CloseRequestCommand extends DiscordCommand {
     .removeHidddenOption()
     .setCleanErrorName('close request this ticket');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override permission: CommandPermission = CommandPermission.Support;
+  override permission: InteractionPermission = InteractionPermission.Support;
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);

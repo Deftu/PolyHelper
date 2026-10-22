@@ -28,7 +28,8 @@ class ButtonHandler {
         `Button Clicked ${interaction.user.username} (${interaction.user.id}) button ${interaction.customId}`
       );
 
-      await this.discord.interactionHandler.checkPermission(interaction, button);
+      this.discord.interactionHandler.checkInteractionFlags(interaction, button);
+      await this.discord.interactionHandler.checkPermission(interaction, button.permission);
 
       if (button.flags.includes(InteractionFlags.GuildButton)) {
         assert(interaction.guild);

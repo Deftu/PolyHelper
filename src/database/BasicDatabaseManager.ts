@@ -103,7 +103,13 @@ abstract class BasicDatabaseManager {
     return this.db.prepare<string, MetadataEntry<K>>('SELECT * FROM metadata WHERE key = ?').get(key);
   }
 
-  protected updateMetadataEntry<K extends string>(entry: MetadataEntry<K>) {
+  setMetadataEntry<K extends string>(entry: MetadataEntry<K>) {
+    const currentValue = this.getMetadataEntry<K>(entry.key);
+    if (currentValue) this.updateMetadataEntry<K>(entry);
+    else this.insertMetadataEntry<K>(entry);
+  }
+
+  private updateMetadataEntry<K extends string>(entry: MetadataEntry<K>) {
     this.db
       .prepare<MetadataEntry<K>>(
         'INSERT INTO metadata(key, value) VALUES (@key, @value) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
@@ -111,11 +117,11 @@ abstract class BasicDatabaseManager {
       .run(entry);
   }
 
-  protected insertMetadataEntry<K extends string>(entry: MetadataEntry<K>) {
+  private insertMetadataEntry<K extends string>(entry: MetadataEntry<K>) {
     this.db.prepare<MetadataEntry<K>>('INSERT INTO metadata(key, value) VALUES (@key, @value)').run(entry);
   }
 
-  protected deletgeMetadataEntry<K extends string>(key: K) {
+  deleteMetadataEntry<K extends string>(key: K) {
     this.db.prepare<string>('DELETE FROM metadata WHERE key = ?').run(key);
   }
 }

@@ -2,7 +2,7 @@ import DiscordCommand from '../../../private/interactions/commands/DiscordComman
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { CommandPermission, InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlags, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
 
 class BumpCommand extends DiscordCommand {
@@ -11,7 +11,7 @@ class BumpCommand extends DiscordCommand {
     .setDescription('Bumps a ticket to encourage closing')
     .setCleanErrorName('bump this ticket');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override permission: CommandPermission = CommandPermission.Support;
+  override permission: InteractionPermission = InteractionPermission.Support;
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);

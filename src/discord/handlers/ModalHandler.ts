@@ -24,7 +24,8 @@ class ModalHandler {
         `Modal submitted ${interaction.user.username} (${interaction.user.id}) modal ${interaction.customId}`
       );
 
-      await this.discord.interactionHandler.checkPermission(interaction, modal);
+      this.discord.interactionHandler.checkInteractionFlags(interaction, modal);
+      await this.discord.interactionHandler.checkPermission(interaction, modal.permission);
 
       if (modal.flags.includes(InteractionFlags.GuildModal)) {
         assert(interaction.guild);

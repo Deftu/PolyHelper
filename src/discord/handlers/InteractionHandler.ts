@@ -1,8 +1,9 @@
 import PolyHelperError from '../../private/error.ts';
 import { type BaseInteraction } from 'discord.js';
-import { CommandPermission, InteractionFlags } from '../../types/discord.ts';
+import { InteractionFlags, InteractionPermission } from '../../types/discord.ts';
 import {
   isAdminMember,
+  isApplicationOwner,
   isInteractionInsideOfGuild,
   isModeratorMember,
   isPolyfrostTeamMember,
@@ -22,89 +23,95 @@ class InteractionHandler {
     if (interaction.isStringSelectMenu()) this.discord.stringSelectMenuHandler.onSubmit(interaction);
   }
 
-  async checkPermission<Metadata extends object, Manager extends DiscordManager = DiscordManager>(
-    interaction: BaseInteraction,
-    data: BasicInteractionData<Manager, Metadata>,
-    skipInteractionFlags: boolean = false
-  ) {
-    const [isAdminMemberCheck, isPolyfrostTeamMemberCheck, isModeratorMemberCheck, isSupportMemberCheck] =
-      await Promise.all([
-        data.permission === CommandPermission.Admin ? isAdminMember(interaction.member) : false,
-        data.permission === CommandPermission.PolyfrostTeam ? isPolyfrostTeamMember(interaction.member) : false,
-        data.permission === CommandPermission.Moderator ? isModeratorMember(interaction.member) : false,
-        data.permission === CommandPermission.Support ? isSupportMember(interaction.member) : false
-      ]);
+  async checkPermission(interaction: BaseInteraction, permission: InteractionPermission) {
+    const [
+      isApplicationOwnerCheck,
+      isAdminMemberCheck,
+      isPolyfrostTeamMemberCheck,
+      isModeratorMemberCheck,
+      isSupportMemberCheck
+    ] = await Promise.all([
+      permission === InteractionPermission.Owner ? isApplicationOwner(interaction.user) : false,
+      permission === InteractionPermission.Admin ? isAdminMember(interaction.member) : false,
+      permission === InteractionPermission.PolyfrostTeam ? isPolyfrostTeamMember(interaction.member) : false,
+      permission === InteractionPermission.Moderator ? isModeratorMember(interaction.member) : false,
+      permission === InteractionPermission.Support ? isSupportMember(interaction.member) : false
+    ]);
 
     const checks: Array<[boolean, string]> = [
       [
-        data.permission === CommandPermission.Admin && !isAdminMemberCheck,
+        permission === InteractionPermission.Owner && !isApplicationOwnerCheck,
+        "You don't have permission to use this command. You are required to own the bot."
+      ],
+      [
+        permission === InteractionPermission.Admin && !isAdminMemberCheck,
         "You don't have permission to use this command. You are required to be an admin."
       ],
       [
-        data.permission === CommandPermission.PolyfrostTeam && !isPolyfrostTeamMemberCheck,
+        permission === InteractionPermission.PolyfrostTeam && !isPolyfrostTeamMemberCheck,
         "You don't have permission to use this command. You are required to be appart of the Polyfrost Team."
       ],
       [
-        data.permission === CommandPermission.Moderator && !isModeratorMemberCheck,
+        permission === InteractionPermission.Moderator && !isModeratorMemberCheck,
         "You don't have permission to use this command. You are required to be appart of the Moderation Team."
       ],
       [
-        data.permission === CommandPermission.Support && !isSupportMemberCheck,
+        permission === InteractionPermission.Support && !isSupportMemberCheck,
         "You don't have permission to use this command. You are required to be appart of the Support Team."
-      ],
+      ]
+    ];
+
+    for (const [failed, message] of checks) if (failed) throw new PolyHelperError(message);
+  }
+
+  checkInteractionFlags<Metadata extends object, Manager extends DiscordManager = DiscordManager>(
+    interaction: BaseInteraction,
+    data: BasicInteractionData<Manager, Metadata>
+  ) {
+    const checks: Array<[boolean, string]> = [
       [
-        !skipInteractionFlags &&
-          data.flags.includes(InteractionFlags.GuildCommand) &&
-          !interaction.isChatInputCommand(),
+        data.flags.includes(InteractionFlags.GuildCommand) && !interaction.isChatInputCommand(),
         'This command must be run as a chat input command.'
       ],
       [
-        !skipInteractionFlags &&
-          data.flags.includes(InteractionFlags.GuildCommand) &&
+        data.flags.includes(InteractionFlags.GuildCommand) &&
           interaction.isChatInputCommand() &&
           !isInteractionInsideOfGuild(interaction),
         'Please run this command inside of a guild.'
       ],
       [
-        !skipInteractionFlags && data.flags.includes(InteractionFlags.GuildButton) && !interaction.isButton(),
+        data.flags.includes(InteractionFlags.GuildButton) && !interaction.isButton(),
         'This button must be run as a button.'
       ],
       [
-        !skipInteractionFlags &&
-          data.flags.includes(InteractionFlags.GuildButton) &&
+        data.flags.includes(InteractionFlags.GuildButton) &&
           interaction.isButton() &&
           !isInteractionInsideOfGuild(interaction),
         'Please run this button inside of a guild.'
       ],
       [
-        !skipInteractionFlags && data.flags.includes(InteractionFlags.GuildModal) && !interaction.isModalSubmit(),
+        data.flags.includes(InteractionFlags.GuildModal) && !interaction.isModalSubmit(),
         'This modal must be run as a modal.'
       ],
       [
-        !skipInteractionFlags &&
-          data.flags.includes(InteractionFlags.GuildModal) &&
+        data.flags.includes(InteractionFlags.GuildModal) &&
           interaction.isModalSubmit() &&
           !isInteractionInsideOfGuild(interaction),
         'Please run this modal inside of a guild.'
       ],
       [
-        !skipInteractionFlags &&
-          data.flags.includes(InteractionFlags.GuildStringSelectMenu) &&
-          !interaction.isStringSelectMenu(),
+        data.flags.includes(InteractionFlags.GuildStringSelectMenu) && !interaction.isStringSelectMenu(),
         'This string select menu must be run as a string select menu.'
       ],
       [
-        !skipInteractionFlags &&
-          data.flags.includes(InteractionFlags.GuildStringSelectMenu) &&
+        data.flags.includes(InteractionFlags.GuildStringSelectMenu) &&
           interaction.isStringSelectMenu() &&
           !isInteractionInsideOfGuild(interaction),
         'Please run this string select menu inside of a guild.'
       ]
     ];
 
-    for (const [failed, message] of checks) {
-      if (failed) throw new PolyHelperError(message);
-    }
+    for (const [failed, message] of checks) if (failed) throw new PolyHelperError(message);
   }
 }
 

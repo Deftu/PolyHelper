@@ -12,9 +12,9 @@ import {
 import {
   type AutocompleteOption,
   type AutocompleteOptionWithValue,
-  CommandPermission,
   type EmbedHelperField,
   InteractionFlags,
+  InteractionPermission,
   type InteractionWithGuild
 } from '../../../../types/discord.ts';
 import { titleCase } from '../../../../utils/stringUtils.ts';
@@ -45,7 +45,7 @@ class TicketsCommand extends DiscordCommand {
     )
     .removeHidddenOption();
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override permission: CommandPermission = CommandPermission.Support;
+  override permission: InteractionPermission = InteractionPermission.Support;
 
   override async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
     const focusedOption = interaction.options.getFocused(true);

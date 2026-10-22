@@ -31,7 +31,8 @@ class StringSelectMenuHandler {
         `String select men submitted ${interaction.user.username} (${interaction.user.id}) modal ${interaction.customId}`
       );
 
-      await this.discord.interactionHandler.checkPermission(interaction, stringSelectMenu);
+      this.discord.interactionHandler.checkInteractionFlags(interaction, stringSelectMenu);
+      await this.discord.interactionHandler.checkPermission(interaction, stringSelectMenu.permission);
 
       if (stringSelectMenu.flags.includes(InteractionFlags.GuildStringSelectMenu)) {
         assert(interaction.guild);

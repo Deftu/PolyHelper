@@ -3,8 +3,8 @@ import DiscordCommandMetadata from '../../../private/interactions/commands/Disco
 import PolyHelperError from '../../../../private/error.ts';
 import {
   BasicInteractionResponse,
-  CommandPermission,
   InteractionFlags,
+  InteractionPermission,
   type InteractionWithGuild
 } from '../../../../types/discord.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
@@ -18,7 +18,7 @@ class PinTicketCommand extends DiscordCommand {
     .setCleanErrorName('pin this ticket');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override response: BasicInteractionResponse = BasicInteractionResponse.Ephemeral;
-  override permission: CommandPermission = CommandPermission.Support;
+  override permission: InteractionPermission = InteractionPermission.Support;
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const reason = interaction.options.getString('reason') || 'No reason provided';

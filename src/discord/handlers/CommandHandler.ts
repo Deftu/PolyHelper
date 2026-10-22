@@ -40,7 +40,8 @@ class CommandHandler {
         `Interaction Event trigged by ${interaction.user.username} (${interaction.user.id}) ran command ${interaction.commandName}`
       );
 
-      await this.discord.interactionHandler.checkPermission(interaction, command);
+      this.discord.interactionHandler.checkInteractionFlags(interaction, command);
+      await this.discord.interactionHandler.checkPermission(interaction, command.permission);
 
       if (command.flags.includes(InteractionFlags.GuildCommand)) {
         assert(interaction.guild);
@@ -75,7 +76,7 @@ class CommandHandler {
     if (!command) return;
     try {
       const hasPermission = await this.discord.interactionHandler
-        .checkPermission(interaction, command, true)
+        .checkPermission(interaction, command.permission)
         .catch((error: PolyHelperError) => error.message);
       if (hasPermission) return await interaction.respond([{ name: hasPermission, value: 'missingPermission' }]);
 
