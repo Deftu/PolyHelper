@@ -4,7 +4,7 @@ import BasicInteractionMetadata from '../private/interactions/basic/BasicInterac
 import DiscordStringSelectMenu from '../private/interactions/DiscordStringSelectMenu.ts';
 import type { StringSelectMenuInteraction } from 'discord.js';
 
-class CreditsDevSelector extends DiscordStringSelectMenu {
+class TicketSearchSelector extends DiscordStringSelectMenu {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('ticketsSearch');
   override response: ButtonResponse = ButtonResponse.None;
   override fetchGuildMember: boolean = false;
@@ -20,4 +20,4 @@ class CreditsDevSelector extends DiscordStringSelectMenu {
   }
 }
 
-export default CreditsDevSelector;
+export default TicketSearchSelector;

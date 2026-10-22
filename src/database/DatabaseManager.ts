@@ -178,10 +178,9 @@ class DatabaseManager extends BasicDatabaseManager {
 
   getCloseRequestByTicketId(id: DatabaseCloseRequest['ticketId']): CloseRequest | undefined {
     const data = this.db
-      .prepare<
-        [DatabaseCloseRequest['ticketId']],
-        DatabaseCloseRequest
-      >('SELECT * FROM closeRequests WHERE ticketId = ?')
+      .prepare<[DatabaseCloseRequest['ticketId']], DatabaseCloseRequest>(
+        'SELECT * FROM closeRequests WHERE ticketId = ?'
+      )
       .get(id);
     if (data === undefined) return data;
     return new CloseRequest(data, this);
