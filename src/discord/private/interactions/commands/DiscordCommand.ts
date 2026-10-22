@@ -1,17 +1,17 @@
-import BasicInteractionData from '../BasicInteractionData.ts';
+import BasicInteractionData from '../basic/BasicInteractionData.ts';
 import {
   type AutocompleteOption,
   BasicInteractionResponse,
   type DiscordManagerWithClient
-} from '../../../types/discord.ts';
-import type DiscordCommandDataBuilder from './DiscordCommandDataBuilder.ts';
-import type DiscordManager from '../../DiscordManager.ts';
+} from '../../../../types/discord.ts';
+import type DiscordCommandMetadata from './DiscordCommandMetadata.ts';
+import type DiscordManager from '../../../DiscordManager.ts';
 import type { AutocompleteInteraction, ChatInputCommandInteraction } from 'discord.js';
 
-abstract class DiscordCommand<
-  Manager extends DiscordManager = DiscordManagerWithClient
-> extends BasicInteractionData<Manager> {
-  abstract readonly data: DiscordCommandDataBuilder;
+abstract class DiscordCommand<Manager extends DiscordManager = DiscordManagerWithClient> extends BasicInteractionData<
+  Manager,
+  DiscordCommandMetadata
+> {
   readonly response: BasicInteractionResponse = BasicInteractionResponse.Public;
 
   shouldEphemeral(interaction: ChatInputCommandInteraction): boolean {

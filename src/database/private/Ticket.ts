@@ -1,9 +1,17 @@
-import EmbedHelper from '../../discord/private/EmbedHelper.ts';
+import EmbedHelper, { TicketEmbed } from '../../discord/private/EmbedHelper.ts';
 import PolyHelperError from '../../private/error.ts';
+import {
+  ActionRowBuilder,
+  type BaseMessageOptions,
+  ButtonBuilder,
+  ButtonStyle,
+  type GuildMember,
+  type Message,
+  type TextThreadChannel
+} from 'discord.js';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Panel from './Panel.ts';
 import type { DatabaseTicket } from '../../types/database.ts';
-import type { GuildMember, Message, TextThreadChannel } from 'discord.js';
 import type { TicketAction } from '../../types/misc.ts';
 
 class Ticket {
@@ -12,6 +20,7 @@ class Ticket {
   readonly threadId: DatabaseTicket['threadId'];
   readonly owner: DatabaseTicket['owner'];
   readonly pinMessageId: DatabaseTicket['pinMessageId'];
+  readonly startingMessageId: DatabaseTicket['startingMessageId'];
   readonly #closed: DatabaseTicket['closed'];
   constructor(
     data: DatabaseTicket,
@@ -22,6 +31,7 @@ class Ticket {
     this.threadId = data.threadId;
     this.owner = data.owner;
     this.pinMessageId = data.pinMessageId;
+    this.startingMessageId = data.startingMessageId;
     this.#closed = data.closed;
   }
 
@@ -55,6 +65,13 @@ class Ticket {
     return thread;
   }
 
+  async getOpeningMesage(): Promise<Message> {
+    const thread = await this.getThread();
+    const message = await thread.messages.fetch(this.startingMessageId).catch(() => null);
+    if (!message) throw new PolyHelperError('Could not find the matching message?');
+    return message;
+  }
+
   static getThreadName(panelName: string, username: string, pinned: boolean = false) {
     return `${pinned ? '[📌]' : ''} [${panelName}] ticket-${username}`.trim();
   }
@@ -80,7 +97,7 @@ class Ticket {
         new EmbedHelper()
           .setTitle('Ticket Closed')
           .setDescription(`This ticket has been closeed by <@${runner}>`)
-          .setFields({ name: 'Reason', value: reason, blockValue: true })
+          .setFields({ name: 'Reason', value: reason, format: 'Block' })
       ]
     });
     const closeRequest = this.manager.getCloseRequestByTicketId(this.id);
@@ -97,20 +114,17 @@ class Ticket {
         new EmbedHelper()
           .setTitle('Ticket Pinned')
           .setDescription(`This ticket has been pinned by <@${runner}>`)
-          .setFields({ name: 'Reason', value: reason, blockValue: true })
+          .setFields({ name: 'Reason', value: reason, format: 'Block' })
       ]
     });
     await message.pin();
     return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: message.id }).updateThreadName();
   }
 
-  async getPinMessage(): Promise<Message> {
-    if (!this.pinMessageId) {
-      throw new PolyHelperError('This ticket isnt pinned. Please pin it to unpin it');
-    }
+  async getPinMessage(): Promise<Message | undefined> {
+    if (!this.pinMessageId) return undefined;
     const thread = await this.getThread();
-    const message = await thread.messages.fetch(this.pinMessageId).catch(() => null);
-    if (!message) throw new PolyHelperError('Could not find the matching pin message?');
+    const message = await thread.messages.fetch(this.pinMessageId).catch(() => undefined);
     return message;
   }
 
@@ -118,16 +132,52 @@ class Ticket {
     if (!this.pinned) throw new PolyHelperError('This ticket isnt pinned. Please pin it to unpin it');
     const thread = await this.getThread();
     const pinMessage = await this.getPinMessage();
+    if (!pinMessage) throw new PolyHelperError('Is this ticket pinned? I could not find the pinned message');
     await pinMessage.unpin();
     await thread.send({
       embeds: [
         new EmbedHelper()
           .setTitle('Ticket Unpinned')
           .setDescription(`This ticket has been unpinned by <@${runner}>`)
-          .setFields({ name: 'Reason', value: reason, blockValue: true })
+          .setFields({ name: 'Reason', value: reason, format: 'Block' })
       ]
     });
     return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: null }).updateThreadName();
+  }
+
+  async getMessageData(): Promise<BaseMessageOptions> {
+    const thread = await this.getThread();
+    const openingMessage = await this.getOpeningMesage();
+    const pinMessage = await this.getPinMessage();
+    return {
+      embeds: [new TicketEmbed(this)],
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder().setLabel('Go To Thread').setStyle(ButtonStyle.Link).setURL(thread.url),
+          new ButtonBuilder().setLabel('Go To Top of Thread').setStyle(ButtonStyle.Link).setURL(openingMessage.url),
+          new ButtonBuilder()
+            .setLabel('Go To Pin Message')
+            .setStyle(ButtonStyle.Link)
+            .setURL(pinMessage?.url ?? 'https://amber.rip')
+            .setDisabled(pinMessage === undefined)
+        ),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setLabel(this.closed ? 'Open' : 'Close')
+            .setStyle(this.closed ? ButtonStyle.Secondary : ButtonStyle.Danger)
+            .setCustomId(this.closed ? `openTicket:${this.id}` : `closeTicket:${this.id}`)
+            .setDisabled(this.pinned),
+          new ButtonBuilder()
+            .setLabel(this.pinned ? 'Unpin' : 'Pin')
+            .setStyle(this.pinned ? ButtonStyle.Danger : ButtonStyle.Secondary)
+            .setCustomId(this.pinned ? `unpinTicket:${this.id}` : `pinTicket:${this.id}`),
+          new ButtonBuilder()
+            .setLabel('Refresh Embed')
+            .setStyle(ButtonStyle.Secondary)
+            .setCustomId(`refreshTicketEmbed:${this.id}`)
+        )
+      ]
+    };
   }
 
   toJSON(): DatabaseTicket {
@@ -137,6 +187,7 @@ class Ticket {
       threadId: this.threadId,
       owner: this.owner,
       pinMessageId: this.pinMessageId,
+      startingMessageId: this.startingMessageId,
       closed: this.#closed
     };
   }

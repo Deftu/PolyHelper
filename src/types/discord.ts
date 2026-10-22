@@ -2,6 +2,7 @@ import type DiscordManager from '../discord/DiscordManager.ts';
 import type {
   APIEmbedField,
   AutocompleteInteraction,
+  BaseInteraction,
   ButtonInteraction,
   ChatInputCommandInteraction,
   Client,
@@ -11,6 +12,7 @@ import type {
   GuildMember,
   ModalMessageModalSubmitInteraction,
   ModalSubmitInteraction,
+  StringSelectMenuInteraction,
   TextBasedChannel
 } from 'discord.js';
 import type { ConfigDiscordEmbedsColors } from './config.ts';
@@ -26,7 +28,8 @@ declare module 'discord.js' {
 export enum InteractionFlags {
   GuildCommand,
   GuildButton,
-  GuildModal
+  GuildModal,
+  GuildStringSelectMenu
 }
 
 export enum CommandPermission {
@@ -62,20 +65,17 @@ export interface GuildInteractionData {
   guildId: string;
   guild: Guild;
   member: GuildMember;
+  channel: TextBasedChannel;
 }
-
-export type ChatInputCommandInteractionWithGuild = ChatInputCommandInteraction &
-  GuildInteractionData & { channel: TextBasedChannel };
-export type ButtonInteractionWithGuild = ButtonInteraction & GuildInteractionData & { channel: TextBasedChannel };
-export type ModalSubmitInteractionWithGuild = ModalSubmitInteraction & GuildInteractionData;
-export type ModalMessageModalSubmitInteractionWithGuild = ModalMessageModalSubmitInteraction & GuildInteractionData;
+export type InteractionWithGuild<Interaction extends BaseInteraction> = Interaction & GuildInteractionData;
 
 export type InteractionTypes =
   | AutocompleteInteraction
   | ButtonInteraction
   | ChatInputCommandInteraction
   | ModalMessageModalSubmitInteraction
-  | ModalSubmitInteraction;
+  | ModalSubmitInteraction
+  | StringSelectMenuInteraction;
 
 export type EmbedStyleName = keyof typeof EmbedStyles;
 export interface EmbedStyleData {
@@ -88,8 +88,8 @@ export interface EmbedStyleData {
   timestamp?: Date | number | 'Now';
 }
 
-export interface EmbedHelperField extends APIEmbedField {
-  smallBlockValue?: boolean;
-  blockValue?: boolean;
-  formatTimestamp?: boolean;
-}
+export type EmbedHelperValueFormatter = 'Small Block' | 'Block' | 'Timestamp' | 'Boolean';
+export type EmbedHelperField =
+  | (APIEmbedField & { format?: 'Small Block' | 'Block' })
+  | (Omit<APIEmbedField, 'value'> & { value: number; format: 'Timestamp' })
+  | (Omit<APIEmbedField, 'value'> & { value: boolean; format: 'Boolean' });

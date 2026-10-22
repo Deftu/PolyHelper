@@ -126,7 +126,7 @@ export function MiscPanelModal(panel?: Panel | DatabasePanel): ModalBuilder {
       )
     )
     .addLabelComponents(
-      new LabelBuilder().setLabel('Opening Message').setTextInputComponent(
+      new LabelBuilder().setLabel('Starting Message').setTextInputComponent(
         new TextInputBuilder()
           .setCustomId('openingMessage')
           .setStyle(TextInputStyle.Paragraph)

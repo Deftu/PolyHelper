@@ -39,7 +39,7 @@ class Panel {
     return Boolean(this.#enabled);
   }
 
-  getOpeningMessage(user: User): BaseMessageOptions {
+  getStartingMessageData(user: User): BaseMessageOptions {
     return {
       content:
         `<@${user.id}> ${this.pingSupportRoleOnOpen ? `<@&${this.manager.application.config.discord.roles.support}>` : ''}`.trim(),

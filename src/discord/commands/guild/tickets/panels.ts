@@ -1,5 +1,5 @@
-import DiscordCommand from '../../../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../../../private/commands/DiscordCommandDataBuilder.ts';
+import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import {
@@ -15,13 +15,13 @@ import {
 import {
   type AutocompleteOption,
   BasicInteractionResponse,
-  type ChatInputCommandInteractionWithGuild,
-  InteractionFlags
+  InteractionFlags,
+  type InteractionWithGuild
 } from '../../../../types/discord.ts';
 import { BasicPanelModal, OpenTicketButton } from '../../../private/ComponentHelper.ts';
 
 class TicketPanelsCommand extends DiscordCommand {
-  override readonly data = new DiscordCommandDataBuilder()
+  override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('ticket-panels')
     .addSubcommand((option) => option.setName('refresh').setDescription('refresh the panels message'))
     .addSubcommand((option) => option.setName('add').setDescription('add a panel'))
@@ -66,18 +66,18 @@ class TicketPanelsCommand extends DiscordCommand {
     });
   }
 
-  async executeRefresh(interaction: ChatInputCommandInteractionWithGuild) {
+  async executeRefresh(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const message = await this.discord.application.database.getPanelsMessage();
     await TicketPanelsCommand.updatePanelsMessage(message);
     await interaction.followUp({ content: `Message updated - ${message.url}` });
   }
 
-  async executeAdd(interaction: ChatInputCommandInteractionWithGuild) {
+  async executeAdd(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     await interaction.showModal(BasicPanelModal().setCustomId('panelAdd').setTitle('Add a new panel'));
   }
 
-  async executeEdit(interaction: ChatInputCommandInteractionWithGuild) {
+  async executeEdit(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const id = interaction.options.getString('panel-id', true);
     const panel = this.discord.application.database.getPanel(id);
@@ -99,7 +99,7 @@ class TicketPanelsCommand extends DiscordCommand {
     });
   }
 
-  async executeRemove(interaction: ChatInputCommandInteractionWithGuild) {
+  async executeRemove(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const id = interaction.options.getString('panel-id', true);
     await this.discord.application.database.deletePanel(id);

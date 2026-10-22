@@ -1,6 +1,6 @@
 import Application from '../../Application.ts';
-import DiscordCommand from '../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../private/commands/DiscordCommandDataBuilder.ts';
+import DiscordCommand from '../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../private/interactions/commands/DiscordCommandMetadata.ts';
 import {
   ActionRowBuilder,
   type BaseMessageOptions,
@@ -12,7 +12,7 @@ import {
 import { PatchedContainerBuilder, ViewCreditsButton, ViewSourceCodeButton } from '../private/ComponentHelper.ts';
 
 class InformationCommand extends DiscordCommand {
-  override readonly data = new DiscordCommandDataBuilder()
+  override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('information')
     .setDescription('Shows information about the bot.');
 

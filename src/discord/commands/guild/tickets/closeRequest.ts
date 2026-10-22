@@ -1,19 +1,15 @@
-import DiscordCommand from '../../../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../../../private/commands/DiscordCommandDataBuilder.ts';
+import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import ms, { type StringValue } from 'ms';
-import { ActionRowBuilder, ButtonBuilder } from 'discord.js';
-import {
-  type ChatInputCommandInteractionWithGuild,
-  CommandPermission,
-  InteractionFlags
-} from '../../../../types/discord.ts';
+import { ActionRowBuilder, ButtonBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { CloseRequestButtons } from '../../../private/ComponentHelper.ts';
+import { CommandPermission, InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { DatabaseCloseRequest } from '../../../../types/database.ts';
 
 class CloseRequestCommand extends DiscordCommand {
-  override readonly data = new DiscordCommandDataBuilder()
+  override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('closerequest')
     .setDescription('Request to close a ticket')
     .addStringOption((option) => option.setName('reason').setDescription('The reason for closing the ticket'))
@@ -23,7 +19,7 @@ class CloseRequestCommand extends DiscordCommand {
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override permission: CommandPermission = CommandPermission.Support;
 
-  override async execute(interaction: ChatInputCommandInteractionWithGuild) {
+  override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
     if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket.');
     if (ticket.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing.');
@@ -49,14 +45,10 @@ class CloseRequestCommand extends DiscordCommand {
     const embed = new EmbedHelper()
       .setTitle('Close Request')
       .setDescription(`<@${interaction.user.id}> has requested to close the ticket.`)
-      .setFields({ name: 'Reason', value: reason, blockValue: true });
+      .setFields({ name: 'Reason', value: reason, format: 'Block' });
 
     if (autoClose !== null) {
-      embed.addFields({
-        name: 'Automatically closes at',
-        value: String(Math.floor(autoClose / 1000)),
-        formatTimestamp: true
-      });
+      embed.addFields({ name: 'Automatically closes at', value: Math.floor(autoClose / 1000), format: 'Timestamp' });
     }
 
     embed.addFields({ name: '_ _', value: 'Please accept or deny using the buttons below.' });

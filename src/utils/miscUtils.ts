@@ -49,7 +49,7 @@ export function getCleanErrorEmbed(error: ValidErrors, interaction: InteractionT
   }
   embed.setDescription(`\`\`\`${error.message}\`\`\``);
   if (!interaction?.isCommand()) return embed;
-  const metadata = interaction.client.discordManager.commandHandler.getCommandData(interaction);
+  const metadata = interaction.client.discordManager.commandHandler.getCommandMetadata(interaction);
   if (metadata?.cleanErrorName) {
     embed.setTitle(`Unable to ${metadata.cleanErrorName}`).setDescription(error.message).setAuthor(null);
   }

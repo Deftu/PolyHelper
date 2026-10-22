@@ -1,13 +1,14 @@
-import DiscordModal from '../../private/modals/DiscordModal.ts';
-import DiscordModalData from '../../private/modals/DiscordModalData.ts';
+import BasicInteractionMetadata from '../../private/interactions/basic/BasicInteractionMetadata.ts';
+import DiscordModal from '../../private/interactions/DiscordModal.ts';
 import PolyHelperError from '../../../private/error.ts';
-import { InteractionFlags, type ModalSubmitInteractionWithGuild } from '../../../types/discord.ts';
+import { InteractionFlags, type InteractionWithGuild } from '../../../types/discord.ts';
+import type { ModalMessageModalSubmitInteraction } from 'discord.js';
 
 class PanelEditModal extends DiscordModal {
-  override readonly data = new DiscordModalData('panelEdit');
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelEdit');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildModal];
 
-  override async execute(interaction: ModalSubmitInteractionWithGuild) {
+  override async execute(interaction: InteractionWithGuild<ModalMessageModalSubmitInteraction>) {
     const [id] = this.getArgs(interaction);
     if (id === undefined) throw new PolyHelperError('Could not find this panel?');
     const panel = this.discord.application.database.getPanel(id);

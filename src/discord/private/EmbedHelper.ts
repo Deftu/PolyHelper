@@ -1,8 +1,16 @@
 import config from '../../../config.json' with { type: 'json' };
-import { type APIEmbed, type APIEmbedField, type ColorResolvable, EmbedBuilder, type EmbedData } from 'discord.js';
+import {
+  type APIEmbed,
+  type APIEmbedField,
+  type ColorResolvable,
+  EmbedBuilder,
+  type EmbedData,
+  type RestOrArray
+} from 'discord.js';
 import { CommonDevs, EmbedStyles } from '../../private/constants.ts';
 import { ConfigDiscordEmbedsColors } from '../../types/config.ts';
 import { type DevData, type DevName } from '../../types/application.ts';
+import type Ticket from '../../database/private/Ticket.ts';
 import type { EmbedHelperField, EmbedStyleData, EmbedStyleName } from '../../types/discord.ts';
 
 export default class EmbedHelper extends EmbedBuilder {
@@ -42,23 +50,41 @@ export default class EmbedHelper extends EmbedBuilder {
     return this;
   }
 
-  override setFields(...fields: EmbedHelperField[]): this {
-    return super.setFields(fields.map((field) => this.formatField(field)));
+  override setFields(...fields: RestOrArray<APIEmbedField>): this;
+  override setFields(...fields: RestOrArray<EmbedHelperField>): this;
+  override setFields(...fields: RestOrArray<APIEmbedField | EmbedHelperField>): this {
+    const normalizedFields = Array.isArray(fields[0]) ? fields[0] : fields;
+    return super.setFields(normalizedFields.map((field) => this.formatField(field as EmbedHelperField)));
   }
 
-  override addFields(...fields: EmbedHelperField[]): this {
-    return super.addFields(fields.map((field) => this.formatField(field)));
+  override addFields(...fields: RestOrArray<APIEmbedField>): this;
+  override addFields(...fields: RestOrArray<EmbedHelperField>): this;
+  override addFields(...fields: RestOrArray<APIEmbedField | EmbedHelperField>): this {
+    const normalizedFields = Array.isArray(fields[0]) ? fields[0] : fields;
+    return super.addFields(normalizedFields.map((field) => this.formatField(field as EmbedHelperField)));
   }
 
-  private formatField({ name, value, inline, blockValue, formatTimestamp }: EmbedHelperField): APIEmbedField {
-    return { name, value: this.formatFieldValue({ name, value, inline, blockValue, formatTimestamp }), inline };
+  get fields(): APIEmbedField[] {
+    return this.toJSON().fields ?? [];
   }
 
-  private formatFieldValue({ value, smallBlockValue, blockValue, formatTimestamp }: EmbedHelperField): string {
-    if (smallBlockValue) return `\`${value}\``;
-    if (blockValue) return `\`\`\`${value}\`\`\``;
-    if (formatTimestamp) return `<t:${value}:F> (<t:${value}:R>)`;
+  private formatField(data: EmbedHelperField): APIEmbedField {
+    return { name: data.name, value: this.formatFieldValue(data), inline: data.inline };
+  }
+
+  private formatFieldValue({ value, format }: EmbedHelperField): string {
+    if (format === 'Small Block') return `\`${value}\``;
+    if (format === 'Block') return `\`\`\`${value}\`\`\``;
+    if (format === 'Timestamp') return `<t:${value}:F> (<t:${value}:R>)`;
+    if (format === 'Boolean') return value ? ':white_check_mark: Yes' : ':x: No';
     return value;
+  }
+
+  addDiscordFields(discordId: string, titlePrefix: string = ''): this {
+    return this.addFields(
+      { name: `${titlePrefix.trim()} Discord`.trim(), value: `<@${discordId}>` },
+      { name: `${titlePrefix.trim()} Discord ID`.trim(), value: discordId, format: 'Block' }
+    );
   }
 }
 
@@ -80,5 +106,22 @@ export class SuccessEmbed extends EmbedHelper {
   constructor() {
     super();
     this.setStyle('Success');
+  }
+}
+
+export class TicketEmbed extends SuccessEmbed {
+  constructor(ticket: Ticket) {
+    super();
+    this.setStyle('Ticket');
+    this.addFields(
+      { name: 'Ticket ID', value: ticket.id, format: 'Block' },
+      { name: 'Panel ID', value: ticket.panelId, format: 'Block' },
+      { name: 'Thread', value: `<#${ticket.threadId}>` }
+    );
+    this.addDiscordFields(ticket.owner, 'Opener');
+    this.addFields(
+      { name: 'Is Closed', value: ticket.closed, format: 'Boolean' },
+      { name: 'Is Pinned', value: ticket.pinned, format: 'Boolean' }
+    );
   }
 }

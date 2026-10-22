@@ -3,7 +3,7 @@ import { type ButtonInteraction, Collection, MessageFlags } from 'discord.js';
 import { ButtonResponse, InteractionFlags } from '../../types/discord.ts';
 import { readdir } from 'node:fs/promises';
 import { toError } from '../../utils/miscUtils.ts';
-import type DiscordButton from '../private/buttons/DiscordButton.ts';
+import type DiscordButton from '../private/interactions/DiscordButton.ts';
 import type DiscordManager from '../DiscordManager.ts';
 
 class ButtonHandler {
@@ -28,7 +28,7 @@ class ButtonHandler {
         `Button Clicked ${interaction.user.username} (${interaction.user.id}) button ${interaction.customId}`
       );
 
-      await this.discord.interactionHandler.checkPerms(interaction, button);
+      await this.discord.interactionHandler.checkPermission(interaction, button);
 
       if (button.flags.includes(InteractionFlags.GuildButton)) {
         assert(interaction.guild);
@@ -48,7 +48,7 @@ class ButtonHandler {
     );
     for (const file of buttonFiles) {
       const button: DiscordButton = new (await import(`../buttons/${file}`)).default(this.discord);
-      button.data.ids.forEach((id) => this.buttons.set(id, button));
+      button.metadata.ids.forEach((id) => this.buttons.set(id, button));
     }
     console.discord(`Successfully loaded ${this.buttons.size} button(s).`);
   }

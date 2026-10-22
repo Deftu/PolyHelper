@@ -13,16 +13,17 @@ import { BasicInteractionResponse, InteractionFlags } from '../../types/discord.
 import { readdir } from 'node:fs/promises';
 import { toCamelCase, upperFirst } from '../../utils/stringUtils.ts';
 import { toError } from '../../utils/miscUtils.ts';
-import type DiscordCommand from '../private/commands/DiscordCommand.ts';
-import type DiscordCommandDataBuilder from '../private/commands/DiscordCommandDataBuilder.ts';
+import type DiscordCommand from '../private/interactions/commands/DiscordCommand.ts';
+import type DiscordCommandMetadata from '../private/interactions/commands/DiscordCommandMetadata.ts';
 import type DiscordManager from '../DiscordManager.ts';
+import type PolyHelperError from '../../private/error.ts';
 
 class CommandHandler {
   readonly commands: Collection<string, DiscordCommand> = new Collection<string, DiscordCommand>();
   constructor(private readonly discord: DiscordManager) {}
 
-  getCommandData(interaction: ChatInputCommandInteraction): DiscordCommandDataBuilder | undefined {
-    return this.commands.get(interaction.commandName)?.data;
+  getCommandMetadata(interaction: ChatInputCommandInteraction): DiscordCommandMetadata | undefined {
+    return this.commands.get(interaction.commandName)?.metadata;
   }
 
   async onCommand(interaction: ChatInputCommandInteraction) {
@@ -39,7 +40,7 @@ class CommandHandler {
         `Interaction Event trigged by ${interaction.user.username} (${interaction.user.id}) ran command ${interaction.commandName}`
       );
 
-      await this.discord.interactionHandler.checkPerms(interaction, command);
+      await this.discord.interactionHandler.checkPermission(interaction, command);
 
       if (command.flags.includes(InteractionFlags.GuildCommand)) {
         assert(interaction.guild);
@@ -73,6 +74,11 @@ class CommandHandler {
     const command = this.commands.get(interaction.commandName);
     if (!command) return;
     try {
+      const hasPermission = await this.discord.interactionHandler
+        .checkPermission(interaction, command, true)
+        .catch((error: PolyHelperError) => error.message);
+      if (hasPermission) return await interaction.respond([{ name: hasPermission, value: 'missingPermission' }]);
+
       const options = await command.autocomplete(interaction);
       if (options.length === 0) options.push({ name: 'No choices found', value: 'UNKNOWN' });
       const focusedOption = interaction.options.getFocused(true);
@@ -97,15 +103,15 @@ class CommandHandler {
     const guildCommands = [];
     for (const file of commandFiles) {
       const command: DiscordCommand = new (await import(`../commands/${file}`)).default(this.discord);
-      if (command.data.name) {
+      if (command.metadata.name) {
         if (command.flags.includes(InteractionFlags.GuildCommand)) {
-          command.data.setContexts(InteractionContextType.Guild);
-          command.data.setIntegrationTypes(ApplicationIntegrationType.GuildInstall);
-          guildCommands.push(command.data.toJSON());
+          command.metadata.setContexts(InteractionContextType.Guild);
+          command.metadata.setIntegrationTypes(ApplicationIntegrationType.GuildInstall);
+          guildCommands.push(command.metadata.toJSON());
         } else {
-          commands.push(command.data.toJSON());
+          commands.push(command.metadata.toJSON());
         }
-        this.commands.set(command.data.name, command);
+        this.commands.set(command.metadata.name, command);
       }
     }
 

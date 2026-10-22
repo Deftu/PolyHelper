@@ -33,6 +33,13 @@ class DatabaseManager extends BasicDatabaseManager {
     return message;
   }
 
+  getPanelIds(): DatabasePanel['id'][] {
+    return this.db
+      .prepare<[], Pick<DatabasePanel, 'id'>>('SELECT id FROM panels')
+      .all()
+      .map((row) => row.id);
+  }
+
   getPanels(): DatabasePanel[] {
     return this.db.prepare<[], DatabasePanel>('SELECT * FROM panels').all();
   }
@@ -84,6 +91,13 @@ class DatabaseManager extends BasicDatabaseManager {
     return new Ticket(data, this);
   }
 
+  getTicketIds(): DatabaseTicket['id'][] {
+    return this.db
+      .prepare<[], Pick<DatabaseTicket, 'id'>>('SELECT id FROM tickets')
+      .all()
+      .map((row) => row.id);
+  }
+
   getTickets(closed: DatabaseTicket['closed'] = 0): Ticket[] {
     return this.db
       .prepare<[DatabaseTicket['closed']], DatabaseTicket>('SELECT * FROM tickets WHERE closed = ?')
@@ -91,25 +105,38 @@ class DatabaseManager extends BasicDatabaseManager {
       .map((data) => new Ticket(data, this));
   }
 
-  getTicketsByPanel(panelId: DatabaseTicket['panelId'], closed: DatabaseTicket['closed'] = 0): Ticket[] {
-    return this.db
-      .prepare<[DatabaseTicket['panelId'], DatabaseTicket['closed']], DatabaseTicket>(
-        'SELECT * FROM tickets WHERE panelId = ? AND closed = ?'
-      )
-      .all(panelId, closed)
-      .map((data) => new Ticket(data, this));
-  }
-
-  getTicketsByPanelUser(
-    panelId: DatabaseTicket['panelId'],
-    owner: DatabaseTicket['owner'],
-    closed: DatabaseTicket['closed'] = 0
+  searchTickets(
+    filters: {
+      panelId?: DatabaseTicket['panelId'];
+      owner?: DatabaseTicket['owner'];
+      pinned?: boolean;
+      closed?: DatabaseTicket['closed'];
+      autoClose?: boolean;
+      limit?: number;
+    } = {}
   ): Ticket[] {
     return this.db
-      .prepare<[DatabaseTicket['panelId'], DatabaseTicket['owner'], DatabaseTicket['closed']], DatabaseTicket>(
-        'SELECT * FROM tickets WHERE panelId = ? AND owner = ? AND closed = ?'
+      .prepare<
+        {
+          panelId: DatabaseTicket['panelId'] | null;
+          owner: DatabaseTicket['owner'] | null;
+          pinned: DatabaseTicket['closed'] | null;
+          autoClose: DatabaseTicket['closed'] | null;
+          closed: DatabaseTicket['closed'] | null;
+          limit: number;
+        },
+        DatabaseTicket
+      >(
+        'SELECT * FROM tickets WHERE (@panelId IS NULL OR panelId = @panelId) AND (@owner IS NULL OR owner = @owner) AND (@pinned IS NULL OR (pinMessageId IS NOT NULL) = @pinned) AND (@autoClose IS NULL OR EXISTS (SELECT 1 FROM closeRequests WHERE closeRequests.ticketId = tickets.id AND closeRequests.autoClose IS NOT NULL) = @autoClose) AND (@closed IS NULL OR closed = @closed) LIMIT @limit'
       )
-      .all(panelId, owner, closed)
+      .all({
+        panelId: filters.panelId ?? null,
+        owner: filters.owner ?? null,
+        pinned: filters.pinned === undefined ? null : filters.pinned ? 1 : 0,
+        autoClose: filters.autoClose === undefined ? null : filters.autoClose ? 1 : 0,
+        closed: filters.closed ?? null,
+        limit: filters.limit ?? 100
+      })
       .map((data) => new Ticket(data, this));
   }
 
@@ -125,7 +152,7 @@ class DatabaseManager extends BasicDatabaseManager {
     const id: DatabaseTicket['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabaseTicket>(
-        'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, closed) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @closed)'
+        'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, startingMessageId, closed) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @startingMessageId, @closed)'
       )
       .run({ ...ticketData, id });
     return new Ticket({ ...ticketData, id }, this);
@@ -134,7 +161,7 @@ class DatabaseManager extends BasicDatabaseManager {
   updateTicket(data: DatabaseTicket): Ticket {
     const update = this.db
       .prepare<DatabaseTicket>(
-        'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinMessageId = @pinMessageId, closed = @closed WHERE id = @id'
+        'UPDATE tickets SET panelId = @panelId, threadId = @threadId, owner = @owner, pinMessageId = @pinMessageId, startingMessageId = @startingMessageId, closed = @closed WHERE id = @id'
       )
       .run(data);
     if (update.changes === 0) throw new PolyHelperError('Could not find this ticket?');
@@ -151,9 +178,10 @@ class DatabaseManager extends BasicDatabaseManager {
 
   getCloseRequestByTicketId(id: DatabaseCloseRequest['ticketId']): CloseRequest | undefined {
     const data = this.db
-      .prepare<[DatabaseCloseRequest['ticketId']], DatabaseCloseRequest>(
-        'SELECT * FROM closeRequests WHERE ticketId = ?'
-      )
+      .prepare<
+        [DatabaseCloseRequest['ticketId']],
+        DatabaseCloseRequest
+      >('SELECT * FROM closeRequests WHERE ticketId = ?')
       .get(id);
     if (data === undefined) return data;
     return new CloseRequest(data, this);

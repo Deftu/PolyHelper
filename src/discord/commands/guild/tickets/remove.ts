@@ -1,17 +1,14 @@
-import DiscordCommand from '../../../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../../../private/commands/DiscordCommandDataBuilder.ts';
+import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import {
-  type ChatInputCommandInteractionWithGuild,
-  CommandPermission,
-  InteractionFlags
-} from '../../../../types/discord.ts';
+import { CommandPermission, InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
 import { SuccessEmbed } from '../../../private/EmbedHelper.ts';
 import { isGuildMember } from '@sapphire/discord.js-utilities';
 import { isSupportMember } from '../../../../utils/discordUtils.ts';
+import type { ChatInputCommandInteraction } from 'discord.js';
 
 class RemoveCommand extends DiscordCommand {
-  override readonly data = new DiscordCommandDataBuilder()
+  override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('remove')
     .setDescription('Remove a user from a ticket')
     .addUserOption((option) =>
@@ -21,7 +18,7 @@ class RemoveCommand extends DiscordCommand {
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override permission: CommandPermission = CommandPermission.Support;
 
-  override async execute(interaction: ChatInputCommandInteractionWithGuild) {
+  override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const member = interaction.options.getMember('user');
     if (!isGuildMember(member)) throw new PolyHelperError('Could not find that user');
     const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);

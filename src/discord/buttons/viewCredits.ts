@@ -1,6 +1,6 @@
+import BasicInteractionMetadata from '../private/interactions/basic/BasicInteractionMetadata.ts';
 import CreditsCommand from '../commands/credits.ts';
-import DiscordButton from '../private/buttons/DiscordButton.ts';
-import DiscordButtonData from '../private/buttons/DiscordButtonData.ts';
+import DiscordButton from '../private/interactions/DiscordButton.ts';
 import {
   type ButtonInteraction,
   type InteractionReplyOptions,
@@ -10,7 +10,7 @@ import {
 import { ButtonResponse } from '../../types/discord.ts';
 
 class ViewCreditsButton extends DiscordButton {
-  override readonly data = new DiscordButtonData('viewCredits');
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('viewCredits');
   override response: ButtonResponse = ButtonResponse.None;
 
   override async execute(interaction: ButtonInteraction) {

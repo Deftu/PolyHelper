@@ -1,16 +1,16 @@
-import DiscordCommand from '../../../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../../../private/commands/DiscordCommandDataBuilder.ts';
+import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import {
   BasicInteractionResponse,
-  type ChatInputCommandInteractionWithGuild,
   CommandPermission,
-  InteractionFlags
+  InteractionFlags,
+  type InteractionWithGuild
 } from '../../../../types/discord.ts';
-import { PermissionFlagsBits } from 'discord.js';
+import { ChatInputCommandInteraction, PermissionFlagsBits } from 'discord.js';
 
 class DebugTickets extends DiscordCommand {
-  override readonly data = new DiscordCommandDataBuilder()
+  override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('debug-tickets')
     .addSubcommand((option) =>
       option.setName('refresh-names').setDescription('refresh the thread name of every open ticket')
@@ -24,20 +24,20 @@ class DebugTickets extends DiscordCommand {
   override response: BasicInteractionResponse = BasicInteractionResponse.Ephemeral;
   override permission: CommandPermission = CommandPermission.Admin;
 
-  async executeRefreshNames(interaction: ChatInputCommandInteractionWithGuild) {
+  async executeRefreshNames(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const tickets = this.discord.application.database.getTickets(1);
     await interaction.followUp({ content: `refreshing the thread name of ${tickets.length} ticket(s)` });
     for (const ticket of tickets) await ticket.updateThreadName();
   }
 
-  async executeRefreshName(interaction: ChatInputCommandInteractionWithGuild) {
+  async executeRefreshName(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
     if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');
     await interaction.followUp({ content: 'refreshing the thread name of this ticket' });
     await ticket.updateThreadName();
   }
 
-  override execute(interaction: ChatInputCommandInteractionWithGuild): Promise<any> {
+  override execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>): Promise<any> {
     throw new PolyHelperError('Invalid subcommand found');
   }
 }

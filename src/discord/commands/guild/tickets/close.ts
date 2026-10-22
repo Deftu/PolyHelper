@@ -1,15 +1,16 @@
-import DiscordCommand from '../../../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../../../private/commands/DiscordCommandDataBuilder.ts';
+import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import {
   BasicInteractionResponse,
-  type ChatInputCommandInteractionWithGuild,
   CommandPermission,
-  InteractionFlags
+  InteractionFlags,
+  type InteractionWithGuild
 } from '../../../../types/discord.ts';
+import type { ChatInputCommandInteraction } from 'discord.js';
 
 class CloseCommand extends DiscordCommand {
-  override readonly data = new DiscordCommandDataBuilder()
+  override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('close')
     .setDescription('Close a ticket')
     .addStringOption((option) => option.setName('reason').setDescription('The reason for closing the ticket'))
@@ -19,7 +20,7 @@ class CloseCommand extends DiscordCommand {
   override response: BasicInteractionResponse = BasicInteractionResponse.Ephemeral;
   override permission: CommandPermission = CommandPermission.Support;
 
-  override async execute(interaction: ChatInputCommandInteractionWithGuild) {
+  override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const reason = interaction.options.getString('reason') || 'No reason provided';
     const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
     if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');

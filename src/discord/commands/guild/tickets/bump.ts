@@ -1,22 +1,19 @@
-import DiscordCommand from '../../../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../../../private/commands/DiscordCommandDataBuilder.ts';
+import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import {
-  type ChatInputCommandInteractionWithGuild,
-  CommandPermission,
-  InteractionFlags
-} from '../../../../types/discord.ts';
+import { CommandPermission, InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
+import type { ChatInputCommandInteraction } from 'discord.js';
 
 class BumpCommand extends DiscordCommand {
-  override readonly data = new DiscordCommandDataBuilder()
+  override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('bump')
     .setDescription('Bumps a ticket to encourage closing')
     .setCleanErrorName('bump this ticket');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override permission: CommandPermission = CommandPermission.Support;
 
-  override async execute(interaction: ChatInputCommandInteractionWithGuild) {
+  override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
     if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');
     if (ticket.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before bumping');

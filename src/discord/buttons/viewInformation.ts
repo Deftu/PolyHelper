@@ -1,5 +1,5 @@
-import DiscordButton from '../private/buttons/DiscordButton.ts';
-import DiscordButtonData from '../private/buttons/DiscordButtonData.ts';
+import BasicInteractionMetadata from '../private/interactions/basic/BasicInteractionMetadata.ts';
+import DiscordButton from '../private/interactions/DiscordButton.ts';
 import InformationCommand from '../commands/information.ts';
 import {
   type ButtonInteraction,
@@ -10,7 +10,7 @@ import {
 import { ButtonResponse } from '../../types/discord.ts';
 
 class ViewInformationButton extends DiscordButton {
-  override readonly data = new DiscordButtonData('viewInformation');
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('viewInformation');
   override response: ButtonResponse = ButtonResponse.None;
 
   override async execute(interaction: ButtonInteraction) {

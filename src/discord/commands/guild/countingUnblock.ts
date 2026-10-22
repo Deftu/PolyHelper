@@ -1,18 +1,15 @@
-import DiscordCommand from '../../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../../private/commands/DiscordCommandDataBuilder.ts';
+import DiscordCommand from '../../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../private/error.ts';
-import {
-  type ChatInputCommandInteractionWithGuild,
-  CommandPermission,
-  InteractionFlags
-} from '../../../types/discord.ts';
+import { CommandPermission, InteractionFlags, type InteractionWithGuild } from '../../../types/discord.ts';
 import { hasRole } from '../../../utils/discordUtils.ts';
 import { isGuildMember } from '@sapphire/discord.js-utilities';
 import { toError } from '../../../utils/miscUtils.ts';
+import type { ChatInputCommandInteraction } from 'discord.js';
 
 class CountingBlockCommand extends DiscordCommand {
-  override readonly data = new DiscordCommandDataBuilder()
+  override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('counting-unblock')
     .setDescription('Unblock a user from counting')
     .addUserOption((option) => option.setName('user').setDescription('The user to unblock').setRequired(true))
@@ -20,7 +17,7 @@ class CountingBlockCommand extends DiscordCommand {
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
   override permission: CommandPermission = CommandPermission.Moderator;
 
-  override async execute(interaction: ChatInputCommandInteractionWithGuild) {
+  override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const member = interaction.options.getMember('user');
     if (!isGuildMember(member)) throw new PolyHelperError('Could not find that user');
     if (!(await hasRole(member, this.discord.application.config.discord.roles.noCounting))) {

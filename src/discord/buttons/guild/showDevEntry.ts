@@ -1,16 +1,16 @@
-import DiscordButton from '../../private/buttons/DiscordButton.ts';
-import DiscordButtonData from '../../private/buttons/DiscordButtonData.ts';
+import BasicInteractionMetadata from '../../private/interactions/basic/BasicInteractionMetadata.ts';
+import DiscordButton from '../../private/interactions/DiscordButton.ts';
 import PolyHelperError from '../../../private/error.ts';
-import { type ButtonInteractionWithGuild, ButtonResponse, InteractionFlags } from '../../../types/discord.ts';
-import { LabelBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ButtonInteraction, LabelBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ButtonResponse, InteractionFlags, type InteractionWithGuild } from '../../../types/discord.ts';
 import { hasRole } from '../../../utils/discordUtils.ts';
 
 class ShowDevEntryButton extends DiscordButton {
-  override readonly data = new DiscordButtonData('show-dev-entry');
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('show-dev-entry');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildButton];
   override response: ButtonResponse = ButtonResponse.None;
 
-  override async execute(interaction: ButtonInteractionWithGuild) {
+  override async execute(interaction: InteractionWithGuild<ButtonInteraction>) {
     if (await hasRole(interaction.member, this.discord.application.config.discord.roles.devAccess)) {
       throw new PolyHelperError('You already have access to the Development channels');
     }

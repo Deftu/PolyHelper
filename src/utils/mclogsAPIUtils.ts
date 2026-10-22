@@ -129,5 +129,5 @@ export async function verbalizeCrash(log: string): Promise<EmbedHelperField[]> {
         ].join('\n')
       };
     })
-    .filter((field): field is EmbedHelperField => field !== undefined);
+    .filter((field) => field !== undefined);
 }

@@ -4,6 +4,7 @@ import InteractionHandler from './handlers/InteractionHandler.ts';
 import MessageHandler from './handlers/MessageHandler.ts';
 import ModalHandler from './handlers/ModalHandler.ts';
 import PolyHelperError from '../private/error.ts';
+import StringSelectMenuHandler from './handlers/StringSelectMenuHandler.ts';
 import {
   ChannelType,
   Client,
@@ -33,6 +34,7 @@ class DiscordManager {
   readonly interactionHandler: InteractionHandler;
   readonly messageHandler: MessageHandler;
   readonly modalHandler: ModalHandler;
+  readonly stringSelectMenuHandler: StringSelectMenuHandler;
   client?: Client;
   guild?: Guild;
   constructor(readonly application: Application) {
@@ -41,6 +43,7 @@ class DiscordManager {
     this.interactionHandler = new InteractionHandler(this);
     this.messageHandler = new MessageHandler(this);
     this.modalHandler = new ModalHandler(this);
+    this.stringSelectMenuHandler = new StringSelectMenuHandler(this);
   }
 
   async connect() {
@@ -52,6 +55,7 @@ class DiscordManager {
     await this.commandHandler.deployCommands();
     await this.buttonHandler.loadButtons();
     await this.modalHandler.loadModals();
+    await this.stringSelectMenuHandler.loadStringSelectMenus();
     this.client.on(Events.ClientReady, (client) => this.onReady(client));
     this.client.on(Events.MessageCreate, (message) => this.messageHandler.onMessage(message));
     this.client.on(Events.InteractionCreate, (interaction) => this.interactionHandler.onInteraction(interaction));
@@ -99,10 +103,10 @@ class DiscordManager {
       });
       extraErrorData.push({ name: 'Interaction Type', value: parseInteractionType(interaction.type) });
       if (interaction.isCommand()) {
-        extraErrorData.push({ name: 'Command', value: interaction.commandName, smallBlockValue: true });
+        extraErrorData.push({ name: 'Command', value: interaction.commandName, format: 'Small Block' });
       }
       if (interaction.isButton()) {
-        extraErrorData.push({ name: 'Button', value: interaction.customId, smallBlockValue: true });
+        extraErrorData.push({ name: 'Button', value: interaction.customId, format: 'Small Block' });
       }
     }
     await this.application.logError(error, extraErrorData);

@@ -16,7 +16,7 @@ import {
   type SlashCommandUserOption
 } from 'discord.js';
 
-class DiscordCommandDataBuilder extends SlashCommandBuilder {
+class DiscordCommandMetadata extends SlashCommandBuilder {
   private shouldAddHiddenOption: boolean = true;
   #cleanErrorName: string | null = null;
   constructor() {
@@ -141,4 +141,4 @@ class DiscordCommandDataBuilder extends SlashCommandBuilder {
   }
 }
 
-export default DiscordCommandDataBuilder;
+export default DiscordCommandMetadata;

@@ -4,15 +4,14 @@ import { Collection, MessageFlags, type ModalSubmitInteraction } from 'discord.j
 import { readdir } from 'node:fs/promises';
 import { toError } from '../../utils/miscUtils.ts';
 import type DiscordManager from '../DiscordManager.ts';
-import type DiscordModal from '../private/modals/DiscordModal.ts';
+import type DiscordModal from '../private/interactions/DiscordModal.ts';
 
 class ModalHandler {
   readonly modals: Collection<string, DiscordModal> = new Collection<string, DiscordModal>();
   constructor(private readonly discord: DiscordManager) {}
 
   async onSubmit(interaction: ModalSubmitInteraction) {
-    const modalId = interaction.customId.split(':', 1)[0] ?? interaction.customId;
-    const modal = this.modals.get(interaction.customId) ?? this.modals.get(modalId);
+    const modal = this.modals.get(interaction.customId.split(':', 1)[0] ?? interaction.customId);
     if (!modal) return;
 
     try {
@@ -25,7 +24,7 @@ class ModalHandler {
         `Modal submitted ${interaction.user.username} (${interaction.user.id}) modal ${interaction.customId}`
       );
 
-      await this.discord.interactionHandler.checkPerms(interaction, modal);
+      await this.discord.interactionHandler.checkPermission(interaction, modal);
 
       if (modal.flags.includes(InteractionFlags.GuildModal)) {
         assert(interaction.guild);
@@ -45,7 +44,7 @@ class ModalHandler {
     );
     for (const file of modalFiles) {
       const modal: DiscordModal = new (await import(`../modals/${file}`)).default(this.discord);
-      modal.data.ids.forEach((id) => this.modals.set(id, modal));
+      modal.metadata.ids.forEach((id) => this.modals.set(id, modal));
     }
     console.discord(`Successfully loaded ${this.modals.size} modal(s).`);
   }

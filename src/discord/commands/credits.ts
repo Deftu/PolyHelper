@@ -1,5 +1,5 @@
-import DiscordCommand from '../private/commands/DiscordCommand.ts';
-import DiscordCommandDataBuilder from '../private/commands/DiscordCommandDataBuilder.ts';
+import DiscordCommand from '../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../private/interactions/commands/DiscordCommandMetadata.ts';
 import {
   ActionRowBuilder,
   type BaseMessageOptions,
@@ -14,7 +14,7 @@ import { PatchedContainerBuilder, ViewInformationButton, ViewSourceCodeButton } 
 import { convertDevDataToName } from '../../utils/miscUtils.ts';
 
 class CreditsCommand extends DiscordCommand {
-  override readonly data = new DiscordCommandDataBuilder()
+  override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('credits')
     .setDescription('Shows the credits of the people who make this possible');
 

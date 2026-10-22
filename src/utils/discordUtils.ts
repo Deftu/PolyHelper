@@ -1,22 +1,16 @@
 import {
   type APIInteractionGuildMember,
-  type ButtonInteraction,
-  type ChatInputCommandInteraction,
+  type BaseInteraction,
   type Client,
   GuildMember,
   InteractionType,
-  ModalSubmitInteraction,
-  Role,
+  type Role,
   type SendableChannels,
   Team,
   type User
 } from 'discord.js';
 import { isGuildMember } from '@sapphire/discord.js-utilities';
-import type {
-  ButtonInteractionWithGuild,
-  ChatInputCommandInteractionWithGuild,
-  ModalSubmitInteractionWithGuild
-} from '../types/discord.ts';
+import type { InteractionWithGuild } from '../types/discord.ts';
 
 export async function getRoles(member: GuildMember): Promise<Role[]> {
   member = await member.fetch();
@@ -70,21 +64,9 @@ export async function isSupportMember(member: GuildMember | APIInteractionGuildM
   return await hasRole(member, member.client.discordManager.application.config.discord.roles.support);
 }
 
-export function isChatInputCommandInteractionInsideOfGuild(
-  interaction: ChatInputCommandInteraction
-): interaction is ChatInputCommandInteractionWithGuild {
-  return interaction.guild !== null && interaction.member !== null;
-}
-
-export function isButtonInteractionInsideOfGuild(
-  interaction: ButtonInteraction
-): interaction is ButtonInteractionWithGuild {
-  return interaction.guild !== null && interaction.member !== null;
-}
-
-export function isModalSubmitInteractionInsideOfGuild(
-  interaction: ModalSubmitInteraction
-): interaction is ModalSubmitInteractionWithGuild {
+export function isInteractionInsideOfGuild<Interaction extends BaseInteraction>(
+  interaction: Interaction
+): interaction is InteractionWithGuild<Interaction> {
   return interaction.guild !== null && interaction.member !== null;
 }
 
@@ -122,4 +104,8 @@ export function getDisplayName(user: GuildMember | User | null): string {
   if (!user) return 'UNKNOWN';
   if (user instanceof GuildMember) return user.nickname ?? getDisplayNameUser(user.user);
   return getDisplayNameUser(user);
+}
+
+export function getFormattedBooleanResponse(value: boolean): string {
+  return value ? ':white_check_mark: Yes' : ':x: No';
 }

@@ -1,13 +1,14 @@
-import DiscordModal from '../../private/modals/DiscordModal.ts';
-import DiscordModalData from '../../private/modals/DiscordModalData.ts';
-import { InteractionFlags, type ModalSubmitInteractionWithGuild } from '../../../types/discord.ts';
+import BasicInteractionMetadata from '../../private/interactions/basic/BasicInteractionMetadata.ts';
+import DiscordModal from '../../private/interactions/DiscordModal.ts';
+import { InteractionFlags, type InteractionWithGuild } from '../../../types/discord.ts';
 import type { DatabasePanel } from '../../../types/database.ts';
+import type { ModalMessageModalSubmitInteraction } from 'discord.js';
 
 class PanelAddModal extends DiscordModal {
-  override readonly data = new DiscordModalData('panelAdd');
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelAdd');
   override flags: readonly InteractionFlags[] = [InteractionFlags.GuildModal];
 
-  override async execute(interaction: ModalSubmitInteractionWithGuild) {
+  override async execute(interaction: InteractionWithGuild<ModalMessageModalSubmitInteraction>) {
     const panelData: Omit<DatabasePanel, 'id'> = {
       name: interaction.fields.getTextInputValue('name'),
       title: interaction.fields.getTextInputValue('title'),
