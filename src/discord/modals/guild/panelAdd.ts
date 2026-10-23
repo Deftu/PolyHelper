@@ -1,13 +1,13 @@
 import BasicInteractionMetadata from '../../private/interactions/basic/BasicInteractionMetadata.ts';
 import DiscordModal from '../../private/interactions/DiscordModal.ts';
-import { InteractionFlag, type InteractionWithGuild } from '../../../types/discord.ts';
+import { InteractionFlag, InteractionResponse, type InteractionWithGuild } from '../../../types/discord.ts';
 import type { DatabasePanel } from '../../../types/database.ts';
 import type { ModalMessageModalSubmitInteraction } from 'discord.js';
 
 class PanelAddModal extends DiscordModal {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelAdd').setFlags(
-    InteractionFlag.GuildModal
-  );
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelAdd')
+    .setFlags(InteractionFlag.GuildModal)
+    .setResponse(InteractionResponse.Ephemeral);
 
   override async execute(interaction: InteractionWithGuild<ModalMessageModalSubmitInteraction>) {
     const panelData: Omit<DatabasePanel, 'id'> = {

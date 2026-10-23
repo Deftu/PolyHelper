@@ -1,13 +1,13 @@
 import BasicInteractionMetadata from '../../private/interactions/basic/BasicInteractionMetadata.ts';
 import DiscordModal from '../../private/interactions/DiscordModal.ts';
 import PolyHelperError from '../../../private/error.ts';
-import { InteractionFlag, type InteractionWithGuild } from '../../../types/discord.ts';
+import { InteractionFlag, InteractionResponse, type InteractionWithGuild } from '../../../types/discord.ts';
 import type { ModalMessageModalSubmitInteraction } from 'discord.js';
 
 class PanelEditModal extends DiscordModal {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelEdit').setFlags(
-    InteractionFlag.GuildModal
-  );
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelEdit')
+    .setFlags(InteractionFlag.GuildModal)
+    .setResponse(InteractionResponse.Ephemeral);
 
   override async execute(interaction: InteractionWithGuild<ModalMessageModalSubmitInteraction>) {
     const [id] = this.getArgs(interaction);
