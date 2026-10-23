@@ -210,7 +210,7 @@ class SparkCommand extends DiscordCommand {
   ): BaseMessageOptions {
     const embed = this.getBaseEmbed(job, kind).setDescription(status);
     if (job.supportNotes) embed.addFields({ name: 'Notes', value: job.supportNotes });
-    return { embeds: [embed], components: this.getButtons(job, analysisMessage), allowedMentions: { parse: [] } };
+    return { embeds: [embed], components: this.getButtons(job, analysisMessage) };
   }
 
   private getReportMessage(
@@ -226,26 +226,19 @@ class SparkCommand extends DiscordCommand {
           ? `${report.slice(0, embedDescriptionLimit - 100)}\n\n*Truncated. The full report is attached.*`
           : report
       )
-      .setFooter({ text: 'AI-generated. Check it before acting on it.' });
+      .setAIFooter();
     if (job.supportNotes) embed.addFields({ name: 'Notes', value: job.supportNotes });
     return {
       embeds: [embed],
       files: truncated ? [new AttachmentBuilder(Buffer.from(report), { name: `${kind}-${job.sparkId}.md` })] : [],
-      components: this.getButtons(job, analysisMessage),
-      allowedMentions: { parse: [] }
+      components: this.getButtons(job, analysisMessage)
     };
   }
 
   private getSkippedMessage(job: SparkJob, reason: string, analysisMessage?: Message): BaseMessageOptions {
     return {
-      embeds: [
-        this.getBaseEmbed(job, 'fix')
-          .setColor('Gray')
-          .setDescription(`No fix brief. ${reason}`)
-          .setFooter({ text: 'AI-generated. Check it before acting on it.' })
-      ],
-      components: this.getButtons(job, analysisMessage),
-      allowedMentions: { parse: [] }
+      embeds: [this.getBaseEmbed(job, 'fix').setColor('Gray').setDescription(`No fix brief. ${reason}`).setAIFooter()],
+      components: this.getButtons(job, analysisMessage)
     };
   }
 
@@ -260,8 +253,7 @@ class SparkCommand extends DiscordCommand {
       embeds: [
         this.getBaseEmbed(job, kind).setColor('Red').setDescription(`❌ ${reportTitles[kind]} failed: ${reason}`)
       ],
-      components: this.getButtons(job, analysisMessage),
-      allowedMentions: { parse: [] }
+      components: this.getButtons(job, analysisMessage)
     };
   }
 }

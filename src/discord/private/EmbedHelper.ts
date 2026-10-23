@@ -86,6 +86,11 @@ export default class EmbedHelper extends EmbedBuilder {
       { name: `${titlePrefix.trim()} Discord ID`.trim(), value: discordId, format: 'Block' }
     );
   }
+
+  setAIFooter(message: string = 'AI-generated. Check it before acting on it.'): this {
+    this.setFooter({ text: `⚠️ ${message}` });
+    return this;
+  }
 }
 
 export class WarningEmbed extends EmbedHelper {
