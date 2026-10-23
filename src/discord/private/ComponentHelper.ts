@@ -150,10 +150,7 @@ export function MiscPanelModal(panel?: Panel | DatabasePanel): ModalBuilder {
     );
 }
 
-export function CloseRequestButtons(
-  id: DatabaseCloseRequest['id'] = 'UNKNOWN',
-  disabled: boolean = false
-): ButtonBuilder[] {
+export function CloseRequestButtons(id: DatabaseCloseRequest['id'], disabled: boolean = false): ButtonBuilder[] {
   return [
     new ButtonBuilder()
       .setLabel('Accept & Close')

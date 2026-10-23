@@ -181,14 +181,13 @@ class DatabaseManager extends BasicDatabaseManager {
       .map((closeRequest) => new CloseRequest(closeRequest, this));
   }
 
-  insertCloseRequest(closeRequestData: Omit<DatabaseCloseRequest, 'id'>): CloseRequest {
-    const id: DatabaseCloseRequest['id'] = crypto.randomUUID();
+  insertCloseRequest(closeRequestData: DatabaseCloseRequest): CloseRequest {
     this.db
       .prepare<DatabaseCloseRequest>(
         'INSERT INTO closeRequests (id, ticketId, messageId, reason, closer, autoClose) VALUES (@id, @ticketId, @messageId, @reason, @closer, @autoClose)'
       )
-      .run({ ...closeRequestData, id });
-    return new CloseRequest({ ...closeRequestData, id }, this);
+      .run(closeRequestData);
+    return new CloseRequest(closeRequestData, this);
   }
 
   async deleteCloseRequest(id: DatabaseCloseRequest['id']) {

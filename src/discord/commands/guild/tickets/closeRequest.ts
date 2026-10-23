@@ -52,19 +52,21 @@ class CloseRequestCommand extends DiscordCommand {
 
     embed.addFields({ name: '_ _', value: 'Please accept or deny using the buttons below.' });
 
+    const id = crypto.randomUUID();
+
     const message = await interaction.followUp({
       content: `Hey <@${ticketOwner.user.id}>`,
       embeds: [embed],
-      components: [new ActionRowBuilder<ButtonBuilder>().addComponents(CloseRequestButtons())]
+      components: [new ActionRowBuilder<ButtonBuilder>().addComponents(CloseRequestButtons(id))]
     });
-    const closeRequest = this.discord.application.database.insertCloseRequest({
+    this.discord.application.database.insertCloseRequest({
+      id,
       ticketId: ticket.id,
       messageId: message.id,
       reason,
       closer: interaction.user.id,
       autoClose
     });
-    await closeRequest.updateMessageButtons();
   }
 }
 

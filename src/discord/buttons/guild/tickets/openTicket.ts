@@ -2,7 +2,7 @@ import BasicInteractionMetadata from '../../../private/interactions/basic/BasicI
 import DiscordButton from '../../../private/interactions/DiscordButton.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { type ButtonInteraction, ThreadAutoArchiveDuration, ChannelType } from 'discord.js';
+import { type ButtonInteraction, ChannelType, ThreadAutoArchiveDuration } from 'discord.js';
 import { InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
 
 class OpenTicketButton extends DiscordButton {
