@@ -2,13 +2,13 @@ import BasicInteractionMetadata from '../../../private/interactions/basic/BasicI
 import DiscordButton from '../../../private/interactions/DiscordButton.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { ButtonResponse, InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlag, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { ButtonInteraction } from 'discord.js';
 
 class CloseRequestAcceptButton extends DiscordButton {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('closeRequestAccept');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildButton];
-  override response: ButtonResponse = ButtonResponse.Public;
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('closeRequestAccept').setFlags(
+    InteractionFlag.GuildButton
+  );
 
   override async execute(interaction: InteractionWithGuild<ButtonInteraction>) {
     const [id] = this.getArgs(interaction);

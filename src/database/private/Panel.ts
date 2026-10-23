@@ -1,6 +1,5 @@
 import EmbedHelper from '../../discord/private/EmbedHelper.ts';
 import { replaceVariables } from '../../utils/stringUtils.ts';
-import type DatabaseManager from '../DatabaseManager.ts';
 import type { BaseMessageOptions, User } from 'discord.js';
 import type { DatabasePanel } from '../../types/database.ts';
 
@@ -14,14 +13,11 @@ class Panel {
   readonly buttonEmoji: DatabasePanel['buttonEmoji'];
   readonly openingMessage: DatabasePanel['openingMessage'];
   readonly maxOpenTickets: DatabasePanel['maxOpenTickets'];
-  readonly #pingSupportRoleOnOpen: DatabasePanel['pingSupportRoleOnOpen'];
   readonly pinnedTicketPrefix: DatabasePanel['pinnedTicketPrefix'];
   readonly defaultTicketName: DatabasePanel['defaultTicketName'];
+  readonly supportRole: DatabasePanel['supportRole'];
   readonly #enabled: DatabasePanel['enabled'];
-  constructor(
-    data: DatabasePanel,
-    private readonly manager: DatabaseManager
-  ) {
+  constructor(data: DatabasePanel) {
     this.id = data.id;
     this.name = data.name;
     this.cleanName = data.cleanName;
@@ -31,14 +27,10 @@ class Panel {
     this.buttonEmoji = data.buttonEmoji;
     this.openingMessage = data.openingMessage;
     this.maxOpenTickets = data.maxOpenTickets;
-    this.#pingSupportRoleOnOpen = data.pingSupportRoleOnOpen;
     this.pinnedTicketPrefix = data.pinnedTicketPrefix;
     this.defaultTicketName = data.defaultTicketName;
+    this.supportRole = data.supportRole;
     this.#enabled = data.enabled;
-  }
-
-  get pingSupportRoleOnOpen(): boolean {
-    return Boolean(this.#pingSupportRoleOnOpen);
   }
 
   get fullPinnedTicketPrefix(): string {
@@ -51,8 +43,7 @@ class Panel {
 
   getStartingMessageData(user: User): BaseMessageOptions {
     return {
-      content:
-        `<@${user.id}> ${this.pingSupportRoleOnOpen ? `<@&${this.manager.application.config.discord.roles.support}>` : ''}`.trim(),
+      content: `<@${user.id}>`,
       embeds: [
         new EmbedHelper()
           .setColor('Green')
@@ -75,9 +66,9 @@ class Panel {
       buttonEmoji: this.buttonEmoji,
       openingMessage: this.openingMessage,
       maxOpenTickets: this.maxOpenTickets,
-      pingSupportRoleOnOpen: this.#pingSupportRoleOnOpen,
       pinnedTicketPrefix: this.pinnedTicketPrefix,
       defaultTicketName: this.defaultTicketName,
+      supportRole: this.supportRole,
       enabled: this.#enabled
     };
   }

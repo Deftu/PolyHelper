@@ -2,13 +2,14 @@ import BasicInteractionMetadata from '../../../private/interactions/basic/BasicI
 import DiscordButton from '../../../private/interactions/DiscordButton.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { type ButtonInteraction, ThreadAutoArchiveDuration, ChannelType } from 'discord.js';
-import { InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { type ButtonInteraction, ChannelType, ThreadAutoArchiveDuration } from 'discord.js';
+import { InteractionFlag, InteractionResponse, type InteractionWithGuild } from '../../../../types/discord.ts';
 
 class OpenTicketButton extends DiscordButton {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('openTicket');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildButton];
-  override fetchGuildMember: boolean = false;
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('openTicket')
+    .setFlags(InteractionFlag.GuildButton)
+    .setResponse(InteractionResponse.Ephemeral)
+    .setFetchGuildMember(false);
 
   override async execute(interaction: InteractionWithGuild<ButtonInteraction>) {
     const [id] = this.getArgs(interaction);
@@ -47,14 +48,17 @@ class OpenTicketButton extends DiscordButton {
     const thread = await channel.threads.create({
       name: `[${panel.cleanName}] ticket-${interaction.user.username}`,
       autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
-      type: ChannelType.PrivateThread
+      type: ChannelType.PrivateThread,
+      invitable: true
     });
     await thread.members.add(interaction.user);
     const startingMessage = await thread.send(panel.getStartingMessageData(interaction.user));
     await startingMessage.pin();
 
-    const pingMessage = await thread.send({ content: `<@&${this.discord.application.config.discord.roles.support}>` });
-    await pingMessage.delete();
+    if (panel.supportRole) {
+      const pingMessage = await thread.send({ content: `<@&${panel.supportRole}>` });
+      await pingMessage.delete();
+    }
 
     const ticket = this.discord.application.database.insertTicket({
       panelId: panel.id,

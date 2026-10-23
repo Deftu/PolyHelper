@@ -7,11 +7,12 @@ import {
   type MessageEditOptions,
   MessageFlags
 } from 'discord.js';
-import { ButtonResponse } from '../../types/discord.ts';
+import { InteractionResponse } from '../../types/discord.ts';
 
 class ViewInformationButton extends DiscordButton {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('viewInformation');
-  override response: ButtonResponse = ButtonResponse.None;
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('viewInformation').setResponse(
+    InteractionResponse.None
+  );
 
   override async execute(interaction: ButtonInteraction) {
     const [ownerId] = this.getArgs(interaction);

@@ -25,7 +25,7 @@ declare module 'discord.js' {
   }
 }
 
-export enum InteractionFlags {
+export enum InteractionFlag {
   GuildCommand,
   GuildButton,
   GuildModal,
@@ -41,16 +41,10 @@ export enum InteractionPermission {
   Anyone
 }
 
-export enum BasicInteractionResponse {
+export enum InteractionResponse {
   Public,
   Ephemeral,
-  None
-}
-
-export enum ButtonResponse {
-  Public = BasicInteractionResponse.Public,
-  Ephemeral = BasicInteractionResponse.Ephemeral,
-  None = BasicInteractionResponse.None,
+  None,
   Update
 }
 

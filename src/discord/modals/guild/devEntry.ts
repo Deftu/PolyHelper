@@ -1,14 +1,15 @@
 import BasicInteractionMetadata from '../../private/interactions/basic/BasicInteractionMetadata.ts';
 import DiscordModal from '../../private/interactions/DiscordModal.ts';
 import PolyHelperError from '../../../private/error.ts';
-import { InteractionFlags, type InteractionWithGuild } from '../../../types/discord.ts';
+import { InteractionFlag, type InteractionWithGuild } from '../../../types/discord.ts';
 import { getRepoCount } from '../../../utils/githubUtils.ts';
 import { hasRole } from '../../../utils/discordUtils.ts';
 import type { ModalMessageModalSubmitInteraction } from 'discord.js';
 
 class DevEntryModal extends DiscordModal {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('dev-entry');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildModal];
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('dev-entry').setFlags(
+    InteractionFlag.GuildModal
+  );
 
   override async execute(interaction: InteractionWithGuild<ModalMessageModalSubmitInteraction>) {
     if (await hasRole(interaction.member, this.discord.application.config.discord.roles.devAccess)) {
@@ -18,10 +19,7 @@ class DevEntryModal extends DiscordModal {
     const userAnswer = parseInt(interaction.fields.getTextInputValue('repo-count'));
     const answer = await getRepoCount();
 
-    if (userAnswer !== answer) {
-      await interaction.followUp({ content: 'Your answer was incorrect. Try again.' });
-      return;
-    }
+    if (userAnswer !== answer) return await interaction.followUp({ content: 'Your answer was incorrect. Try again.' });
 
     await interaction.member.roles.add(
       this.discord.application.config.discord.roles.devAccess,

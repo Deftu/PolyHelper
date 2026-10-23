@@ -5,7 +5,7 @@ import PolyHelperError from '../../../../private/error.ts';
 import ms, { type StringValue } from 'ms';
 import { ActionRowBuilder, ButtonBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { CloseRequestButtons } from '../../../private/ComponentHelper.ts';
-import { InteractionFlags, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { DatabaseCloseRequest } from '../../../../types/database.ts';
 
 class CloseRequestCommand extends DiscordCommand {
@@ -15,9 +15,9 @@ class CloseRequestCommand extends DiscordCommand {
     .addStringOption((option) => option.setName('reason').setDescription('The reason for closing the ticket'))
     .addStringOption((option) => option.setName('auto-close').setDescription('The auto close time (e.g. 1d, 72h, 2w)'))
     .removeHidddenOption()
-    .setCleanErrorName('close request this ticket');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override permission: InteractionPermission = InteractionPermission.Support;
+    .setCleanErrorTitle('close request this ticket')
+    .setFlags(InteractionFlag.GuildCommand)
+    .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const ticket = this.getTicket(interaction);
@@ -52,19 +52,21 @@ class CloseRequestCommand extends DiscordCommand {
 
     embed.addFields({ name: '_ _', value: 'Please accept or deny using the buttons below.' });
 
+    const id = crypto.randomUUID();
+
     const message = await interaction.followUp({
       content: `Hey <@${ticketOwner.user.id}>`,
       embeds: [embed],
-      components: [new ActionRowBuilder<ButtonBuilder>().addComponents(CloseRequestButtons())]
+      components: [new ActionRowBuilder<ButtonBuilder>().addComponents(CloseRequestButtons(id))]
     });
-    const closeRequest = this.discord.application.database.insertCloseRequest({
+    this.discord.application.database.insertCloseRequest({
+      id,
       ticketId: ticket.id,
       messageId: message.id,
       reason,
       closer: interaction.user.id,
       autoClose
     });
-    await closeRequest.updateMessageButtons();
   }
 }
 

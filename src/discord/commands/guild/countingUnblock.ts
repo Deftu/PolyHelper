@@ -2,7 +2,7 @@ import DiscordCommand from '../../private/interactions/commands/DiscordCommand.t
 import DiscordCommandMetadata from '../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../private/error.ts';
-import { InteractionFlags, InteractionPermission, type InteractionWithGuild } from '../../../types/discord.ts';
+import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../types/discord.ts';
 import { hasRole } from '../../../utils/discordUtils.ts';
 import { isGuildMember } from '@sapphire/discord.js-utilities';
 import { toError } from '../../../utils/miscUtils.ts';
@@ -13,9 +13,9 @@ class CountingBlockCommand extends DiscordCommand {
     .setName('counting-unblock')
     .setDescription('Unblock a user from counting')
     .addUserOption((option) => option.setName('user').setDescription('The user to unblock').setRequired(true))
-    .addStringOption((option) => option.setName('reason').setDescription('The reason to log'));
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override permission: InteractionPermission = InteractionPermission.Moderator;
+    .addStringOption((option) => option.setName('reason').setDescription('The reason to log'))
+    .setFlags(InteractionFlag.GuildCommand)
+    .setPermission(InteractionPermission.Moderator);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const member = interaction.options.getMember('user');

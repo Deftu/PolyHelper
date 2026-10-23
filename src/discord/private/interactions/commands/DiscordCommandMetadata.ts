@@ -15,10 +15,15 @@ import {
   type SlashCommandSubcommandGroupBuilder,
   type SlashCommandUserOption
 } from 'discord.js';
+import { type InteractionFlag, InteractionPermission, InteractionResponse } from '../../../../types/discord.ts';
 
 class DiscordCommandMetadata extends SlashCommandBuilder {
-  private shouldAddHiddenOption: boolean = true;
-  #cleanErrorName: string | null = null;
+  #shouldAddHiddenOption: boolean = true;
+  readonly #flags: InteractionFlag[] = [];
+  #permission: InteractionPermission = InteractionPermission.Anyone;
+  #response: InteractionResponse = InteractionResponse.Public;
+  #fetchGuildMember: boolean = true;
+  #cleanErrorTitle: string | null = null;
   constructor() {
     super();
     this.setContexts(InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel);
@@ -98,7 +103,7 @@ class DiscordCommandMetadata extends SlashCommandBuilder {
       | ((subcommandGroup: SlashCommandSubcommandBuilder) => SlashCommandSubcommandBuilder)
   ): this {
     super.addSubcommand(input);
-    return this;
+    return this.removeHidddenOption();
   }
 
   override addSubcommandGroup(
@@ -107,7 +112,7 @@ class DiscordCommandMetadata extends SlashCommandBuilder {
       | ((subcommandGroup: SlashCommandSubcommandGroupBuilder) => SlashCommandSubcommandGroupBuilder)
   ): this {
     super.addSubcommandGroup(input);
-    return this;
+    return this.removeHidddenOption();
   }
 
   override addUserOption(
@@ -117,27 +122,64 @@ class DiscordCommandMetadata extends SlashCommandBuilder {
     return this;
   }
 
-  setCleanErrorName(name: string | null): this {
-    this.#cleanErrorName = name;
-    return this;
-  }
-
-  get cleanErrorName(): string | null {
-    return this.#cleanErrorName;
-  }
-
-  removeHidddenOption(): this {
-    this.shouldAddHiddenOption = false;
-    return this;
-  }
-
   override toJSON(): RESTPostAPIChatInputApplicationCommandsJSONBody {
-    if (this.shouldAddHiddenOption) {
+    if (this.#shouldAddHiddenOption) {
       this.addBooleanOption((option) =>
         option.setName('hidden-response').setDescription('Should the command response be hidden')
       );
     }
     return super.toJSON();
+  }
+
+  removeHidddenOption(): this {
+    this.#shouldAddHiddenOption = false;
+    return this;
+  }
+
+  setFlags(...flags: InteractionFlag[]): this {
+    this.#flags.push(...flags);
+    return this;
+  }
+
+  get flags(): InteractionFlag[] {
+    return [...this.#flags];
+  }
+
+  setPermission(permission: InteractionPermission): this {
+    this.#permission = permission;
+    return this;
+  }
+
+  get permission(): InteractionPermission {
+    return this.#permission;
+  }
+
+  setResponse(response: InteractionResponse): this {
+    if (response === InteractionResponse.Ephemeral) this.removeHidddenOption();
+    this.#response = response;
+    return this;
+  }
+
+  get response(): InteractionResponse {
+    return this.#response;
+  }
+
+  setFetchGuildMember(fetchGuildMember: boolean): this {
+    this.#fetchGuildMember = fetchGuildMember;
+    return this;
+  }
+
+  get fetchGuildMember(): boolean {
+    return this.#fetchGuildMember;
+  }
+
+  setCleanErrorTitle(title: string | null): this {
+    this.#cleanErrorTitle = title;
+    return this;
+  }
+
+  get cleanErrorTitle(): string | null {
+    return this.#cleanErrorTitle;
   }
 }
 

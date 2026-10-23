@@ -2,8 +2,10 @@ import PolyHelperError from '../private/error.ts';
 import chalk from 'chalk';
 import { DiscordjsError, type HexColorString, type RGBTuple } from 'discord.js';
 import { ErrorEmbed } from '../discord/private/EmbedHelper.ts';
+import type BasicInteractionMetadata from '../discord/private/interactions/basic/BasicInteractionMetadata.ts';
+import type DiscordCommandMetadata from '../discord/private/interactions/commands/DiscordCommandMetadata.ts';
 import type { DevData, ValidErrors } from '../types/application.ts';
-import type { EmbedHelperField, InteractionTypes } from '../types/discord.ts';
+import type { EmbedHelperField } from '../types/discord.ts';
 
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -42,16 +44,17 @@ export function getErrorTypeName(error: ValidErrors): string {
   return 'Generic Error';
 }
 
-export function getCleanErrorEmbed(error: ValidErrors, interaction: InteractionTypes | null = null) {
+export function getCleanErrorEmbed(
+  error: ValidErrors,
+  metadata: BasicInteractionMetadata | DiscordCommandMetadata | null = null
+) {
   const embed = new ErrorEmbed();
   if (!(error instanceof PolyHelperError)) {
     return embed.setDescription('This error has been reported to the devs. Please try again later.');
   }
   embed.setDescription(`\`\`\`${error.message}\`\`\``);
-  if (!interaction?.isCommand()) return embed;
-  const metadata = interaction.client.discordManager.commandHandler.getCommandMetadata(interaction);
-  if (metadata?.cleanErrorName) {
-    embed.setTitle(`Unable to ${metadata.cleanErrorName}`).setDescription(error.message).setAuthor(null);
+  if (metadata?.cleanErrorTitle) {
+    embed.setTitle(`Unable to ${metadata.cleanErrorTitle}`).setDescription(error.message).setAuthor(null);
   }
   return embed;
 }

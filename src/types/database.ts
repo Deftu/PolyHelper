@@ -25,9 +25,9 @@ export const DatabasePanel = zod.object({
   buttonEmoji: zod.string().nullable(),
   openingMessage: zod.string(),
   maxOpenTickets: zod.int().positive(),
-  pingSupportRoleOnOpen: DatabaseBoolean,
   pinnedTicketPrefix: zod.string(),
   defaultTicketName: zod.string(),
+  supportRole: zod.string().nullable(),
   enabled: DatabaseBoolean
 });
 export type DatabasePanel = zod.infer<typeof DatabasePanel>;

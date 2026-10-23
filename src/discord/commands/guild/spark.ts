@@ -14,9 +14,9 @@ import {
   type SendableChannels
 } from 'discord.js';
 import {
-  BasicInteractionResponse,
-  InteractionFlags,
+  InteractionFlag,
   InteractionPermission,
+  InteractionResponse,
   type InteractionWithGuild
 } from '../../../types/discord.ts';
 import {
@@ -50,11 +50,10 @@ class SparkCommand extends DiscordCommand {
         .setDescription('What the user is seeing, e.g. FPS drops when opening their inventory')
         .setMaxLength(1000)
     )
-    .removeHidddenOption()
-    .setCleanErrorName('analyze this spark profile');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override response: BasicInteractionResponse = BasicInteractionResponse.Ephemeral;
-  override permission: InteractionPermission = InteractionPermission.Support;
+    .setFlags(InteractionFlag.GuildCommand)
+    .setPermission(InteractionPermission.Support)
+    .setResponse(InteractionResponse.Ephemeral)
+    .setCleanErrorTitle('analyze this spark profile');
   private readonly running = new Set<string>();
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {

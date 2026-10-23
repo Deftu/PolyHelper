@@ -13,8 +13,8 @@ import {
 } from 'discord.js';
 import {
   type AutocompleteOption,
-  BasicInteractionResponse,
-  InteractionFlags,
+  InteractionFlag,
+  InteractionResponse,
   type InteractionWithGuild
 } from '../../../../types/discord.ts';
 import { BasicPanelModal } from '../../../private/ComponentHelper.ts';
@@ -41,10 +41,9 @@ class TicketPanelsCommand extends DiscordCommand {
         )
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .removeHidddenOption();
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override response: BasicInteractionResponse = BasicInteractionResponse.None;
-  override fetchGuildMember: boolean = false;
+    .setResponse(InteractionResponse.None)
+    .setFlags(InteractionFlag.GuildCommand)
+    .setFetchGuildMember(false);
 
   // eslint-disable-next-line require-await
   override async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {

@@ -139,21 +139,11 @@ export function MiscPanelModal(panel?: Panel | DatabasePanel): ModalBuilder {
           .setStyle(TextInputStyle.Short)
           .setRequired(true)
           .setValue(String(panel?.maxOpenTickets ?? 1))
-      ),
-      new LabelBuilder()
-        .setLabel('Ping Support Role On Open')
-        .setCheckboxComponent(
-          new CheckboxBuilder()
-            .setCustomId('pingSupportRoleOnOpen')
-            .setDefault(Boolean(panel?.pingSupportRoleOnOpen ?? 1))
-        )
+      )
     );
 }
 
-export function CloseRequestButtons(
-  id: DatabaseCloseRequest['id'] = 'UNKNOWN',
-  disabled: boolean = false
-): ButtonBuilder[] {
+export function CloseRequestButtons(id: DatabaseCloseRequest['id'], disabled: boolean = false): ButtonBuilder[] {
   return [
     new ButtonBuilder()
       .setLabel('Accept & Close')

@@ -2,14 +2,14 @@ import BasicInteractionMetadata from '../../../private/interactions/basic/BasicI
 import DiscordButton from '../../../private/interactions/DiscordButton.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import { BasicPanelModal, MiscPanelModal } from '../../../private/ComponentHelper.ts';
-import { ButtonResponse, InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlag, InteractionResponse, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { ButtonInteraction } from 'discord.js';
 
 class PanelEditButton extends DiscordButton {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelEdit');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildButton];
-  override response: ButtonResponse = ButtonResponse.None;
-  override fetchGuildMember: boolean = false;
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelEdit')
+    .setFlags(InteractionFlag.GuildButton)
+    .setResponse(InteractionResponse.None)
+    .setFetchGuildMember(false);
 
   override async execute(interaction: InteractionWithGuild<ButtonInteraction>) {
     const [id, type] = this.getArgs(interaction);

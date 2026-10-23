@@ -6,11 +6,13 @@ import ModalHandler from './handlers/ModalHandler.ts';
 import PolyHelperError from '../private/error.ts';
 import StringSelectMenuHandler from './handlers/StringSelectMenuHandler.ts';
 import {
+  BaseInteraction,
   ChannelType,
   Client,
   Events,
   GatewayIntentBits,
   Guild,
+  Message,
   MessageFlags,
   type SendableChannels,
   TextChannel
@@ -19,6 +21,8 @@ import { getCleanErrorEmbed, toError } from '../utils/miscUtils.ts';
 import { parseInteractionType } from '../utils/discordUtils.ts';
 import { writeFile } from 'node:fs/promises';
 import type Application from '../Application.ts';
+import type BasicInteractionMetadata from './private/interactions/basic/BasicInteractionMetadata.ts';
+import type DiscordCommandMetadata from './private/interactions/commands/DiscordCommandMetadata.ts';
 import type { Config } from '../types/config.ts';
 import type {
   DiscordManagerWithClient,
@@ -57,8 +61,12 @@ class DiscordManager {
     await this.modalHandler.loadModals();
     await this.stringSelectMenuHandler.loadStringSelectMenus();
     this.client.on(Events.ClientReady, (client) => this.onReady(client));
-    this.client.on(Events.MessageCreate, (message) => this.messageHandler.onMessage(message));
-    this.client.on(Events.InteractionCreate, (interaction) => this.interactionHandler.onInteraction(interaction));
+    this.client.on(Events.MessageCreate, (message) =>
+      this.messageHandler.onMessage(message).catch((e) => this.handleError(toError(e)))
+    );
+    this.client.on(Events.InteractionCreate, (interaction) =>
+      this.interactionHandler.onInteraction(interaction).catch((e) => this.handleError(toError(e)))
+    );
     this.client.login(this.application.config.discord.token).catch((e) => this.handleError(toError(e)));
   }
 
@@ -90,31 +98,50 @@ class DiscordManager {
     await this.loadGuild();
   }
 
-  async handleError(
-    error: ValidErrors,
-    interaction: InteractionTypes | null = null,
-    extraErrorData: EmbedHelperField[] = []
-  ) {
-    if (interaction) {
-      extraErrorData.push({ name: 'Source', value: 'Discord Interaction' });
-      extraErrorData.push({
+  private getErrorContext(context: InteractionTypes | Message | null = null): EmbedHelperField[] {
+    const extraData: EmbedHelperField[] = [];
+    if (!context) return extraData;
+    if (context instanceof BaseInteraction) {
+      extraData.push({ name: 'Source', value: 'Discord Interaction' });
+      extraData.push({
         name: 'User',
-        value: `\`@${interaction.user.username}\` (\`${interaction.user.id}\`) <@${interaction.user.id}>`
+        value: `\`@${context.user.username}\` (\`${context.user.id}\`) <@${context.user.id}>`
       });
-      extraErrorData.push({ name: 'Interaction Type', value: parseInteractionType(interaction.type) });
-      if (interaction.isCommand()) {
-        extraErrorData.push({ name: 'Command', value: interaction.commandName, format: 'Small Block' });
+      extraData.push({ name: 'Interaction Type', value: parseInteractionType(context.type) });
+      if (context.isCommand()) {
+        extraData.push({ name: 'Command', value: context.commandName, format: 'Small Block' });
       }
-      if (interaction.isButton()) {
-        extraErrorData.push({ name: 'Button', value: interaction.customId, format: 'Small Block' });
+      if (context.isButton()) {
+        extraData.push({ name: 'Button', value: context.customId, format: 'Small Block' });
       }
     }
-    await this.application.logError(error, extraErrorData);
-    if (!interaction) return;
+    if (context instanceof Message) {
+      extraData.push({ name: 'Source', value: 'Discord Message' });
+      extraData.push({
+        name: 'User',
+        value: `\`@${context.author.username}\` (\`${context.author.id}\`) <@${context.author.id}>`
+      });
+      extraData.push({ name: 'URL', value: context.url });
+    }
+    if (context.channel) {
+      extraData.push({ name: 'Channel', value: `<#${context.channel.id}> (\`${context.channel.id}\`)` });
+    }
+    return extraData;
+  }
 
-    if (interaction.isAutocomplete()) {
+  async handleError(
+    error: ValidErrors,
+    context: InteractionTypes | Message | null = null,
+    extraErrorData: EmbedHelperField[] = [],
+    metadata: BasicInteractionMetadata | DiscordCommandMetadata | null = null
+  ) {
+    extraErrorData.push(...this.getErrorContext(context));
+    await this.application.logError(error, extraErrorData);
+    if (!context || !(context instanceof BaseInteraction)) return;
+
+    if (context.isAutocomplete()) {
       try {
-        await interaction.respond([]);
+        await context.respond([]);
       } catch (e: unknown) {
         this.application.logError(toError(e));
       }
@@ -122,11 +149,11 @@ class DiscordManager {
     }
 
     try {
-      const embed = getCleanErrorEmbed(error, interaction);
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+      const embed = getCleanErrorEmbed(error, metadata);
+      if (context.replied || context.deferred) {
+        await context.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
       } else {
-        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+        await context.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
     } catch (e: unknown) {
       this.application.logError(toError(e));

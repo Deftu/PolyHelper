@@ -27,8 +27,7 @@ class RuntimeSettingsCommand extends DiscordCommand {
     .setName('runtime-settings')
     .addSubcommandGroup(this.createSubcommandGroup('panels-message'))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .removeHidddenOption();
-  override permission: InteractionPermission = InteractionPermission.Owner;
+    .setPermission(InteractionPermission.Owner);
 
   async executeGet(interaction: ChatInputCommandInteraction) {
     const entryName = interaction.options.getSubcommandGroup(true);

@@ -1,6 +1,6 @@
 import PolyHelperError from '../../private/error.ts';
 import { type BaseInteraction } from 'discord.js';
-import { InteractionFlags, InteractionPermission } from '../../types/discord.ts';
+import { InteractionFlag, InteractionPermission } from '../../types/discord.ts';
 import {
   isAdminMember,
   isApplicationOwner,
@@ -9,18 +9,17 @@ import {
   isPolyfrostTeamMember,
   isSupportMember
 } from '../../utils/discordUtils.ts';
-import type BasicInteractionData from '../private/interactions/basic/BasicInteractionData.ts';
 import type DiscordManager from '../DiscordManager.ts';
 
 class InteractionHandler {
   constructor(private readonly discord: DiscordManager) {}
 
-  onInteraction(interaction: BaseInteraction) {
-    if (interaction.isChatInputCommand()) this.discord.commandHandler.onCommand(interaction);
-    if (interaction.isAutocomplete()) this.discord.commandHandler.onAutocomplete(interaction);
-    if (interaction.isButton()) this.discord.buttonHandler.onButton(interaction);
-    if (interaction.isModalSubmit()) this.discord.modalHandler.onSubmit(interaction);
-    if (interaction.isStringSelectMenu()) this.discord.stringSelectMenuHandler.onSubmit(interaction);
+  async onInteraction(interaction: BaseInteraction) {
+    if (interaction.isChatInputCommand()) await this.discord.commandHandler.onCommand(interaction);
+    if (interaction.isAutocomplete()) await this.discord.commandHandler.onAutocomplete(interaction);
+    if (interaction.isButton()) await this.discord.buttonHandler.onButton(interaction);
+    if (interaction.isModalSubmit()) await this.discord.modalHandler.onSubmit(interaction);
+    if (interaction.isStringSelectMenu()) await this.discord.stringSelectMenuHandler.onSubmit(interaction);
   }
 
   async checkPermission(interaction: BaseInteraction, permission: InteractionPermission) {
@@ -64,47 +63,41 @@ class InteractionHandler {
     for (const [failed, message] of checks) if (failed) throw new PolyHelperError(message);
   }
 
-  checkInteractionFlags<Metadata extends object, Manager extends DiscordManager = DiscordManager>(
-    interaction: BaseInteraction,
-    data: BasicInteractionData<Manager, Metadata>
-  ) {
+  checkInteractionFlags(interaction: BaseInteraction, flags: InteractionFlag[]) {
     const checks: Array<[boolean, string]> = [
       [
-        data.flags.includes(InteractionFlags.GuildCommand) && !interaction.isChatInputCommand(),
+        flags.includes(InteractionFlag.GuildCommand) && !interaction.isChatInputCommand(),
         'This command must be run as a chat input command.'
       ],
       [
-        data.flags.includes(InteractionFlags.GuildCommand) &&
+        flags.includes(InteractionFlag.GuildCommand) &&
           interaction.isChatInputCommand() &&
           !isInteractionInsideOfGuild(interaction),
         'Please run this command inside of a guild.'
       ],
+      [flags.includes(InteractionFlag.GuildButton) && !interaction.isButton(), 'This button must be run as a button.'],
       [
-        data.flags.includes(InteractionFlags.GuildButton) && !interaction.isButton(),
-        'This button must be run as a button.'
-      ],
-      [
-        data.flags.includes(InteractionFlags.GuildButton) &&
+        flags.includes(InteractionFlag.GuildButton) &&
           interaction.isButton() &&
           !isInteractionInsideOfGuild(interaction),
         'Please run this button inside of a guild.'
       ],
       [
-        data.flags.includes(InteractionFlags.GuildModal) && !interaction.isModalSubmit(),
+        flags.includes(InteractionFlag.GuildModal) && !interaction.isModalSubmit(),
         'This modal must be run as a modal.'
       ],
       [
-        data.flags.includes(InteractionFlags.GuildModal) &&
+        flags.includes(InteractionFlag.GuildModal) &&
           interaction.isModalSubmit() &&
           !isInteractionInsideOfGuild(interaction),
         'Please run this modal inside of a guild.'
       ],
       [
-        data.flags.includes(InteractionFlags.GuildStringSelectMenu) && !interaction.isStringSelectMenu(),
+        flags.includes(InteractionFlag.GuildStringSelectMenu) && !interaction.isStringSelectMenu(),
         'This string select menu must be run as a string select menu.'
       ],
       [
-        data.flags.includes(InteractionFlags.GuildStringSelectMenu) &&
+        flags.includes(InteractionFlag.GuildStringSelectMenu) &&
           interaction.isStringSelectMenu() &&
           !isInteractionInsideOfGuild(interaction),
         'Please run this string select menu inside of a guild.'

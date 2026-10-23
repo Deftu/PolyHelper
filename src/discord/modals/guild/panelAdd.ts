@@ -1,12 +1,13 @@
 import BasicInteractionMetadata from '../../private/interactions/basic/BasicInteractionMetadata.ts';
 import DiscordModal from '../../private/interactions/DiscordModal.ts';
-import { InteractionFlags, type InteractionWithGuild } from '../../../types/discord.ts';
+import { InteractionFlag, InteractionResponse, type InteractionWithGuild } from '../../../types/discord.ts';
 import type { DatabasePanel } from '../../../types/database.ts';
 import type { ModalMessageModalSubmitInteraction } from 'discord.js';
 
 class PanelAddModal extends DiscordModal {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelAdd');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildModal];
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelAdd')
+    .setFlags(InteractionFlag.GuildModal)
+    .setResponse(InteractionResponse.Ephemeral);
 
   override async execute(interaction: InteractionWithGuild<ModalMessageModalSubmitInteraction>) {
     const panelData: Omit<DatabasePanel, 'id'> = {
@@ -18,9 +19,9 @@ class PanelAddModal extends DiscordModal {
       buttonEmoji: null,
       openingMessage: interaction.fields.getTextInputValue('title'),
       maxOpenTickets: 1,
-      pingSupportRoleOnOpen: 1,
       pinnedTicketPrefix: '📌',
       defaultTicketName: '[{cleanPanelName}] ticket-{username}',
+      supportRole: this.discord.application.config.discord.roles.support,
       enabled: this.getCheckbox(interaction, 'enabled') ? 1 : 0
     };
 

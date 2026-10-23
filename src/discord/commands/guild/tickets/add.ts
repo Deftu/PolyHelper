@@ -1,7 +1,7 @@
 import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { InteractionFlags, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
 import { SuccessEmbed } from '../../../private/EmbedHelper.ts';
 import { isGuildMember } from '@sapphire/discord.js-utilities';
 import type { ChatInputCommandInteraction } from 'discord.js';
@@ -13,9 +13,9 @@ class AddCommand extends DiscordCommand {
     .addUserOption((option) =>
       option.setName('user').setDescription('The user you want to add to the ticket').setRequired(true)
     )
-    .setCleanErrorName('add this user to the ticket');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override permission: InteractionPermission = InteractionPermission.Support;
+    .setCleanErrorTitle('add this user to the ticket')
+    .setFlags(InteractionFlag.GuildCommand)
+    .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const member = interaction.options.getMember('user');

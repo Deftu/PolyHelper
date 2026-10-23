@@ -1,6 +1,6 @@
 import assert from 'node:assert';
-import { ButtonResponse, InteractionFlags } from '../../types/discord.ts';
 import { Collection, MessageFlags, StringSelectMenuInteraction } from 'discord.js';
+import { InteractionFlag, InteractionResponse } from '../../types/discord.ts';
 import { readdir } from 'node:fs/promises';
 import { toError } from '../../utils/miscUtils.ts';
 import type DiscordManager from '../DiscordManager.ts';
@@ -18,12 +18,13 @@ class StringSelectMenuHandler {
     if (!stringSelectMenu) return;
 
     try {
-      if (stringSelectMenu.response !== ButtonResponse.None) {
-        if (stringSelectMenu.response === ButtonResponse.Update) {
+      if (stringSelectMenu.metadata.response !== InteractionResponse.None) {
+        if (stringSelectMenu.metadata.response === InteractionResponse.Update) {
           await interaction.deferUpdate();
         } else {
           await interaction.deferReply({
-            flags: stringSelectMenu.response === ButtonResponse.Ephemeral ? MessageFlags.Ephemeral : undefined
+            flags:
+              stringSelectMenu.metadata.response === InteractionResponse.Ephemeral ? MessageFlags.Ephemeral : undefined
           });
         }
       }
@@ -31,19 +32,19 @@ class StringSelectMenuHandler {
         `String select men submitted ${interaction.user.username} (${interaction.user.id}) modal ${interaction.customId}`
       );
 
-      this.discord.interactionHandler.checkInteractionFlags(interaction, stringSelectMenu);
-      await this.discord.interactionHandler.checkPermission(interaction, stringSelectMenu.permission);
+      this.discord.interactionHandler.checkInteractionFlags(interaction, stringSelectMenu.metadata.flags);
+      await this.discord.interactionHandler.checkPermission(interaction, stringSelectMenu.metadata.permission);
 
-      if (stringSelectMenu.flags.includes(InteractionFlags.GuildStringSelectMenu)) {
+      if (stringSelectMenu.metadata.flags.includes(InteractionFlag.GuildStringSelectMenu)) {
         assert(interaction.guild);
-        if (stringSelectMenu.fetchGuildMember) {
+        if (stringSelectMenu.metadata.fetchGuildMember) {
           interaction.member = await interaction.guild.members.fetch(interaction.user.id);
         }
       }
 
       await stringSelectMenu.execute(interaction);
     } catch (error) {
-      await this.discord.handleError(toError(error), interaction);
+      await this.discord.handleError(toError(error), interaction, [], stringSelectMenu.metadata);
     }
   }
 
