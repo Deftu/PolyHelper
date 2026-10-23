@@ -19,9 +19,9 @@ class PanelAddModal extends DiscordModal {
       buttonEmoji: null,
       openingMessage: interaction.fields.getTextInputValue('title'),
       maxOpenTickets: 1,
-      pingSupportRoleOnOpen: 1,
       pinnedTicketPrefix: '📌',
       defaultTicketName: '[{cleanPanelName}] ticket-{username}',
+      supportRole: this.discord.application.config.discord.roles.support,
       enabled: this.getCheckbox(interaction, 'enabled') ? 1 : 0
     };
 

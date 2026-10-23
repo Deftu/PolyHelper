@@ -30,11 +30,9 @@ class PanelEditModal extends DiscordModal {
       buttonEmoji: (this.getTextInputValue(interaction, 'buttonEmoji') ?? panel.buttonEmoji)?.trim() || null,
       openingMessage: this.getTextInputValue(interaction, 'openingMessage') ?? panel.openingMessage,
       maxOpenTickets,
-      pingSupportRoleOnOpen: this.getCheckbox(interaction, 'pingSupportRoleOnOpen', panel.pingSupportRoleOnOpen)
-        ? 1
-        : 0,
       pinnedTicketPrefix: this.getTextInputValue(interaction, 'pinnedTicketPrefix') ?? panel.pinnedTicketPrefix,
       defaultTicketName: this.getTextInputValue(interaction, 'defaultTicketName') ?? panel.defaultTicketName,
+      supportRole: this.discord.application.config.discord.roles.support,
       enabled: this.getCheckbox(interaction, 'enabled', panel.enabled) ? 1 : 0
     });
     await interaction.followUp({ content: `Panel "${updated.name}" updated.` });

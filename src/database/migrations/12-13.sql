@@ -1,0 +1,2 @@
+ALTER TABLE panels ADD COLUMN supportRole TEXT DEFAULT NULL;
+ALTER TABLE panels DROP COLUMN pingSupportRoleOnOpen;

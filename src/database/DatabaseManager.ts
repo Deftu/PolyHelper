@@ -47,14 +47,14 @@ class DatabaseManager extends BasicDatabaseManager {
   getPanel(id: DatabasePanel['id']): Panel | undefined {
     const data = this.db.prepare<[DatabasePanel['id']], DatabasePanel>('SELECT * FROM panels WHERE id = ?').get(id);
     if (!data) return data;
-    return new Panel(data, this);
+    return new Panel(data);
   }
 
   async insertPanel(panelData: Omit<DatabasePanel, 'id'>): Promise<Panel> {
     const id: DatabasePanel['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabasePanel>(
-        'INSERT INTO panels (id, name, cleanName, title, description, buttonLabel, buttonEmoji, openingMessage, maxOpenTickets, pingSupportRoleOnOpen, pinnedTicketPrefix, defaultTicketName, enabled) VALUES (@id, @name, @cleanName, @title, @description, @buttonLabel, @buttonEmoji, @openingMessage, @maxOpenTickets, @pingSupportRoleOnOpen, @pinnedTicketPrefix, @defaultTicketName, @enabled)'
+        'INSERT INTO panels (id, name, cleanName, title, description, buttonLabel, buttonEmoji, openingMessage, maxOpenTickets, pinnedTicketPrefix, defaultTicketName, supportRole, enabled) VALUES (@id, @name, @cleanName, @title, @description, @buttonLabel, @buttonEmoji, @openingMessage, @maxOpenTickets, @pinnedTicketPrefix, @defaultTicketName, @supportRole, @enabled)'
       )
       .run({ ...panelData, id });
     const panel = this.getPanel(id);
@@ -75,7 +75,7 @@ class DatabaseManager extends BasicDatabaseManager {
     if (!panel) throw new PolyHelperError('Could not find this panel?');
     this.db
       .prepare<DatabasePanel>(
-        'UPDATE panels SET name = @name, cleanName = @cleanName, title = @title, description = @description, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, maxOpenTickets = @maxOpenTickets, pingSupportRoleOnOpen = @pingSupportRoleOnOpen, pinnedTicketPrefix = @pinnedTicketPrefix, defaultTicketName = @defaultTicketName, enabled = @enabled WHERE id = @id'
+        'UPDATE panels SET name = @name, cleanName = @cleanName, title = @title, description = @description, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, maxOpenTickets = @maxOpenTickets, pinnedTicketPrefix = @pinnedTicketPrefix, defaultTicketName = @defaultTicketName, supportRole = @supportRole, enabled = @enabled WHERE id = @id'
       )
       .run(data);
     const newPanel = this.getPanel(data.id);

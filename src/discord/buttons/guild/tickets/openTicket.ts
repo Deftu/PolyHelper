@@ -47,14 +47,17 @@ class OpenTicketButton extends DiscordButton {
     const thread = await channel.threads.create({
       name: `[${panel.cleanName}] ticket-${interaction.user.username}`,
       autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
-      type: ChannelType.PrivateThread
+      type: ChannelType.PrivateThread,
+      invitable: true
     });
     await thread.members.add(interaction.user);
     const startingMessage = await thread.send(panel.getStartingMessageData(interaction.user));
     await startingMessage.pin();
 
-    const pingMessage = await thread.send({ content: `<@&${this.discord.application.config.discord.roles.support}>` });
-    await pingMessage.delete();
+    if (panel.supportRole) {
+      const pingMessage = await thread.send({ content: `<@&${panel.supportRole}>` });
+      await pingMessage.delete();
+    }
 
     const ticket = this.discord.application.database.insertTicket({
       panelId: panel.id,
