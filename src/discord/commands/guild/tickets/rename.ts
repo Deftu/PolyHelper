@@ -1,7 +1,7 @@
 import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
-import { InteractionFlags, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
 
 class RenameCommand extends DiscordCommand {
@@ -11,9 +11,9 @@ class RenameCommand extends DiscordCommand {
     .addStringOption((option) =>
       option.setName('name').setDescription('Supported variables - {username} {id} {panelName} {cleanPanelName}')
     )
-    .setCleanErrorName('renaming this ticket');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override permission: InteractionPermission = InteractionPermission.Support;
+    .setCleanErrorTitle('renaming this ticket')
+    .setFlags(InteractionFlag.GuildCommand)
+    .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     await this.getTicket(interaction).rename(interaction.options.getString('name') ?? undefined);

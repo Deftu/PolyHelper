@@ -19,6 +19,8 @@ import { getCleanErrorEmbed, toError } from '../utils/miscUtils.ts';
 import { parseInteractionType } from '../utils/discordUtils.ts';
 import { writeFile } from 'node:fs/promises';
 import type Application from '../Application.ts';
+import type BasicInteractionMetadata from './private/interactions/basic/BasicInteractionMetadata.ts';
+import type DiscordCommandMetadata from './private/interactions/commands/DiscordCommandMetadata.ts';
 import type { Config } from '../types/config.ts';
 import type {
   DiscordManagerWithClient,
@@ -93,7 +95,8 @@ class DiscordManager {
   async handleError(
     error: ValidErrors,
     interaction: InteractionTypes | null = null,
-    extraErrorData: EmbedHelperField[] = []
+    extraErrorData: EmbedHelperField[] = [],
+    metadata: BasicInteractionMetadata | DiscordCommandMetadata | null = null
   ) {
     if (interaction) {
       extraErrorData.push({ name: 'Source', value: 'Discord Interaction' });
@@ -122,7 +125,7 @@ class DiscordManager {
     }
 
     try {
-      const embed = getCleanErrorEmbed(error, interaction);
+      const embed = getCleanErrorEmbed(error, metadata);
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
       } else {

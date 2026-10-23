@@ -12,7 +12,7 @@ import {
 import {
   type AutocompleteOption,
   type EmbedHelperField,
-  InteractionFlags,
+  InteractionFlag,
   InteractionPermission,
   type InteractionWithGuild
 } from '../../../../types/discord.ts';
@@ -42,9 +42,8 @@ class TicketsCommand extends DiscordCommand {
         .addBooleanOption((option) => option.setName('closed').setDescription('Is the ticket currently closed'))
         .addBooleanOption((option) => option.setName('open').setDescription('Is the ticket currently open'))
     )
-    .removeHidddenOption();
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override permission: InteractionPermission = InteractionPermission.Support;
+    .setFlags(InteractionFlag.GuildCommand)
+    .setPermission(InteractionPermission.Support);
 
   // eslint-disable-next-line require-await
   override async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {

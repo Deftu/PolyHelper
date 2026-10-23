@@ -1,6 +1,6 @@
 import assert from 'node:assert';
-import { BasicInteractionResponse, InteractionFlags } from '../../types/discord.ts';
 import { Collection, MessageFlags, type ModalSubmitInteraction } from 'discord.js';
+import { InteractionFlag, InteractionResponse } from '../../types/discord.ts';
 import { readdir } from 'node:fs/promises';
 import { toError } from '../../utils/miscUtils.ts';
 import type DiscordManager from '../DiscordManager.ts';
@@ -15,26 +15,28 @@ class ModalHandler {
     if (!modal) return;
 
     try {
-      if (modal.response !== BasicInteractionResponse.None) {
+      if (modal.metadata.response !== InteractionResponse.None) {
         await interaction.deferReply({
-          flags: modal.response === BasicInteractionResponse.Ephemeral ? MessageFlags.Ephemeral : undefined
+          flags: modal.metadata.response === InteractionResponse.Ephemeral ? MessageFlags.Ephemeral : undefined
         });
       }
       console.discord(
         `Modal submitted ${interaction.user.username} (${interaction.user.id}) modal ${interaction.customId}`
       );
 
-      this.discord.interactionHandler.checkInteractionFlags(interaction, modal);
-      await this.discord.interactionHandler.checkPermission(interaction, modal.permission);
+      this.discord.interactionHandler.checkInteractionFlags(interaction, modal.metadata.flags);
+      await this.discord.interactionHandler.checkPermission(interaction, modal.metadata.permission);
 
-      if (modal.flags.includes(InteractionFlags.GuildModal)) {
+      if (modal.metadata.flags.includes(InteractionFlag.GuildModal)) {
         assert(interaction.guild);
-        interaction.member = await interaction.guild.members.fetch(interaction.user.id);
+        if (modal.metadata.fetchGuildMember) {
+          interaction.member = await interaction.guild.members.fetch(interaction.user.id);
+        }
       }
 
       await modal.execute(interaction);
     } catch (error) {
-      await this.discord.handleError(toError(error), interaction);
+      await this.discord.handleError(toError(error), interaction, [], modal.metadata);
     }
   }
 

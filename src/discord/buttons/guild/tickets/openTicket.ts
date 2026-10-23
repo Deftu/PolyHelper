@@ -3,12 +3,12 @@ import DiscordButton from '../../../private/interactions/DiscordButton.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import { type ButtonInteraction, ChannelType, ThreadAutoArchiveDuration } from 'discord.js';
-import { InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlag, type InteractionWithGuild } from '../../../../types/discord.ts';
 
 class OpenTicketButton extends DiscordButton {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('openTicket');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildButton];
-  override fetchGuildMember: boolean = false;
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('openTicket')
+    .setFlags(InteractionFlag.GuildButton)
+    .setFetchGuildMember(false);
 
   override async execute(interaction: InteractionWithGuild<ButtonInteraction>) {
     const [id] = this.getArgs(interaction);

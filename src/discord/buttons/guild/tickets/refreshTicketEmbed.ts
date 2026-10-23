@@ -1,14 +1,14 @@
 import BasicInteractionMetadata from '../../../private/interactions/basic/BasicInteractionMetadata.ts';
 import DiscordButton from '../../../private/interactions/DiscordButton.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { ButtonResponse, InteractionFlags, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlag, InteractionResponse, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { ButtonInteraction } from 'discord.js';
 
 class RefreshTicketEmbedButton extends DiscordButton {
-  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('refreshTicketEmbed');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildButton];
-  override response: ButtonResponse = ButtonResponse.Update;
-  override fetchGuildMember: boolean = false;
+  override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('refreshTicketEmbed')
+    .setFlags(InteractionFlag.GuildButton)
+    .setResponse(InteractionResponse.Update)
+    .setFetchGuildMember(false);
 
   override async execute(interaction: InteractionWithGuild<ButtonInteraction>) {
     const [id] = this.getArgs(interaction);

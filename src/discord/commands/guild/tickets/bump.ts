@@ -2,16 +2,17 @@ import DiscordCommand from '../../../private/interactions/commands/DiscordComman
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { InteractionFlags, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
 
 class BumpCommand extends DiscordCommand {
   override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('bump')
     .setDescription('Bumps a ticket to encourage closing')
-    .setCleanErrorName('bump this ticket');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override permission: InteractionPermission = InteractionPermission.Support;
+    .setCleanErrorTitle('bump this ticket')
+    .removeHidddenOption()
+    .setFlags(InteractionFlag.GuildCommand)
+    .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const ticket = this.getTicket(interaction);

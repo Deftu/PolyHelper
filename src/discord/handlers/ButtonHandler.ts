@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { type ButtonInteraction, Collection, MessageFlags } from 'discord.js';
-import { ButtonResponse, InteractionFlags } from '../../types/discord.ts';
+import { InteractionFlag, InteractionResponse } from '../../types/discord.ts';
 import { readdir } from 'node:fs/promises';
 import { toError } from '../../utils/miscUtils.ts';
 import type DiscordButton from '../private/interactions/DiscordButton.ts';
@@ -15,12 +15,12 @@ class ButtonHandler {
     if (!button) return;
 
     try {
-      if (button.response !== ButtonResponse.None) {
-        if (button.response === ButtonResponse.Update) {
+      if (button.metadata.response !== InteractionResponse.None) {
+        if (button.metadata.response === InteractionResponse.Update) {
           await interaction.deferUpdate();
         } else {
           await interaction.deferReply({
-            flags: button.response === ButtonResponse.Ephemeral ? MessageFlags.Ephemeral : undefined
+            flags: button.metadata.response === InteractionResponse.Ephemeral ? MessageFlags.Ephemeral : undefined
           });
         }
       }
@@ -28,17 +28,19 @@ class ButtonHandler {
         `Button Clicked ${interaction.user.username} (${interaction.user.id}) button ${interaction.customId}`
       );
 
-      this.discord.interactionHandler.checkInteractionFlags(interaction, button);
-      await this.discord.interactionHandler.checkPermission(interaction, button.permission);
+      this.discord.interactionHandler.checkInteractionFlags(interaction, button.metadata.flags);
+      await this.discord.interactionHandler.checkPermission(interaction, button.metadata.permission);
 
-      if (button.flags.includes(InteractionFlags.GuildButton)) {
+      if (button.metadata.flags.includes(InteractionFlag.GuildButton)) {
         assert(interaction.guild);
-        interaction.member = await interaction.guild.members.fetch(interaction.user.id);
+        if (button.metadata.fetchGuildMember) {
+          interaction.member = await interaction.guild.members.fetch(interaction.user.id);
+        }
       }
 
       await button.execute(interaction);
     } catch (error) {
-      await this.discord.handleError(toError(error), interaction);
+      await this.discord.handleError(toError(error), interaction, [], button.metadata);
     }
   }
 

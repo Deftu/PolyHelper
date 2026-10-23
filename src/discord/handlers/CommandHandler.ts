@@ -9,7 +9,7 @@ import {
   REST,
   Routes
 } from 'discord.js';
-import { BasicInteractionResponse, InteractionFlags } from '../../types/discord.ts';
+import { InteractionFlag, InteractionResponse } from '../../types/discord.ts';
 import { readdir } from 'node:fs/promises';
 import { toCamelCase, upperFirst } from '../../utils/stringUtils.ts';
 import { toError } from '../../utils/miscUtils.ts';
@@ -31,7 +31,7 @@ class CommandHandler {
     if (!command) return;
 
     try {
-      if (command.response !== BasicInteractionResponse.None) {
+      if (command.metadata.response !== InteractionResponse.None) {
         await interaction.deferReply({
           flags: command.shouldEphemeral(interaction) ? MessageFlags.Ephemeral : undefined
         });
@@ -40,12 +40,12 @@ class CommandHandler {
         `Interaction Event trigged by ${interaction.user.username} (${interaction.user.id}) ran command ${interaction.commandName}`
       );
 
-      this.discord.interactionHandler.checkInteractionFlags(interaction, command);
-      await this.discord.interactionHandler.checkPermission(interaction, command.permission);
+      this.discord.interactionHandler.checkInteractionFlags(interaction, command.metadata.flags);
+      await this.discord.interactionHandler.checkPermission(interaction, command.metadata.permission);
 
-      if (command.flags.includes(InteractionFlags.GuildCommand)) {
+      if (command.metadata.flags.includes(InteractionFlag.GuildCommand)) {
         assert(interaction.guild);
-        if (command.fetchGuildMember) {
+        if (command.metadata.fetchGuildMember) {
           interaction.member = await interaction.guild.members.fetch(interaction.user.id);
         }
       }
@@ -59,7 +59,7 @@ class CommandHandler {
 
       await command.execute(interaction);
     } catch (error) {
-      await this.discord.handleError(toError(error), interaction);
+      await this.discord.handleError(toError(error), interaction, [], command.metadata);
     }
   }
 
@@ -76,7 +76,7 @@ class CommandHandler {
     if (!command) return;
     try {
       const hasPermission = await this.discord.interactionHandler
-        .checkPermission(interaction, command.permission)
+        .checkPermission(interaction, command.metadata.permission)
         .catch((error: PolyHelperError) => error.message);
       if (hasPermission) return await interaction.respond([{ name: hasPermission, value: 'missingPermission' }]);
 
@@ -90,7 +90,7 @@ class CommandHandler {
           .map((choice) => ({ name: choice.name, value: choice.value ?? choice.name }))
       );
     } catch (error) {
-      await this.discord.handleError(toError(error), interaction);
+      await this.discord.handleError(toError(error), interaction, [], command.metadata);
     }
   }
 
@@ -105,7 +105,7 @@ class CommandHandler {
     for (const file of commandFiles) {
       const command: DiscordCommand = new (await import(`../commands/${file}`)).default(this.discord);
       if (command.metadata.name) {
-        if (command.flags.includes(InteractionFlags.GuildCommand)) {
+        if (command.metadata.flags.includes(InteractionFlag.GuildCommand)) {
           command.metadata.setContexts(InteractionContextType.Guild);
           command.metadata.setIntegrationTypes(ApplicationIntegrationType.GuildInstall);
           guildCommands.push(command.metadata.toJSON());

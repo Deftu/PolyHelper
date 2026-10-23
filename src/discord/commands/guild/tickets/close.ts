@@ -1,9 +1,9 @@
 import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import {
-  BasicInteractionResponse,
-  InteractionFlags,
+  InteractionFlag,
   InteractionPermission,
+  InteractionResponse,
   type InteractionWithGuild
 } from '../../../../types/discord.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
@@ -13,11 +13,10 @@ class CloseCommand extends DiscordCommand {
     .setName('close')
     .setDescription('Close a ticket')
     .addStringOption((option) => option.setName('reason').setDescription('The reason for closing the ticket'))
-    .removeHidddenOption()
-    .setCleanErrorName('close ticket');
-  override flags: readonly InteractionFlags[] = [InteractionFlags.GuildCommand];
-  override response: BasicInteractionResponse = BasicInteractionResponse.Ephemeral;
-  override permission: InteractionPermission = InteractionPermission.Support;
+    .setCleanErrorTitle('close ticket')
+    .setFlags(InteractionFlag.GuildCommand)
+    .setResponse(InteractionResponse.Ephemeral)
+    .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const reason = interaction.options.getString('reason') || 'No reason provided';

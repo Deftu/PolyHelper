@@ -1,21 +1,14 @@
 import BasicInteractionMetadata from './BasicInteractionMetadata.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import {
-  type DiscordManagerWithClient,
-  type InteractionFlags,
-  InteractionPermission
-} from '../../../../types/discord.ts';
 import type DiscordManager from '../../../DiscordManager.ts';
 import type { ButtonInteraction, ModalSubmitInteraction, StringSelectMenuInteraction } from 'discord.js';
+import type { DiscordManagerWithClient } from '../../../../types/discord.ts';
 
 abstract class BasicInteractionData<
   Manager extends DiscordManager = DiscordManagerWithClient,
   Metadata extends object = BasicInteractionMetadata
 > {
   abstract readonly metadata: Metadata;
-  readonly permission: InteractionPermission = InteractionPermission.Anyone;
-  readonly flags: readonly InteractionFlags[] = [];
-  readonly fetchGuildMember: boolean = true;
   constructor(protected readonly discord: Manager) {}
 
   protected getArgs(interaction: ButtonInteraction | ModalSubmitInteraction | StringSelectMenuInteraction): string[] {
