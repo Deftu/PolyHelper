@@ -85,7 +85,7 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 ---
 
 This document is [auto generated](/scripts/docs/Configuration.ts) and was last updated on
-`Thu, 22 Oct 2026 19:39:17 GMT` (`1792697957227`)
+`Fri, 23 Oct 2026 04:29:45 GMT` (`1792729785344`)
 
 To update this document please run `pnpm docgen` or contact a maintainer and ask them to update it.
 
