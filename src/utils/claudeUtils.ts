@@ -1,15 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import PolyHelperError from '../private/error.ts';
 import zod from 'zod';
+import { getErrorMessage } from './miscUtils.ts';
 import type { AgentOptions, AgentUsage, ClientTool } from '../types/claude.ts';
 
 const agentModel = 'claude-sonnet-5-5';
 const wrapUpMessage =
   'You have reached your tool-call limit. Write your final reply now from what you have found so far.';
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function isToolInputParseError(error: unknown): boolean {
   return (

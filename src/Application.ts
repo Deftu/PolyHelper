@@ -78,7 +78,7 @@ class Application {
   }
 
   static getUserAgent() {
-    return `${this.package.name}/g${this.runtimeInformation.commit} (github:Polyfrost/PolyHelper)`;
+    return `${this.package.name}/git:${this.runtimeInformation.commit} (github:Polyfrost/PolyHelper)`;
   }
 }
 

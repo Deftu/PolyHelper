@@ -2,7 +2,7 @@ import BasicInteractionMetadata from '../../private/interactions/basic/BasicInte
 import DiscordModal from '../../private/interactions/DiscordModal.ts';
 import PolyHelperError from '../../../private/error.ts';
 import { InteractionFlags, type InteractionWithGuild } from '../../../types/discord.ts';
-import { getRepoCount } from '../../../utils/githubAPIUtils.ts';
+import { getRepoCount } from '../../../utils/githubUtils.ts';
 import { hasRole } from '../../../utils/discordUtils.ts';
 import type { ModalMessageModalSubmitInteraction } from 'discord.js';
 

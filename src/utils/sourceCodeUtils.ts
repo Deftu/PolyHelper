@@ -3,13 +3,13 @@ import PolyHelperError from '../private/error.ts';
 import zod from 'zod';
 import { ModrinthProject, ModrinthSearchResponse } from '../types/modrinth.ts';
 import { defineTool } from './claudeUtils.ts';
+import { getContentsURL, getGithubRepo, githubRequest } from './githubUtils.ts';
 import { isAxiosError } from 'axios';
 import type { ClientTool } from '../types/claude.ts';
 import type { CodeSearchResponse, ContentEntry } from '../types/github.ts';
 
 const maxFileLines = 250;
 const modrinthBaseURL = 'https://api.modrinth.com/v2';
-const githubRepoRegex = /github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[/#?]|$)/i;
 
 const repoInput = zod
   .string()
@@ -33,28 +33,6 @@ async function searchModrinth(query: string): Promise<ModrinthProject | undefine
   });
   const hit = (await ModrinthSearchResponse.parseAsync(response.data)).hits.at(0);
   return hit ? await getModrinthProject(hit.slug) : undefined;
-}
-
-function getGithubRepo(url: string | null | undefined): string | undefined {
-  const match = url?.match(githubRepoRegex);
-  return match ? `${match[1]}/${match[2]}` : undefined;
-}
-
-function getContentsURL(repo: string, path: string): string {
-  const encodedPath = path
-    .split('/')
-    .filter(Boolean)
-    .map((segment) => encodeURIComponent(segment))
-    .join('/');
-  return `https://api.github.com/repos/${repo}/contents/${encodedPath}`;
-}
-
-function getGithubHeaders(token: string | null, accept: string = 'application/vnd.github+json') {
-  return {
-    'Accept': accept,
-    'X-GitHub-Api-Version': '2026-03-10',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  };
 }
 
 const lookupMod = defineTool({
@@ -81,7 +59,7 @@ const lookupMod = defineTool({
   }
 });
 
-function searchCode(token: string | null): ClientTool {
+function searchCode(token: string | null = null): ClientTool {
   return defineTool({
     name: 'github_search_code',
     description:
@@ -96,9 +74,9 @@ function searchCode(token: string | null): ClientTool {
           'Code search needs a GitHub token, and none is configured. Browse with github_list_directory instead.'
         );
       }
-      const response = await Application.request<CodeSearchResponse>('https://api.github.com/search/code', {
+      const response = await githubRequest<CodeSearchResponse>('https://api.github.com/search/code', {
         params: { q: `${query} repo:${repo}`, per_page: 20 },
-        headers: getGithubHeaders(token)
+        headers: { Authorization: token !== null ? `Bearer ${token}` : undefined }
       });
       if (response.data.items.length === 0) {
         return 'No matches. Code search only covers the default branch; browse with github_list_directory instead.';
@@ -108,7 +86,7 @@ function searchCode(token: string | null): ClientTool {
   });
 }
 
-function listDirectory(token: string | null): ClientTool {
+function listDirectory(token: string | null = null): ClientTool {
   return defineTool({
     name: 'github_list_directory',
     description: 'List the files and folders at a path in a GitHub repository.',
@@ -118,9 +96,9 @@ function listDirectory(token: string | null): ClientTool {
       ref: refInput
     }),
     run: async ({ repo, path, ref }) => {
-      const response = await Application.request<ContentEntry[] | ContentEntry>(getContentsURL(repo, path), {
+      const response = await githubRequest<ContentEntry[] | ContentEntry>(getContentsURL(repo, path), {
         params: { ref },
-        headers: getGithubHeaders(token)
+        headers: { Authorization: token !== null ? `Bearer ${token}` : undefined }
       });
       if (!Array.isArray(response.data)) return `${path} is a file. Use github_read_file to read it.`;
       return response.data.map((entry) => `${entry.type === 'dir' ? 'dir ' : 'file'} ${entry.path}`).join('\n');
@@ -128,7 +106,7 @@ function listDirectory(token: string | null): ClientTool {
   });
 }
 
-function readFile(token: string | null): ClientTool {
+function readFile(token: string | null = null): ClientTool {
   return defineTool({
     name: 'github_read_file',
     description: `Read a file from a GitHub repository, with line numbers. Returns at most ${maxFileLines} lines per call; use startLine to page through longer files.`,
@@ -140,9 +118,12 @@ function readFile(token: string | null): ClientTool {
       endLine: zod.number().int().min(1).optional()
     }),
     run: async ({ repo, path, ref, startLine, endLine }) => {
-      const response = await Application.request<string>(getContentsURL(repo, path), {
+      const response = await githubRequest<string>(getContentsURL(repo, path), {
         params: { ref },
-        headers: getGithubHeaders(token, 'application/vnd.github.raw+json'),
+        headers: {
+          Authorization: token !== null ? `Bearer ${token}` : undefined,
+          Accept: 'application/vnd.github.raw+json'
+        },
         responseType: 'text'
       });
       if (String(response.headers['content-type'] ?? '').includes('application/json')) {
