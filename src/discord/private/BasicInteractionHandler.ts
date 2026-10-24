@@ -13,7 +13,7 @@ import {
   parseInteractionType
 } from '../../utils/discordUtils.ts';
 import { toError } from '../../utils/miscUtils.ts';
-import type BasicInteractionData from '../private/interactions/basic/BasicInteractionData.ts';
+import type BasicInteractionData from './interactions/basic/BasicInteractionData.ts';
 import type DiscordManager from '../DiscordManager.ts';
 
 abstract class BasicInteractionHandler<
@@ -66,7 +66,7 @@ abstract class BasicInteractionHandler<
     }
   }
 
-  abstract loadElements(): Promise<any>;
+  abstract loadElements(): Promise<unknown>;
 
   async checkPermission(interaction: BaseInteraction, permission: InteractionPermission) {
     const [

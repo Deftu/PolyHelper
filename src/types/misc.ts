@@ -18,3 +18,12 @@ export interface TicketAction {
   reason: string;
   runner: string;
 }
+
+export interface TicketSearch {
+  panelId?: string;
+  pinned?: boolean;
+  unpinned?: boolean;
+  closed?: boolean;
+  open?: boolean;
+  owner?: string;
+}

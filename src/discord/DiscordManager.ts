@@ -1,5 +1,6 @@
 import ButtonHandler from './handlers/ButtonHandler.ts';
 import CommandHandler from './handlers/CommandHandler.ts';
+import ContextMenuHandler from './handlers/ContextMenuHandler.ts';
 import MessageHandler from './handlers/MessageHandler.ts';
 import ModalHandler from './handlers/ModalHandler.ts';
 import PolyHelperError from '../private/error.ts';
@@ -34,6 +35,7 @@ import type { ValidErrors } from '../types/application.ts';
 class DiscordManager {
   readonly buttonHandler: ButtonHandler;
   readonly commandHandler: CommandHandler;
+  readonly contextMenuHandler: ContextMenuHandler;
   readonly messageHandler: MessageHandler;
   readonly modalHandler: ModalHandler;
   readonly stringSelectMenuHandler: StringSelectMenuHandler;
@@ -42,6 +44,7 @@ class DiscordManager {
   constructor(readonly application: Application) {
     this.buttonHandler = new ButtonHandler(this);
     this.commandHandler = new CommandHandler(this);
+    this.contextMenuHandler = new ContextMenuHandler(this);
     this.messageHandler = new MessageHandler(this);
     this.modalHandler = new ModalHandler(this);
     this.stringSelectMenuHandler = new StringSelectMenuHandler(this);
@@ -101,6 +104,7 @@ class DiscordManager {
     if (interaction.isButton()) await this.buttonHandler.onInteraction(interaction);
     if (interaction.isModalSubmit()) await this.modalHandler.onInteraction(interaction);
     if (interaction.isStringSelectMenu()) await this.stringSelectMenuHandler.onInteraction(interaction);
+    if (interaction.isContextMenuCommand()) await this.contextMenuHandler.onInteraction(interaction);
   }
 
   private getErrorContext(context: InteractionTypes | Message | null = null): EmbedHelperField[] {

@@ -7,14 +7,17 @@ import type {
   ChatInputCommandInteraction,
   Client,
   ColorResolvable,
+  ContextMenuCommandInteraction,
   EmbedAuthorOptions,
   Guild,
   GuildMember,
+  MessageContextMenuCommandInteraction,
   ModalMessageModalSubmitInteraction,
   ModalSubmitInteraction,
   StringSelectMenuInteraction,
   TextBasedChannel,
-  User
+  User,
+  UserContextMenuCommandInteraction
 } from 'discord.js';
 import type { ConfigDiscordEmbedsColors } from './config.ts';
 import type { DevData, DevName } from './application.ts';
@@ -70,9 +73,13 @@ export type InteractionTypes =
   | AutocompleteInteraction
   | ButtonInteraction
   | ChatInputCommandInteraction
+  | ContextMenuCommandInteraction
   | ModalMessageModalSubmitInteraction
   | ModalSubmitInteraction
   | StringSelectMenuInteraction;
+
+export type MessageAndUserContextMenuInteraction =
+  MessageContextMenuCommandInteraction | UserContextMenuCommandInteraction;
 
 export type EmbedStyleName = keyof typeof EmbedStyles;
 export interface EmbedStyleData {
