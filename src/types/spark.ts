@@ -1,5 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type { Config } from './config.ts';
+import type { Message } from 'discord.js';
 
 export type SparkReportKind = 'analysis' | 'fix';
 
@@ -28,4 +29,14 @@ export interface FixHandoff {
 export interface SparkAnalysis {
   report: string;
   handoff: FixHandoff | null;
+}
+
+export type ScanSparkLogMetadata = Pick<
+  SparkJob,
+  'sparkId' | 'supportNotes' | 'channelId' | 'channelUrl' | 'requester'
+>;
+
+export interface ScanSparkLogResult {
+  analysisMessage: Message;
+  fixMessage: Message;
 }
