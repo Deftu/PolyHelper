@@ -1,10 +1,10 @@
-import DiscordCommand from '../private/interactions/commands/DiscordCommand.ts';
-import DiscordCommandMetadata from '../private/interactions/commands/DiscordCommandMetadata.ts';
-import EmbedHelper, { SuccessEmbed } from '../private/EmbedHelper.ts';
-import PolyHelperError from '../../private/error.ts';
+import DiscordCommand from '../../private/interactions/commands/DiscordCommand.ts';
+import DiscordCommandMetadata from '../../private/interactions/commands/DiscordCommandMetadata.ts';
+import EmbedHelper, { SuccessEmbed } from '../../private/EmbedHelper.ts';
+import PolyHelperError from '../../../private/error.ts';
 import { type ChatInputCommandInteraction, PermissionFlagsBits, SlashCommandSubcommandGroupBuilder } from 'discord.js';
-import { InteractionPermission } from '../../types/discord.ts';
-import { titleCase } from '../../utils/stringUtils.ts';
+import { InteractionPermission } from '../../../types/discord.ts';
+import { titleCase } from '../../../utils/stringUtils.ts';
 
 class RuntimeSettingsCommand extends DiscordCommand {
   private createSubcommandGroup(optionName: string): SlashCommandSubcommandGroupBuilder {
