@@ -1,12 +1,7 @@
 import BasicInteractionData from './basic/BasicInteractionData.ts';
-import type DiscordManager from '../../DiscordManager.ts';
-import type { DiscordManagerWithClient } from '../../../types/discord.ts';
 import type { ModalSubmitInteraction } from 'discord.js';
 
-abstract class DiscordModal<Manager extends DiscordManager = DiscordManagerWithClient> extends BasicInteractionData<
-  ModalSubmitInteraction,
-  Manager
-> {
+abstract class DiscordModal extends BasicInteractionData<ModalSubmitInteraction> {
   protected getTextInputValue(interaction: ModalSubmitInteraction, customId: string): string | undefined {
     try {
       return interaction.fields.getTextInputValue(customId).trim();

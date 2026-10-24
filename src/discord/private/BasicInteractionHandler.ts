@@ -18,7 +18,7 @@ import type DiscordManager from '../DiscordManager.ts';
 
 abstract class BasicInteractionHandler<
   Interaction extends InteractionTypes,
-  ElementData extends BasicInteractionData<Interaction, any, any>
+  ElementData extends BasicInteractionData<Interaction, any>
 > {
   readonly elements: Collection<string, ElementData> = new Collection<string, ElementData>();
   constructor(protected readonly discord: DiscordManager) {}
