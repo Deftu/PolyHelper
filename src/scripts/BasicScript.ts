@@ -5,7 +5,7 @@ import { toError } from '../utils/miscUtils.ts';
 import type ScriptManager from './ScriptManager.ts';
 import type { ScriptOptions } from '../types/scripts.ts';
 
-class BasicScript {
+abstract class BasicScript {
   id: string;
   cron?: string;
   interval?: number;
@@ -22,15 +22,20 @@ class BasicScript {
     this.init();
   }
 
-  execute(): unknown {
-    throw new Error('Execute Method not implemented!');
+  abstract execute(): Promise<any>;
+
+  async runNow(): Promise<number> {
+    return await this.run();
   }
 
   private async run() {
+    const start = performance.now();
     try {
       await this.execute();
     } catch (error) {
-      this.scripts.application.logError(toError(error));
+      this.scripts.application.logError(toError(error), [{ name: 'Script Id', value: this.id, format: 'Block' }]);
+    } finally {
+      return performance.now() - start;
     }
   }
 

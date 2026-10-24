@@ -1,26 +1,9 @@
 import BasicInteractionData from '../basic/BasicInteractionData.ts';
-import PolyHelperError from '../../../../private/error.ts';
-import {
-  type AutocompleteOption,
-  type DiscordManagerWithClient,
-  InteractionResponse,
-  type InteractionWithGuild
-} from '../../../../types/discord.ts';
+import { type AutocompleteOption, InteractionResponse } from '../../../../types/discord.ts';
 import type DiscordCommandMetadata from './DiscordCommandMetadata.ts';
-import type DiscordManager from '../../../DiscordManager.ts';
-import type Ticket from '../../../../database/private/Ticket.ts';
 import type { AutocompleteInteraction, ChatInputCommandInteraction } from 'discord.js';
 
-abstract class DiscordCommand<Manager extends DiscordManager = DiscordManagerWithClient> extends BasicInteractionData<
-  Manager,
-  DiscordCommandMetadata
-> {
-  getTicket(interaction: InteractionWithGuild<ChatInputCommandInteraction>): Ticket {
-    const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
-    if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');
-    return ticket;
-  }
-
+abstract class DiscordCommand extends BasicInteractionData<ChatInputCommandInteraction, DiscordCommandMetadata> {
   shouldEphemeral(interaction: ChatInputCommandInteraction): boolean {
     return (
       interaction.options.getBoolean('hidden-response') ?? this.metadata.response === InteractionResponse.Ephemeral
@@ -31,8 +14,6 @@ abstract class DiscordCommand<Manager extends DiscordManager = DiscordManagerWit
   async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
     return [];
   }
-
-  abstract execute(interaction: ChatInputCommandInteraction): Promise<any>;
 }
 
 export default DiscordCommand;

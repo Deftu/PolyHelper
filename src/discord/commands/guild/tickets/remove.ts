@@ -15,7 +15,7 @@ class RemoveCommand extends DiscordCommand {
       option.setName('user').setDescription('The user you want to remove from the ticket').setRequired(true)
     )
     .setCleanErrorTitle('remove this user to the ticket')
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {

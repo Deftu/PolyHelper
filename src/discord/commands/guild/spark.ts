@@ -50,7 +50,7 @@ class SparkCommand extends DiscordCommand {
         .setDescription('What the user is seeing, e.g. FPS drops when opening their inventory')
         .setMaxLength(1000)
     )
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Support)
     .setResponse(InteractionResponse.Ephemeral)
     .setCleanErrorTitle('analyze this spark profile');

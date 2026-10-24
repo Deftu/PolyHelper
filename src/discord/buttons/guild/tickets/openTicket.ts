@@ -7,7 +7,7 @@ import { InteractionFlag, InteractionResponse, type InteractionWithGuild } from 
 
 class OpenTicketButton extends DiscordButton {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('openTicket')
-    .setFlags(InteractionFlag.GuildButton)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setResponse(InteractionResponse.Ephemeral)
     .setFetchGuildMember(false);
 

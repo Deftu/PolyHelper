@@ -7,7 +7,7 @@ import { hasRole } from '../../../utils/discordUtils.ts';
 
 class ShowDevEntryButton extends DiscordButton {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('show-dev-entry')
-    .setFlags(InteractionFlag.GuildButton)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setResponse(InteractionResponse.None);
 
   override async execute(interaction: InteractionWithGuild<ButtonInteraction>) {

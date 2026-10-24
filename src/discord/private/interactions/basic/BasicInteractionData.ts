@@ -1,15 +1,20 @@
 import BasicInteractionMetadata from './BasicInteractionMetadata.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import type DiscordManager from '../../../DiscordManager.ts';
-import type { ButtonInteraction, ModalSubmitInteraction, StringSelectMenuInteraction } from 'discord.js';
-import type { DiscordManagerWithClient } from '../../../../types/discord.ts';
+import type Ticket from '../../../../database/private/Ticket.ts';
+import type {
+  BaseInteraction,
+  ButtonInteraction,
+  ModalSubmitInteraction,
+  StringSelectMenuInteraction
+} from 'discord.js';
+import type { DiscordManagerWithClient, InteractionWithGuild } from '../../../../types/discord.ts';
 
 abstract class BasicInteractionData<
-  Manager extends DiscordManager = DiscordManagerWithClient,
+  Interaction extends BaseInteraction,
   Metadata extends object = BasicInteractionMetadata
 > {
   abstract readonly metadata: Metadata;
-  constructor(protected readonly discord: Manager) {}
+  constructor(protected readonly discord: DiscordManagerWithClient) {}
 
   protected getArgs(interaction: ButtonInteraction | ModalSubmitInteraction | StringSelectMenuInteraction): string[] {
     if (!(this.metadata instanceof BasicInteractionMetadata)) throw new PolyHelperError('Unsuported interaction data');
@@ -19,6 +24,14 @@ abstract class BasicInteractionData<
     if (!this.metadata.ids.includes(id)) throw new PolyHelperError('Could not get the args of this interaction');
     return split.slice(1);
   }
+
+  getTicket(interaction: InteractionWithGuild<Interaction>): Ticket {
+    const ticket = this.discord.application.database.getTicketByThreadId(interaction.channel.id);
+    if (!ticket) throw new PolyHelperError('This is not a ticket. Please run this command inside of a ticket');
+    return ticket;
+  }
+
+  abstract execute(interaction: Interaction): Promise<any>;
 }
 
 export default BasicInteractionData;

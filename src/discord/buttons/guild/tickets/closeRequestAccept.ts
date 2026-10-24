@@ -7,7 +7,7 @@ import type { ButtonInteraction } from 'discord.js';
 
 class CloseRequestAcceptButton extends DiscordButton {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('closeRequestAccept').setFlags(
-    InteractionFlag.GuildButton
+    InteractionFlag.RequiresGuild
   );
 
   override async execute(interaction: InteractionWithGuild<ButtonInteraction>) {

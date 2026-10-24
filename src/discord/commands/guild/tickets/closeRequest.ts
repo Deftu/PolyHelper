@@ -16,7 +16,7 @@ class CloseRequestCommand extends DiscordCommand {
     .addStringOption((option) => option.setName('auto-close').setDescription('The auto close time (e.g. 1d, 72h, 2w)'))
     .removeHidddenOption()
     .setCleanErrorTitle('close request this ticket')
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {

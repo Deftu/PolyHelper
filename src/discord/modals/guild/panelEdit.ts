@@ -6,7 +6,7 @@ import type { ModalMessageModalSubmitInteraction } from 'discord.js';
 
 class PanelEditModal extends DiscordModal {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelEdit')
-    .setFlags(InteractionFlag.GuildModal)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setResponse(InteractionResponse.Ephemeral);
 
   override async execute(interaction: InteractionWithGuild<ModalMessageModalSubmitInteraction>) {

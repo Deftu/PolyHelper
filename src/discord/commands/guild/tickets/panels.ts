@@ -42,7 +42,7 @@ class TicketPanelsCommand extends DiscordCommand {
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setResponse(InteractionResponse.None)
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setFetchGuildMember(false);
 
   // eslint-disable-next-line require-await

@@ -16,7 +16,7 @@ class DebugTicketsCommand extends DiscordCommand {
     .setName('debug-tickets')
     .addSubcommand((option) => option.setName('refresh-panels-message').setDescription('refresh the panels message'))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setResponse(InteractionResponse.Ephemeral)
     .setPermission(InteractionPermission.Admin);
 

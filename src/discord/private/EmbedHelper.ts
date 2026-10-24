@@ -73,18 +73,20 @@ export default class EmbedHelper extends EmbedBuilder {
   }
 
   private formatFieldValue({ value, format }: EmbedHelperField): string {
-    if (format === 'Small Block') return `\`${value}\``;
-    if (format === 'Block') return `\`\`\`${value}\`\`\``;
-    if (format === 'Timestamp') return `<t:${value}:F> (<t:${value}:R>)`;
-    if (format === 'Boolean') return value ? ':white_check_mark: Yes' : ':x: No';
+    if (format === 'Small Block') {
+      return `\`${value}\``;
+    } else if (format === 'Block') {
+      return `\`\`\`${value}\`\`\``;
+    } else if (format === 'Timestamp') {
+      return `<t:${value}:F> (<t:${value}:R>)`;
+    } else if (format === 'Boolean') {
+      return value ? ':white_check_mark: Yes' : ':x: No';
+    } else if (format === 'Discord User') {
+      return typeof value === 'string'
+        ? `<@${value}> (\`${value}\`)`
+        : `\`@${value.username}\` (\`${value.id}\`) <@${value.id}>`;
+    }
     return value;
-  }
-
-  addDiscordFields(discordId: string, titlePrefix: string = ''): this {
-    return this.addFields(
-      { name: `${titlePrefix.trim()} Discord`.trim(), value: `<@${discordId}>` },
-      { name: `${titlePrefix.trim()} Discord ID`.trim(), value: discordId, format: 'Block' }
-    );
   }
 
   setAIFooter(message: string = 'AI-generated. Check it before acting on it.'): this {
@@ -122,10 +124,8 @@ export class TicketEmbed extends SuccessEmbed {
       { name: 'Ticket ID', value: ticket.id, format: 'Block' },
       { name: 'Panel ID', value: ticket.panelId, format: 'Block' },
       { name: 'Thread', value: `<#${ticket.threadId}>` },
-      { name: 'Open Timestamp', value: Math.floor(ticket.openingTimestamp / 1000), format: 'Timestamp' }
-    );
-    this.addDiscordFields(ticket.owner, 'Opener');
-    this.addFields(
+      { name: 'Open Timestamp', value: Math.floor(ticket.openingTimestamp / 1000), format: 'Timestamp' },
+      { name: 'Ticket Owner', value: ticket.owner, format: 'Discord User' },
       { name: 'Is Closed', value: ticket.closed, format: 'Boolean' },
       { name: 'Is Pinned', value: ticket.pinned, format: 'Boolean' }
     );

@@ -14,7 +14,7 @@ class PinTicketCommand extends DiscordCommand {
     .setDescription('Pin a ticket')
     .addStringOption((option) => option.setName('reason').setDescription('The reason for pinning the ticket'))
     .setCleanErrorTitle('pin this ticket')
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setResponse(InteractionResponse.Ephemeral)
     .setPermission(InteractionPermission.Support);
 

@@ -7,7 +7,7 @@ import type { ButtonInteraction } from 'discord.js';
 
 class PanelEditButton extends DiscordButton {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('panelEdit')
-    .setFlags(InteractionFlag.GuildButton)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setResponse(InteractionResponse.None)
     .setFetchGuildMember(false);
 
