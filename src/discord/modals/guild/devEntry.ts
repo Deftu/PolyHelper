@@ -8,7 +8,7 @@ import type { ModalMessageModalSubmitInteraction } from 'discord.js';
 
 class DevEntryModal extends DiscordModal {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('dev-entry').setFlags(
-    InteractionFlag.GuildModal
+    InteractionFlag.RequiresGuild
   );
 
   override async execute(interaction: InteractionWithGuild<ModalMessageModalSubmitInteraction>) {

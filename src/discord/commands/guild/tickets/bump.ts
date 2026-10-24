@@ -11,7 +11,7 @@ class BumpCommand extends DiscordCommand {
     .setDescription('Bumps a ticket to encourage closing')
     .setCleanErrorTitle('bump this ticket')
     .removeHidddenOption()
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {

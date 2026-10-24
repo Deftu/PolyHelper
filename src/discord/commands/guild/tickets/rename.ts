@@ -12,7 +12,7 @@ class RenameCommand extends DiscordCommand {
       option.setName('name').setDescription('Supported variables - {username} {id} {panelName} {cleanPanelName}')
     )
     .setCleanErrorTitle('renaming this ticket')
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {

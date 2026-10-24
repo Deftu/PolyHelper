@@ -14,7 +14,7 @@ class CloseCommand extends DiscordCommand {
     .setDescription('Close a ticket')
     .addStringOption((option) => option.setName('reason').setDescription('The reason for closing the ticket'))
     .setCleanErrorTitle('close ticket')
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setResponse(InteractionResponse.Ephemeral)
     .setPermission(InteractionPermission.Support);
 

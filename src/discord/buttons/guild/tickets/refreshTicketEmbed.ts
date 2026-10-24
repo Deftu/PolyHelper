@@ -6,7 +6,7 @@ import type { ButtonInteraction } from 'discord.js';
 
 class RefreshTicketEmbedButton extends DiscordButton {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('refreshTicketEmbed')
-    .setFlags(InteractionFlag.GuildButton)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setResponse(InteractionResponse.Update)
     .setFetchGuildMember(false);
 

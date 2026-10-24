@@ -14,7 +14,7 @@ class CountingBlockCommand extends DiscordCommand {
     .setDescription('Unblock a user from counting')
     .addUserOption((option) => option.setName('user').setDescription('The user to unblock').setRequired(true))
     .addStringOption((option) => option.setName('reason').setDescription('The reason to log'))
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Moderator);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {

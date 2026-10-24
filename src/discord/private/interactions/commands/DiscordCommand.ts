@@ -12,6 +12,7 @@ import type Ticket from '../../../../database/private/Ticket.ts';
 import type { AutocompleteInteraction, ChatInputCommandInteraction } from 'discord.js';
 
 abstract class DiscordCommand<Manager extends DiscordManager = DiscordManagerWithClient> extends BasicInteractionData<
+  ChatInputCommandInteraction,
   Manager,
   DiscordCommandMetadata
 > {
@@ -31,8 +32,6 @@ abstract class DiscordCommand<Manager extends DiscordManager = DiscordManagerWit
   async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
     return [];
   }
-
-  abstract execute(interaction: ChatInputCommandInteraction): Promise<any>;
 }
 
 export default DiscordCommand;

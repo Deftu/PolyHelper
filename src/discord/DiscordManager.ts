@@ -1,6 +1,5 @@
 import ButtonHandler from './handlers/ButtonHandler.ts';
 import CommandHandler from './handlers/CommandHandler.ts';
-import InteractionHandler from './handlers/InteractionHandler.ts';
 import MessageHandler from './handlers/MessageHandler.ts';
 import ModalHandler from './handlers/ModalHandler.ts';
 import PolyHelperError from '../private/error.ts';
@@ -35,7 +34,6 @@ import type { ValidErrors } from '../types/application.ts';
 class DiscordManager {
   readonly buttonHandler: ButtonHandler;
   readonly commandHandler: CommandHandler;
-  readonly interactionHandler: InteractionHandler;
   readonly messageHandler: MessageHandler;
   readonly modalHandler: ModalHandler;
   readonly stringSelectMenuHandler: StringSelectMenuHandler;
@@ -44,7 +42,6 @@ class DiscordManager {
   constructor(readonly application: Application) {
     this.buttonHandler = new ButtonHandler(this);
     this.commandHandler = new CommandHandler(this);
-    this.interactionHandler = new InteractionHandler(this);
     this.messageHandler = new MessageHandler(this);
     this.modalHandler = new ModalHandler(this);
     this.stringSelectMenuHandler = new StringSelectMenuHandler(this);
@@ -56,16 +53,16 @@ class DiscordManager {
     });
     client.discordManager = this;
     this.client = client;
-    await this.commandHandler.deployCommands();
-    await this.buttonHandler.loadButtons();
-    await this.modalHandler.loadModals();
-    await this.stringSelectMenuHandler.loadStringSelectMenus();
+    await this.commandHandler.loadElements();
+    await this.buttonHandler.loadElements();
+    await this.modalHandler.loadElements();
+    await this.stringSelectMenuHandler.loadElements();
     this.client.on(Events.ClientReady, (client) => this.onReady(client));
     this.client.on(Events.MessageCreate, (message) =>
       this.messageHandler.onMessage(message).catch((e) => this.handleError(toError(e)))
     );
     this.client.on(Events.InteractionCreate, (interaction) =>
-      this.interactionHandler.onInteraction(interaction).catch((e) => this.handleError(toError(e)))
+      this.onInteraction(interaction).catch((e) => this.handleError(toError(e)))
     );
     this.client.login(this.application.config.discord.token).catch((e) => this.handleError(toError(e)));
   }
@@ -98,29 +95,32 @@ class DiscordManager {
     await this.loadGuild();
   }
 
+  private async onInteraction(interaction: BaseInteraction) {
+    if (interaction.isChatInputCommand()) await this.commandHandler.onInteraction(interaction);
+    if (interaction.isAutocomplete()) await this.commandHandler.onAutocomplete(interaction);
+    if (interaction.isButton()) await this.buttonHandler.onInteraction(interaction);
+    if (interaction.isModalSubmit()) await this.modalHandler.onInteraction(interaction);
+    if (interaction.isStringSelectMenu()) await this.stringSelectMenuHandler.onInteraction(interaction);
+  }
+
   private getErrorContext(context: InteractionTypes | Message | null = null): EmbedHelperField[] {
     const extraData: EmbedHelperField[] = [];
     if (!context) return extraData;
     if (context instanceof BaseInteraction) {
       extraData.push({ name: 'Source', value: 'Discord Interaction' });
-      extraData.push({
-        name: 'User',
-        value: `\`@${context.user.username}\` (\`${context.user.id}\`) <@${context.user.id}>`
-      });
+      extraData.push({ name: 'User', value: context.user, format: 'Discord User' });
       extraData.push({ name: 'Interaction Type', value: parseInteractionType(context.type) });
       if (context.isCommand()) {
         extraData.push({ name: 'Command', value: context.commandName, format: 'Small Block' });
       }
-      if (context.isButton()) {
-        extraData.push({ name: 'Button', value: context.customId, format: 'Small Block' });
+      if (context.isMessageComponent()) {
+        extraData.push({ name: 'Id', value: context.customId, format: 'Small Block' });
+        extraData.push({ name: 'Message', value: context.message.url });
       }
     }
     if (context instanceof Message) {
       extraData.push({ name: 'Source', value: 'Discord Message' });
-      extraData.push({
-        name: 'User',
-        value: `\`@${context.author.username}\` (\`${context.author.id}\`) <@${context.author.id}>`
-      });
+      extraData.push({ name: 'Author', value: context.author, format: 'Discord User' });
       extraData.push({ name: 'URL', value: context.url });
     }
     if (context.channel) {

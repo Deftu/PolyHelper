@@ -13,7 +13,8 @@ import type {
   ModalMessageModalSubmitInteraction,
   ModalSubmitInteraction,
   StringSelectMenuInteraction,
-  TextBasedChannel
+  TextBasedChannel,
+  User
 } from 'discord.js';
 import type { ConfigDiscordEmbedsColors } from './config.ts';
 import type { DevData, DevName } from './application.ts';
@@ -26,10 +27,7 @@ declare module 'discord.js' {
 }
 
 export enum InteractionFlag {
-  GuildCommand,
-  GuildButton,
-  GuildModal,
-  GuildStringSelectMenu
+  RequiresGuild
 }
 
 export enum InteractionPermission {
@@ -87,8 +85,9 @@ export interface EmbedStyleData {
   timestamp?: Date | number | 'Now';
 }
 
-export type EmbedHelperValueFormatter = 'Small Block' | 'Block' | 'Timestamp' | 'Boolean';
+export type EmbedHelperValueFormatter = 'Small Block' | 'Block' | 'Timestamp' | 'Boolean' | 'Discord User';
 export type EmbedHelperField =
   | (APIEmbedField & { format?: 'Small Block' | 'Block' })
   | (Omit<APIEmbedField, 'value'> & { value: number; format: 'Timestamp' })
-  | (Omit<APIEmbedField, 'value'> & { value: boolean; format: 'Boolean' });
+  | (Omit<APIEmbedField, 'value'> & { value: boolean; format: 'Boolean' })
+  | (Omit<APIEmbedField, 'value'> & { value: User | string; format: 'Discord User' });

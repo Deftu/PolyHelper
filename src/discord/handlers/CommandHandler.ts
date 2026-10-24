@@ -1,9 +1,8 @@
-import assert from 'node:assert';
+import BasicInteractionHandler from '../private/BasicInteractionHandler.ts';
 import {
   ApplicationIntegrationType,
   AutocompleteInteraction,
   ChatInputCommandInteraction,
-  Collection,
   InteractionContextType,
   MessageFlags,
   REST,
@@ -14,53 +13,29 @@ import { readdir } from 'node:fs/promises';
 import { toCamelCase, upperFirst } from '../../utils/stringUtils.ts';
 import { toError } from '../../utils/miscUtils.ts';
 import type DiscordCommand from '../private/interactions/commands/DiscordCommand.ts';
-import type DiscordCommandMetadata from '../private/interactions/commands/DiscordCommandMetadata.ts';
-import type DiscordManager from '../DiscordManager.ts';
 import type PolyHelperError from '../../private/error.ts';
 
-class CommandHandler {
-  readonly commands: Collection<string, DiscordCommand> = new Collection<string, DiscordCommand>();
-  constructor(private readonly discord: DiscordManager) {}
-
-  getCommandMetadata(interaction: ChatInputCommandInteraction): DiscordCommandMetadata | undefined {
-    return this.commands.get(interaction.commandName)?.metadata;
+class CommandHandler extends BasicInteractionHandler<ChatInputCommandInteraction, DiscordCommand> {
+  override getRawIdFromInteraction(interaction: ChatInputCommandInteraction) {
+    return interaction.commandName;
   }
 
-  async onCommand(interaction: ChatInputCommandInteraction) {
-    const command = this.commands.get(interaction.commandName);
-    if (!command) return;
+  override async handleResponse(interaction: ChatInputCommandInteraction, element: DiscordCommand) {
+    if (element.metadata.response === InteractionResponse.None) return;
+    await interaction.deferReply({ flags: element.shouldEphemeral(interaction) ? MessageFlags.Ephemeral : undefined });
+  }
 
-    try {
-      if (command.metadata.response !== InteractionResponse.None) {
-        await interaction.deferReply({
-          flags: command.shouldEphemeral(interaction) ? MessageFlags.Ephemeral : undefined
-        });
+  override async beforeExectue(interaction: ChatInputCommandInteraction, element: DiscordCommand): Promise<boolean> {
+    const subcommand = this.checkForSubcommand(interaction);
+    if (subcommand) {
+      const funcName = `execute${upperFirst(toCamelCase(subcommand))}`;
+      const stupidCommand = element as any;
+      if (typeof stupidCommand[funcName] === 'function') {
+        await stupidCommand[funcName](interaction);
+        return true;
       }
-      console.discord(
-        `Interaction Event trigged by ${interaction.user.username} (${interaction.user.id}) ran command ${interaction.commandName}`
-      );
-
-      this.discord.interactionHandler.checkInteractionFlags(interaction, command.metadata.flags);
-      await this.discord.interactionHandler.checkPermission(interaction, command.metadata.permission);
-
-      if (command.metadata.flags.includes(InteractionFlag.GuildCommand)) {
-        assert(interaction.guild);
-        if (command.metadata.fetchGuildMember) {
-          interaction.member = await interaction.guild.members.fetch(interaction.user.id);
-        }
-      }
-
-      const subcommand = this.checkForSubcommand(interaction);
-      if (subcommand) {
-        const funcName = `execute${upperFirst(toCamelCase(subcommand))}`;
-        const stupidCommand = command as any;
-        if (typeof stupidCommand[funcName] === 'function') return await stupidCommand[funcName](interaction);
-      }
-
-      await command.execute(interaction);
-    } catch (error) {
-      await this.discord.handleError(toError(error), interaction, [], command.metadata);
     }
+    return false;
   }
 
   private checkForSubcommand(interaction: ChatInputCommandInteraction): string | null {
@@ -72,15 +47,15 @@ class CommandHandler {
   }
 
   async onAutocomplete(interaction: AutocompleteInteraction) {
-    const command = this.commands.get(interaction.commandName);
-    if (!command) return;
+    const element = this.elements.get(interaction.commandName);
+    if (!element) return;
     try {
-      const hasPermission = await this.discord.interactionHandler
-        .checkPermission(interaction, command.metadata.permission)
-        .catch((error: PolyHelperError) => error.message);
+      const hasPermission = await this.checkPermission(interaction, element.metadata.permission).catch(
+        (error: PolyHelperError) => error.message
+      );
       if (hasPermission) return await interaction.respond([{ name: hasPermission, value: 'missingPermission' }]);
 
-      const options = await command.autocomplete(interaction);
+      const options = await element.autocomplete(interaction);
       if (options.length === 0) options.push({ name: 'No choices found', value: 'UNKNOWN' });
       const focusedOption = interaction.options.getFocused(true);
       await interaction.respond(
@@ -90,12 +65,12 @@ class CommandHandler {
           .map((choice) => ({ name: choice.name, value: choice.value ?? choice.name }))
       );
     } catch (error) {
-      await this.discord.handleError(toError(error), interaction, [], command.metadata);
+      await this.discord.handleError(toError(error), interaction, [], element.metadata);
     }
   }
 
-  async deployCommands() {
-    this.commands.clear();
+  override async loadElements() {
+    this.elements.clear();
     const commandFiles = await readdir('./src/discord/commands/', { recursive: true, encoding: 'utf-8' }).then(
       (files) => files.filter((file) => file.endsWith('.ts'))
     );
@@ -105,14 +80,14 @@ class CommandHandler {
     for (const file of commandFiles) {
       const command: DiscordCommand = new (await import(`../commands/${file}`)).default(this.discord);
       if (command.metadata.name) {
-        if (command.metadata.flags.includes(InteractionFlag.GuildCommand)) {
+        if (command.metadata.flags.includes(InteractionFlag.RequiresGuild)) {
           command.metadata.setContexts(InteractionContextType.Guild);
           command.metadata.setIntegrationTypes(ApplicationIntegrationType.GuildInstall);
           guildCommands.push(command.metadata.toJSON());
         } else {
           commands.push(command.metadata.toJSON());
         }
-        this.commands.set(command.metadata.name, command);
+        this.elements.set(command.metadata.name, command);
       }
     }
 

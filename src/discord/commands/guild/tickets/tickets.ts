@@ -42,7 +42,7 @@ class TicketsCommand extends DiscordCommand {
         .addBooleanOption((option) => option.setName('closed').setDescription('Is the ticket currently closed'))
         .addBooleanOption((option) => option.setName('open').setDescription('Is the ticket currently open'))
     )
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Support);
 
   // eslint-disable-next-line require-await

@@ -3,9 +3,10 @@ import type DiscordManager from '../../DiscordManager.ts';
 import type { DiscordManagerWithClient } from '../../../types/discord.ts';
 import type { ModalSubmitInteraction } from 'discord.js';
 
-abstract class DiscordModal<
-  Manager extends DiscordManager = DiscordManagerWithClient
-> extends BasicInteractionData<Manager> {
+abstract class DiscordModal<Manager extends DiscordManager = DiscordManagerWithClient> extends BasicInteractionData<
+  ModalSubmitInteraction,
+  Manager
+> {
   protected getTextInputValue(interaction: ModalSubmitInteraction, customId: string): string | undefined {
     try {
       return interaction.fields.getTextInputValue(customId).trim();
@@ -29,8 +30,6 @@ abstract class DiscordModal<
       return defaultValue;
     }
   }
-
-  abstract execute(interaction: ModalSubmitInteraction): Promise<any>;
 }
 
 export default DiscordModal;

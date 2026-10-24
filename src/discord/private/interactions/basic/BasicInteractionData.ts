@@ -1,10 +1,16 @@
 import BasicInteractionMetadata from './BasicInteractionMetadata.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import type DiscordManager from '../../../DiscordManager.ts';
-import type { ButtonInteraction, ModalSubmitInteraction, StringSelectMenuInteraction } from 'discord.js';
+import type {
+  BaseInteraction,
+  ButtonInteraction,
+  ModalSubmitInteraction,
+  StringSelectMenuInteraction
+} from 'discord.js';
 import type { DiscordManagerWithClient } from '../../../../types/discord.ts';
 
 abstract class BasicInteractionData<
+  Interaction extends BaseInteraction,
   Manager extends DiscordManager = DiscordManagerWithClient,
   Metadata extends object = BasicInteractionMetadata
 > {
@@ -19,6 +25,8 @@ abstract class BasicInteractionData<
     if (!this.metadata.ids.includes(id)) throw new PolyHelperError('Could not get the args of this interaction');
     return split.slice(1);
   }
+
+  abstract execute(interaction: Interaction): Promise<any>;
 }
 
 export default BasicInteractionData;

@@ -5,8 +5,6 @@ import type { StringSelectMenuInteraction } from 'discord.js';
 
 abstract class DiscordStringSelectMenu<
   Manager extends DiscordManager = DiscordManagerWithClient
-> extends BasicInteractionData<Manager> {
-  abstract execute(interaction: StringSelectMenuInteraction): Promise<any>;
-}
+> extends BasicInteractionData<StringSelectMenuInteraction, Manager> {}
 
 export default DiscordStringSelectMenu;

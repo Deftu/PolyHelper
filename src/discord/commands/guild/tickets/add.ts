@@ -14,7 +14,7 @@ class AddCommand extends DiscordCommand {
       option.setName('user').setDescription('The user you want to add to the ticket').setRequired(true)
     )
     .setCleanErrorTitle('add this user to the ticket')
-    .setFlags(InteractionFlag.GuildCommand)
+    .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
