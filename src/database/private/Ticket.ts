@@ -77,9 +77,12 @@ class Ticket {
     return message;
   }
 
-  async rename(name: string = this.panel.defaultTicketName, shouldReplaceVariables: boolean = true): Promise<Ticket> {
+  async rename(
+    name: string = this.panel.defaultTicketName,
+    options: { shouldReplaceVariables?: boolean; runner?: string } = {}
+  ): Promise<Ticket> {
     const thread = await this.getThread();
-    if (shouldReplaceVariables) {
+    if (options.shouldReplaceVariables !== false) {
       const discord = await this.getDiscord();
       name = replaceVariables(name, {
         username: discord.user.username,
@@ -91,6 +94,15 @@ class Ticket {
     name = name.replaceAll(this.panel.fullPinnedTicketPrefix, '').trim();
     if (this.pinned) name = `${this.panel.fullPinnedTicketPrefix} ${name}`;
     await thread.setName(name);
+    if (options.runner) {
+      await thread.send({
+        embeds: [
+          new EmbedHelper()
+            .setTitle('Ticket Renamed')
+            .setDescription(`This ticket has been renamed by <@${options.runner}>`)
+        ]
+      });
+    }
     return this.manager.updateTicket({ ...this.toJSON(), name });
   }
 
