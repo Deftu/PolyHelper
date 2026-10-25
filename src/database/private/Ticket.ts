@@ -185,7 +185,11 @@ class Ticket {
           new ButtonBuilder()
             .setLabel('Refresh Embed')
             .setStyle(ButtonStyle.Secondary)
-            .setCustomId(`refreshTicketEmbed:${this.id}`)
+            .setCustomId(`refreshTicketEmbed:${this.id}`),
+          new ButtonBuilder()
+            .setLabel('Join Thread')
+            .setStyle(ButtonStyle.Success)
+            .setCustomId(`joinThread:${this.threadId}`)
         )
       ]
     };

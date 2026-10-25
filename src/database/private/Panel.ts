@@ -1,7 +1,8 @@
 import EmbedHelper from '../../discord/private/EmbedHelper.ts';
 import { replaceVariables } from '../../utils/stringUtils.ts';
+import type DatabaseManager from '../DatabaseManager.ts';
 import type { BaseMessageOptions, User } from 'discord.js';
-import type { DatabasePanel } from '../../types/database.ts';
+import type { DatabasePanel, TicketSearchFilters } from '../../types/database.ts';
 
 class Panel {
   readonly id: DatabasePanel['id'];
@@ -17,7 +18,10 @@ class Panel {
   readonly defaultTicketName: DatabasePanel['defaultTicketName'];
   readonly supportRole: DatabasePanel['supportRole'];
   readonly #enabled: DatabasePanel['enabled'];
-  constructor(data: DatabasePanel) {
+  constructor(
+    data: DatabasePanel,
+    private readonly manager: DatabaseManager
+  ) {
     this.id = data.id;
     this.name = data.name;
     this.cleanName = data.cleanName;
@@ -52,6 +56,29 @@ class Panel {
             replaceVariables(this.openingMessage, { mention: `<@${user.id}>`, username: user.username, id: user.id })
           )
       ]
+    };
+  }
+
+  getTickets(filters: Omit<TicketSearchFilters, 'panelId'> = {}) {
+    return this.manager.getTickets({ ...filters, panelId: this.id });
+  }
+
+  getOverviewFields(): {
+    id: DatabasePanel['id'];
+    name: DatabasePanel['name'];
+    enabled: boolean;
+    tickets: number;
+    openTickets: number;
+    pinnedTickets: number;
+  } {
+    const tickets = this.getTickets();
+    return {
+      id: this.id,
+      name: this.name,
+      enabled: this.enabled,
+      tickets: tickets.length,
+      openTickets: tickets.filter((ticket) => !ticket.closed).length,
+      pinnedTickets: tickets.filter((ticket) => ticket.pinned).length
     };
   }
 

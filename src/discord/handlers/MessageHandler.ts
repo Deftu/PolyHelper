@@ -10,7 +10,6 @@ class MessageHandler {
 
   async onMessage(message: Message) {
     if (message.type === MessageType.ThreadCreated) await this.onThreadCreated(message);
-    if (message.type === MessageType.ChannelPinnedMessage) await this.onPinMessage(message);
     if (
       this.discord.application.config.discord.minecraftLogCleaner &&
       !message.flags.has(MessageFlags.SuppressNotifications) &&
@@ -21,18 +20,13 @@ class MessageHandler {
     }
   }
 
-  async onThreadCreated(message: Message) {
+  private async onThreadCreated(message: Message) {
     if (message.author.id !== message.client.user.id) return;
     if (message.channel.id !== this.discord.application.config.discord.channels.support) return;
     await message.delete().catch();
   }
 
-  async onPinMessage(message: Message) {
-    if (message.author.id !== message.client.user.id) return;
-    await message.delete().catch();
-  }
-
-  async onLogMessage(message: Message) {
+  private async onLogMessage(message: Message) {
     try {
       if (!message.channel.isSendable()) return;
       const logURL = findLogURL(message);

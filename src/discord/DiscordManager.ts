@@ -130,6 +130,7 @@ class DiscordManager {
     if (context.channel) {
       extraData.push({ name: 'Channel', value: `<#${context.channel.id}> (\`${context.channel.id}\`)` });
     }
+    if (context.guild) extraData.push({ name: 'Guild', value: `\`${context.guild.name}\` (\`${context.guild.id}\`)` });
     return extraData;
   }
 

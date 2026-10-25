@@ -44,7 +44,7 @@ abstract class BasicInteractionHandler<
       await this.handleResponse(interaction, element);
 
       console.discord(
-        `Interaction ${parseInteractionType(interaction.type)} triggered by @${interaction.user.username} (${interaction.user.id}) | ${this.getIdFromInteraction(interaction)}`
+        `Interaction ${parseInteractionType(interaction.type)} triggered by @${interaction.user.username} (${interaction.user.id}) | ${this.getIdFromInteraction(interaction)} (${this.getRawIdFromInteraction(interaction)})`
       );
 
       this.checkInteractionFlags(interaction, element.metadata.flags);
