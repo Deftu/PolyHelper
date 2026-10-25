@@ -65,7 +65,7 @@ class DatabaseManager extends BasicDatabaseManager {
     const id: DatabasePanel['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabasePanel>(
-        'INSERT INTO panels (id, name, cleanName, title, description, buttonLabel, buttonEmoji, openingMessage, maxOpenTickets, pinnedTicketPrefix, defaultTicketName, supportRole, enabled) VALUES (@id, @name, @cleanName, @title, @description, @buttonLabel, @buttonEmoji, @openingMessage, @maxOpenTickets, @pinnedTicketPrefix, @defaultTicketName, @supportRole, @enabled)'
+        'INSERT INTO panels (id, name, cleanName, title, description, buttonLabel, buttonEmoji, openingMessage, maxOpenTickets, pinnedTicketPrefix, defaultTicketName, pingSupportRoleOnOpen, enabled) VALUES (@id, @name, @cleanName, @title, @description, @buttonLabel, @buttonEmoji, @openingMessage, @maxOpenTickets, @pinnedTicketPrefix, @defaultTicketName, @pingSupportRoleOnOpen, @enabled)'
       )
       .run({ ...panelData, id });
     const panel = this.getPanel(id);
@@ -86,7 +86,7 @@ class DatabaseManager extends BasicDatabaseManager {
     if (!panel) throw new PolyHelperError('Could not find this panel?');
     this.db
       .prepare<DatabasePanel>(
-        'UPDATE panels SET name = @name, cleanName = @cleanName, title = @title, description = @description, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, maxOpenTickets = @maxOpenTickets, pinnedTicketPrefix = @pinnedTicketPrefix, defaultTicketName = @defaultTicketName, supportRole = @supportRole, enabled = @enabled WHERE id = @id'
+        'UPDATE panels SET name = @name, cleanName = @cleanName, title = @title, description = @description, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, maxOpenTickets = @maxOpenTickets, pinnedTicketPrefix = @pinnedTicketPrefix, defaultTicketName = @defaultTicketName, pingSupportRoleOnOpen = @pingSupportRoleOnOpen, enabled = @enabled WHERE id = @id'
       )
       .run(data);
     const newPanel = this.getPanel(data.id);

@@ -30,6 +30,7 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 | `polyfrostTeam` | `string` | Discord role id |
 | `moderator`     | `string` | Discord role id |
 | `support`       | `string` | Discord role id |
+| `ticketPing`    | `string` | Discord role id |
 | `noCounting`    | `string` | Discord role id |
 | `noGiveaway`    | `string` | Discord role id |
 | `devAccess`     | `string` | Discord role id |
@@ -73,7 +74,7 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 ---
 
 This document is [auto generated](/scripts/docs/Configuration.ts) and was last updated on
-`Thu, 22 Oct 2026 10:22:27 GMT` (`1792664547893`)
+`Sun, 25 Oct 2026 05:11:47 GMT` (`1792905107899`)
 
 To update this document please run `pnpm docgen` or contact a maintainer and ask them to update it.
 

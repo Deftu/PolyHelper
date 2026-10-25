@@ -31,7 +31,7 @@ export const DatabasePanel = zod.object({
   maxOpenTickets: zod.int().positive(),
   pinnedTicketPrefix: zod.string(),
   defaultTicketName: zod.string(),
-  supportRole: zod.string().nullable(),
+  pingSupportRoleOnOpen: DatabaseBoolean,
   enabled: DatabaseBoolean
 });
 export type DatabasePanel = zod.infer<typeof DatabasePanel>;

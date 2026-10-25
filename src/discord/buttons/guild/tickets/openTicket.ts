@@ -55,8 +55,10 @@ class OpenTicketButton extends DiscordButton {
     const startingMessage = await thread.send(panel.getStartingMessageData(interaction.user));
     await startingMessage.pin();
 
-    if (panel.supportRole) {
-      const pingMessage = await thread.send({ content: `<@&${panel.supportRole}>` });
+    if (panel.pingSupportRoleOnOpen) {
+      const pingMessage = await thread.send({
+        content: `<@&${this.discord.application.config.discord.roles.ticketPing}>`
+      });
       await pingMessage.delete();
     }
 
