@@ -77,17 +77,18 @@ class Ticket {
     return message;
   }
 
-  async rename(name: string = this.panel.defaultTicketName): Promise<Ticket> {
+  async rename(name: string = this.panel.defaultTicketName, shouldReplaceVariables: boolean = true): Promise<Ticket> {
     const thread = await this.getThread();
-    const discord = await this.getDiscord();
-    name = replaceVariables(name, {
-      username: discord.user.username,
-      id: discord.user.id,
-      panelName: this.panel.name,
-      cleanPanelName: this.panel.cleanName
-    })
-      .replaceAll(this.panel.fullPinnedTicketPrefix, '')
-      .trim();
+    if (shouldReplaceVariables) {
+      const discord = await this.getDiscord();
+      name = replaceVariables(name, {
+        username: discord.user.username,
+        id: discord.user.id,
+        panelName: this.panel.name,
+        cleanPanelName: this.panel.cleanName
+      });
+    }
+    name = name.replaceAll(this.panel.fullPinnedTicketPrefix, '').trim();
     if (this.pinned) name = `${this.panel.fullPinnedTicketPrefix} ${name}`;
     await thread.setName(name);
     return this.manager.updateTicket({ ...this.toJSON(), name });
@@ -101,7 +102,7 @@ class Ticket {
 
   async close({ reason, runner }: TicketAction) {
     if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
-    const updated = await this.rename(`[Closed] ${this.name}`);
+    const updated = await this.rename(`[Closed] ${this.name}`, false);
     const thread = await this.getThread();
     await thread.send({
       embeds: [
