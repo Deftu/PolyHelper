@@ -196,10 +196,6 @@ class TicketsCommand extends DiscordCommand {
           new ButtonBuilder()
             .setLabel('Refresh Embed')
             .setCustomId('refreshTicketsOverviewEmbed')
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setLabel('Toggle Ticket Open Mention')
-            .setCustomId('toggleTicketOpenMention')
             .setStyle(ButtonStyle.Secondary)
         )
       ]
