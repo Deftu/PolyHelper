@@ -114,7 +114,7 @@ class Ticket {
 
   async close({ reason, runner }: TicketAction) {
     if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
-    const updated = await this.rename(`[Closed] ${this.name}`, false);
+    const updated = await this.rename(`[Closed] ${this.name}`, { shouldReplaceVariables: false });
     const thread = await this.getThread();
     await thread.send({
       embeds: [
