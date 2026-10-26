@@ -69,14 +69,11 @@ export interface GuildInteractionData {
 }
 export type InteractionWithGuild<Interaction extends BaseInteraction> = Interaction & GuildInteractionData;
 
-export type InteractionTypes =
-  | AutocompleteInteraction
-  | ButtonInteraction
-  | ChatInputCommandInteraction
-  | ContextMenuCommandInteraction
-  | ModalMessageModalSubmitInteraction
-  | ModalSubmitInteraction
-  | StringSelectMenuInteraction;
+export type CommandInteraction = AutocompleteInteraction | ChatInputCommandInteraction | ContextMenuCommandInteraction;
+export type CustomIdInteraction =
+  ButtonInteraction | ModalMessageModalSubmitInteraction | ModalSubmitInteraction | StringSelectMenuInteraction;
+
+export type InteractionTypes = CommandInteraction | CustomIdInteraction;
 
 export type MessageAndUserContextMenuInteraction =
   MessageContextMenuCommandInteraction | UserContextMenuCommandInteraction;

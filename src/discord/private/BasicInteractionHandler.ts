@@ -1,8 +1,7 @@
 import PolyHelperError from '../../private/error.ts';
 import assert from 'node:assert';
 import { type BaseInteraction, Collection } from 'discord.js';
-import { InteractionFlag } from '../../types/discord.ts';
-import { InteractionPermission, type InteractionTypes } from '../../types/discord.ts';
+import { InteractionFlag, InteractionPermission, type InteractionTypes } from '../../types/discord.ts';
 import {
   isAdminMember,
   isApplicationOwner,
@@ -44,7 +43,7 @@ abstract class BasicInteractionHandler<
       await this.handleResponse(interaction, element);
 
       console.discord(
-        `Interaction ${parseInteractionType(interaction.type)} triggered by @${interaction.user.username} (${interaction.user.id}) | ${this.getIdFromInteraction(interaction)}`
+        `Interaction ${parseInteractionType(interaction.type)} triggered by @${interaction.user.username} (${interaction.user.id}) | ${this.getIdFromInteraction(interaction)} (${this.getRawIdFromInteraction(interaction)})`
       );
 
       this.checkInteractionFlags(interaction, element.metadata.flags);

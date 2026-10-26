@@ -11,6 +11,10 @@ export interface MetadataEntry<K extends string> {
   value: string;
 }
 
+export interface DatabaseSearchFilters {
+  limit?: number;
+}
+
 export const DatabaseBoolean = zod
   .union([zod.literal(0), zod.literal(1)])
   .meta({ description: "Boolean type isn't support by sql so we need to use 0 1 as a boolean" });
@@ -26,11 +30,16 @@ export const DatabasePanel = zod.object({
   openingMessage: zod.string(),
   maxOpenTickets: zod.int().positive(),
   pinnedTicketPrefix: zod.string(),
+  closedTicketPrefix: zod.string(),
   defaultTicketName: zod.string(),
-  supportRole: zod.string().nullable(),
+  pingSupportRoleOnOpen: DatabaseBoolean,
   enabled: DatabaseBoolean
 });
 export type DatabasePanel = zod.infer<typeof DatabasePanel>;
+
+export interface PanelSearchFilters extends DatabaseSearchFilters {
+  enabled?: boolean;
+}
 
 export const DatabaseTicket = zod.object({
   id: zod.string(),
@@ -44,6 +53,14 @@ export const DatabaseTicket = zod.object({
   closed: DatabaseBoolean
 });
 export type DatabaseTicket = zod.infer<typeof DatabaseTicket>;
+
+export interface TicketSearchFilters extends DatabaseSearchFilters {
+  panelId?: DatabaseTicket['panelId'];
+  owner?: DatabaseTicket['owner'];
+  pinned?: boolean;
+  closed?: DatabaseTicket['closed'];
+  autoClose?: boolean;
+}
 
 export const DatabaseCloseRequest = zod.object({
   id: zod.string(),

@@ -1,8 +1,8 @@
 import BasicInteractionHandler from '../private/BasicInteractionHandler.ts';
 import {
   ApplicationIntegrationType,
-  AutocompleteInteraction,
-  ChatInputCommandInteraction,
+  type AutocompleteInteraction,
+  type ChatInputCommandInteraction,
   InteractionContextType,
   MessageFlags,
   REST,

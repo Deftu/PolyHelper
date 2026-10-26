@@ -2,7 +2,13 @@ import DiscordCommand from '../../../private/interactions/commands/DiscordComman
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { ActionRowBuilder, ButtonBuilder, ChatInputCommandInteraction, Message, PermissionFlagsBits } from 'discord.js';
+import {
+  ActionRowBuilder,
+  type ButtonBuilder,
+  type ChatInputCommandInteraction,
+  type Message,
+  PermissionFlagsBits
+} from 'discord.js';
 import {
   InteractionFlag,
   InteractionPermission,
@@ -10,11 +16,18 @@ import {
   type InteractionWithGuild
 } from '../../../../types/discord.ts';
 import { OpenTicketButton } from '../../../private/ComponentHelper.ts';
+import { isSupportMember } from '../../../../utils/discordUtils.ts';
+import { toError } from '../../../../utils/miscUtils.ts';
 
 class DebugTicketsCommand extends DiscordCommand {
   override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
     .setName('debug-tickets')
     .addSubcommand((option) => option.setName('refresh-panels-message').setDescription('refresh the panels message'))
+    .addSubcommand((option) =>
+      option
+        .setName('sync-support-and-ticket-ping')
+        .setDescription('sync the support role users with the tick ping users')
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setFlags(InteractionFlag.RequiresGuild)
     .setResponse(InteractionResponse.Ephemeral)
@@ -38,6 +51,66 @@ class DebugTicketsCommand extends DiscordCommand {
     const message = await this.discord.application.database.getPanelsMessage();
     await DebugTicketsCommand.updatePanelsMessage(message);
     await interaction.followUp({ content: `Message updated - ${message.url}` });
+  }
+
+  async executeSyncSupportAndTicketPing(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
+    const supportRole = await interaction.guild.roles.fetch(this.discord.application.config.discord.roles.support);
+    if (!supportRole) throw new PolyHelperError('Could not find the support role?');
+    const ticketPingRole = await interaction.guild.roles.fetch(
+      this.discord.application.config.discord.roles.ticketPing
+    );
+    if (!ticketPingRole) throw new PolyHelperError('Could not find the ticket ping role?');
+
+    const removed: string[] = [];
+    const added: string[] = [];
+    const errors: string[] = [];
+
+    const membersToRemove = (
+      await Promise.all(
+        [...ticketPingRole.members.values()].map(async (member) => ({
+          member,
+          isSupport: await isSupportMember(member)
+        }))
+      )
+    )
+      .filter(({ isSupport }) => !isSupport)
+      .map(({ member }) => member);
+    for (const member of membersToRemove) {
+      try {
+        await member.roles.remove(ticketPingRole);
+        removed.push(member.id);
+      } catch (error) {
+        errors.push(`<@${member.id}>: ${toError(error).message}`);
+      }
+    }
+
+    const membersToAdd = [...supportRole.members.values()].filter((member) => !ticketPingRole.members.has(member.id));
+    for (const member of membersToAdd) {
+      try {
+        await member.roles.add(ticketPingRole);
+        added.push(member.id);
+      } catch (error) {
+        errors.push(`<@${member.id}>: ${toError(error).message}`);
+      }
+    }
+
+    await interaction.followUp({
+      embeds: [
+        new EmbedHelper()
+          .setTitle('Support & Ticket Ping Role Sync')
+          .setColor(errors.length > 0 ? 'Red' : 'Green')
+          .setDescription('Synchronization completed.')
+          .addFields(
+            { name: `Added (${added.length})`, value: added.length ? added.map((id) => `<@${id}>`).join(' ') : 'None' },
+            {
+              name: `Removed (${removed.length})`,
+              value: removed.length ? removed.map((id) => `<@${id}>`).join(' ') : 'None'
+            },
+            { name: `Errors (${errors.length})`, value: errors.length ? errors.join(' ') : 'None' }
+          )
+          .setTimestamp()
+      ]
+    });
   }
 
   override execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>): Promise<any> {

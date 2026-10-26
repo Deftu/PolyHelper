@@ -1,13 +1,8 @@
 import BasicInteractionMetadata from './BasicInteractionMetadata.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import type Ticket from '../../../../database/private/Ticket.ts';
-import type {
-  BaseInteraction,
-  ButtonInteraction,
-  ModalSubmitInteraction,
-  StringSelectMenuInteraction
-} from 'discord.js';
-import type { DiscordManagerWithClient, InteractionWithGuild } from '../../../../types/discord.ts';
+import type { BaseInteraction } from 'discord.js';
+import type { CustomIdInteraction, DiscordManagerWithClient, InteractionWithGuild } from '../../../../types/discord.ts';
 
 abstract class BasicInteractionData<
   Interaction extends BaseInteraction,
@@ -16,7 +11,7 @@ abstract class BasicInteractionData<
   abstract readonly metadata: Metadata;
   constructor(protected readonly discord: DiscordManagerWithClient) {}
 
-  protected getArgs(interaction: ButtonInteraction | ModalSubmitInteraction | StringSelectMenuInteraction): string[] {
+  protected getArgs(interaction: CustomIdInteraction): string[] {
     if (!(this.metadata instanceof BasicInteractionMetadata)) throw new PolyHelperError('Unsuported interaction data');
     const split = interaction.customId.split(':');
     const id = split[0];

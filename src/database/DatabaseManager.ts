@@ -5,7 +5,13 @@ import Panel from './private/Panel.ts';
 import PolyHelperError from '../private/error.ts';
 import Ticket from './private/Ticket.ts';
 import type Application from '../Application.ts';
-import type { DatabaseCloseRequest, DatabasePanel, DatabaseTicket } from '../types/database.ts';
+import type {
+  DatabaseCloseRequest,
+  DatabasePanel,
+  DatabaseTicket,
+  PanelSearchFilters,
+  TicketSearchFilters
+} from '../types/database.ts';
 import type { Message } from 'discord.js';
 
 class DatabaseManager extends BasicDatabaseManager {
@@ -40,21 +46,26 @@ class DatabaseManager extends BasicDatabaseManager {
       .map((row) => row.id);
   }
 
-  getPanels(): DatabasePanel[] {
-    return this.db.prepare<[], DatabasePanel>('SELECT * FROM panels').all();
+  getPanels(filters: PanelSearchFilters = {}): Panel[] {
+    return this.db
+      .prepare<{ enabled: DatabasePanel['enabled'] | null; limit: number }, DatabasePanel>(
+        'SELECT * FROM panels WHERE (@enabled IS NULL OR enabled = @enabled) LIMIT @limit'
+      )
+      .all({ enabled: filters.enabled === undefined ? null : filters.enabled ? 1 : 0, limit: filters.limit ?? -1 })
+      .map((data) => new Panel(data, this));
   }
 
   getPanel(id: DatabasePanel['id']): Panel | undefined {
     const data = this.db.prepare<[DatabasePanel['id']], DatabasePanel>('SELECT * FROM panels WHERE id = ?').get(id);
     if (!data) return data;
-    return new Panel(data);
+    return new Panel(data, this);
   }
 
   async insertPanel(panelData: Omit<DatabasePanel, 'id'>): Promise<Panel> {
     const id: DatabasePanel['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabasePanel>(
-        'INSERT INTO panels (id, name, cleanName, title, description, buttonLabel, buttonEmoji, openingMessage, maxOpenTickets, pinnedTicketPrefix, defaultTicketName, supportRole, enabled) VALUES (@id, @name, @cleanName, @title, @description, @buttonLabel, @buttonEmoji, @openingMessage, @maxOpenTickets, @pinnedTicketPrefix, @defaultTicketName, @supportRole, @enabled)'
+        'INSERT INTO panels (id, name, cleanName, title, description, buttonLabel, buttonEmoji, openingMessage, maxOpenTickets, pinnedTicketPrefix, closedTicketPrefix, defaultTicketName, pingSupportRoleOnOpen, enabled) VALUES (@id, @name, @cleanName, @title, @description, @buttonLabel, @buttonEmoji, @openingMessage, @maxOpenTickets, @pinnedTicketPrefix, @closedTicketPrefix, @defaultTicketName, @pingSupportRoleOnOpen, @enabled)'
       )
       .run({ ...panelData, id });
     const panel = this.getPanel(id);
@@ -75,7 +86,7 @@ class DatabaseManager extends BasicDatabaseManager {
     if (!panel) throw new PolyHelperError('Could not find this panel?');
     this.db
       .prepare<DatabasePanel>(
-        'UPDATE panels SET name = @name, cleanName = @cleanName, title = @title, description = @description, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, maxOpenTickets = @maxOpenTickets, pinnedTicketPrefix = @pinnedTicketPrefix, defaultTicketName = @defaultTicketName, supportRole = @supportRole, enabled = @enabled WHERE id = @id'
+        'UPDATE panels SET name = @name, cleanName = @cleanName, title = @title, description = @description, buttonLabel = @buttonLabel, buttonEmoji = @buttonEmoji, openingMessage = @openingMessage, maxOpenTickets = @maxOpenTickets, pinnedTicketPrefix = @pinnedTicketPrefix, closedTicketPrefix = @closedTicketPrefix, defaultTicketName = @defaultTicketName, pingSupportRoleOnOpen = @pingSupportRoleOnOpen, enabled = @enabled WHERE id = @id'
       )
       .run(data);
     const newPanel = this.getPanel(data.id);
@@ -91,16 +102,7 @@ class DatabaseManager extends BasicDatabaseManager {
     return new Ticket(data, this);
   }
 
-  getTickets(
-    filters: {
-      panelId?: DatabaseTicket['panelId'];
-      owner?: DatabaseTicket['owner'];
-      pinned?: boolean;
-      closed?: DatabaseTicket['closed'];
-      autoClose?: boolean;
-      limit?: number;
-    } = {}
-  ): Ticket[] {
+  getTickets(filters: TicketSearchFilters = {}): Ticket[] {
     return this.db
       .prepare<
         {
@@ -121,7 +123,7 @@ class DatabaseManager extends BasicDatabaseManager {
         pinned: filters.pinned === undefined ? null : filters.pinned ? 1 : 0,
         autoClose: filters.autoClose === undefined ? null : filters.autoClose ? 1 : 0,
         closed: filters.closed ?? null,
-        limit: filters.limit ?? 100
+        limit: filters.limit ?? -1
       })
       .map((data) => new Ticket(data, this));
   }

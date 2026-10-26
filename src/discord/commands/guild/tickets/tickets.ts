@@ -4,20 +4,21 @@ import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import {
   ActionRowBuilder,
-  type AutocompleteInteraction,
   type BaseMessageOptions,
+  ButtonBuilder,
+  ButtonStyle,
   type ChatInputCommandInteraction,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder
 } from 'discord.js';
 import {
-  type AutocompleteOption,
   type EmbedHelperField,
   InteractionFlag,
   InteractionPermission,
   type InteractionWithGuild
 } from '../../../../types/discord.ts';
 import { titleCase } from '../../../../utils/stringUtils.ts';
+import type Panel from '../../../../database/private/Panel.ts';
 import type Ticket from '../../../../database/private/Ticket.ts';
 import type { TicketSearch } from '../../../../types/misc.ts';
 
@@ -45,27 +46,9 @@ class TicketsCommand extends DiscordCommand {
         .addBooleanOption((option) => option.setName('closed').setDescription('Is the ticket currently closed'))
         .addBooleanOption((option) => option.setName('open').setDescription('Is the ticket currently open'))
     )
+    .addSubcommand((option) => option.setName('overview').setDescription('Overview of the tickets'))
     .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Support);
-
-  // eslint-disable-next-line require-await
-  override async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
-    const focusedOption = interaction.options.getFocused(true);
-
-    switch (focusedOption.name) {
-      case 'ticket-id':
-        return this.discord.application.database
-          .getTickets({ limit: 25 })
-          .map((ticket) => ({
-            name: `${ticket.name} - ${new Date(ticket.openingTimestamp).toISOString().split('T')[0]}`,
-            value: ticket.id
-          }));
-      case 'panel-id':
-        return this.discord.application.database.getPanels().map((panel) => ({ name: panel.name, value: panel.id }));
-      default:
-        return [{ name: 'No perm' }];
-    }
-  }
 
   async executeView(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const ticketId = interaction.options.getString('ticket-id', true);
@@ -143,6 +126,65 @@ class TicketsCommand extends DiscordCommand {
     });
 
     await interaction.followUp(TicketsCommand.getTicketsSearchMessageData(tickets, search, interaction.user.id));
+  }
+
+  static getTicketsOverviewMessageData(panels: Panel[]): BaseMessageOptions {
+    const parsedPanels = panels.map((panel) => panel.getOverviewFields());
+    return {
+      embeds: [
+        new EmbedHelper()
+          .setStyle('TicketsOverview')
+          .setFields(
+            parsedPanels.map((panel) => ({
+              name: panel.name,
+              value: [
+                `**ID:** \`${panel.id}\``,
+                `**Enabled:** ${panel.enabled ? ':white_check_mark: Yes' : ':x: No'}`,
+                `**Total Tickets:** ${panel.tickets}`,
+                `**Open Tickets:** ${panel.openTickets}`,
+                `**Pinned Tickets:** ${panel.pinnedTickets}`
+              ].join('\n'),
+              inline: true
+            }))
+          )
+          .addFields(
+            {
+              name: 'Total Tickets',
+              value: parsedPanels.reduce((total, panel) => total + panel.tickets, 0).toString(),
+              inline: true
+            },
+            {
+              name: 'Total Open Tickets',
+              value: parsedPanels.reduce((total, panel) => total + panel.openTickets, 0).toString(),
+              inline: true
+            },
+            {
+              name: 'Total Pinned Tickets',
+              value: parsedPanels.reduce((total, panel) => total + panel.pinnedTickets, 0).toString(),
+              inline: true
+            }
+          )
+      ],
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().setComponents(
+          new ButtonBuilder()
+            .setCustomId('joinActiveTickets')
+            .setLabel('Join Ticket Threads')
+            .setStyle(ButtonStyle.Secondary),
+
+          new ButtonBuilder()
+            .setLabel('Refresh Embed')
+            .setCustomId('refreshTicketsOverviewEmbed')
+            .setStyle(ButtonStyle.Secondary)
+        )
+      ]
+    };
+  }
+
+  async executeOverview(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
+    await interaction.followUp(
+      TicketsCommand.getTicketsOverviewMessageData(this.discord.application.database.getPanels())
+    );
   }
 
   override execute(interaction: ChatInputCommandInteraction): Promise<any> {

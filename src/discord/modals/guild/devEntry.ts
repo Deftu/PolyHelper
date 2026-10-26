@@ -18,7 +18,6 @@ class DevEntryModal extends DiscordModal {
 
     const userAnswer = parseInt(interaction.fields.getTextInputValue('repo-count'));
     const answer = await getRepoCount();
-
     if (userAnswer !== answer) return await interaction.followUp({ content: 'Your answer was incorrect. Try again.' });
 
     await interaction.member.roles.add(

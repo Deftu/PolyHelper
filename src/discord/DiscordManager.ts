@@ -1,6 +1,7 @@
 import ButtonHandler from './handlers/ButtonHandler.ts';
 import CommandHandler from './handlers/CommandHandler.ts';
 import ContextMenuHandler from './handlers/ContextMenuHandler.ts';
+import EventHandler from './handlers/EventHandler.ts';
 import MessageHandler from './handlers/MessageHandler.ts';
 import ModalHandler from './handlers/ModalHandler.ts';
 import PolyHelperError from '../private/error.ts';
@@ -11,11 +12,11 @@ import {
   Client,
   Events,
   GatewayIntentBits,
-  Guild,
+  type Guild,
   Message,
   MessageFlags,
   type SendableChannels,
-  TextChannel
+  type TextChannel
 } from 'discord.js';
 import { getCleanErrorEmbed, toError } from '../utils/miscUtils.ts';
 import { parseInteractionType } from '../utils/discordUtils.ts';
@@ -36,6 +37,7 @@ class DiscordManager {
   readonly buttonHandler: ButtonHandler;
   readonly commandHandler: CommandHandler;
   readonly contextMenuHandler: ContextMenuHandler;
+  readonly eventHandler: EventHandler;
   readonly messageHandler: MessageHandler;
   readonly modalHandler: ModalHandler;
   readonly stringSelectMenuHandler: StringSelectMenuHandler;
@@ -45,6 +47,7 @@ class DiscordManager {
     this.buttonHandler = new ButtonHandler(this);
     this.commandHandler = new CommandHandler(this);
     this.contextMenuHandler = new ContextMenuHandler(this);
+    this.eventHandler = new EventHandler(this);
     this.messageHandler = new MessageHandler(this);
     this.modalHandler = new ModalHandler(this);
     this.stringSelectMenuHandler = new StringSelectMenuHandler(this);
@@ -52,7 +55,12 @@ class DiscordManager {
 
   async connect() {
     const client = new Client({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildModeration
+      ]
     });
     client.discordManager = this;
     this.client = client;
@@ -60,13 +68,14 @@ class DiscordManager {
     await this.buttonHandler.loadElements();
     await this.modalHandler.loadElements();
     await this.stringSelectMenuHandler.loadElements();
-    this.client.on(Events.ClientReady, (client) => this.onReady(client));
+    this.client.on(Events.ClientReady, (client) => this.eventHandler.onReady(client));
     this.client.on(Events.MessageCreate, (message) =>
       this.messageHandler.onMessage(message).catch((e) => this.handleError(toError(e)))
     );
     this.client.on(Events.InteractionCreate, (interaction) =>
       this.onInteraction(interaction).catch((e) => this.handleError(toError(e)))
     );
+    this.client.on(Events.GuildAuditLogEntryCreate, (entry) => this.eventHandler.onGuildAuditLogEntryCreate(entry));
     this.client.login(this.application.config.discord.token).catch((e) => this.handleError(toError(e)));
   }
 
@@ -91,11 +100,6 @@ class DiscordManager {
 
   hasClient(): this is DiscordManager & { client: Client } {
     return this.client !== undefined;
-  }
-
-  private async onReady(client: Client<true>) {
-    console.discord(`Logged in as ${client.user.username} (${client.user.id})!`);
-    await this.loadGuild();
   }
 
   private async onInteraction(interaction: BaseInteraction) {
@@ -130,6 +134,7 @@ class DiscordManager {
     if (context.channel) {
       extraData.push({ name: 'Channel', value: `<#${context.channel.id}> (\`${context.channel.id}\`)` });
     }
+    if (context.guild) extraData.push({ name: 'Guild', value: `\`${context.guild.name}\` (\`${context.guild.id}\`)` });
     return extraData;
   }
 

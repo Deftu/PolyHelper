@@ -1,9 +1,12 @@
+import BaseParsedDatabaseItem from './BaseParsedDatabaseItem.ts';
 import EmbedHelper from '../../discord/private/EmbedHelper.ts';
 import { replaceVariables } from '../../utils/stringUtils.ts';
+import type DatabaseManager from '../DatabaseManager.ts';
+import type { AutocompleteOption } from '../../types/discord.ts';
 import type { BaseMessageOptions, User } from 'discord.js';
-import type { DatabasePanel } from '../../types/database.ts';
+import type { DatabasePanel, TicketSearchFilters } from '../../types/database.ts';
 
-class Panel {
+class Panel extends BaseParsedDatabaseItem<DatabasePanel> {
   readonly id: DatabasePanel['id'];
   readonly name: DatabasePanel['name'];
   readonly cleanName: DatabasePanel['cleanName'];
@@ -14,10 +17,15 @@ class Panel {
   readonly openingMessage: DatabasePanel['openingMessage'];
   readonly maxOpenTickets: DatabasePanel['maxOpenTickets'];
   readonly pinnedTicketPrefix: DatabasePanel['pinnedTicketPrefix'];
+  readonly closedTicketPrefix: DatabasePanel['closedTicketPrefix'];
   readonly defaultTicketName: DatabasePanel['defaultTicketName'];
-  readonly supportRole: DatabasePanel['supportRole'];
+  readonly #pingSupportRoleOnOpen: DatabasePanel['pingSupportRoleOnOpen'];
   readonly #enabled: DatabasePanel['enabled'];
-  constructor(data: DatabasePanel) {
+  constructor(
+    data: DatabasePanel,
+    private readonly manager: DatabaseManager
+  ) {
+    super();
     this.id = data.id;
     this.name = data.name;
     this.cleanName = data.cleanName;
@@ -28,13 +36,22 @@ class Panel {
     this.openingMessage = data.openingMessage;
     this.maxOpenTickets = data.maxOpenTickets;
     this.pinnedTicketPrefix = data.pinnedTicketPrefix;
+    this.closedTicketPrefix = data.closedTicketPrefix;
     this.defaultTicketName = data.defaultTicketName;
-    this.supportRole = data.supportRole;
+    this.#pingSupportRoleOnOpen = data.pingSupportRoleOnOpen;
     this.#enabled = data.enabled;
+  }
+
+  get fullClosedTicketPrefix(): string {
+    return `[${this.closedTicketPrefix}]`;
   }
 
   get fullPinnedTicketPrefix(): string {
     return `[${this.pinnedTicketPrefix}]`;
+  }
+
+  get pingSupportRoleOnOpen(): boolean {
+    return Boolean(this.#pingSupportRoleOnOpen);
   }
 
   get enabled(): boolean {
@@ -55,7 +72,34 @@ class Panel {
     };
   }
 
-  toJSON(): DatabasePanel {
+  getTickets(filters: Omit<TicketSearchFilters, 'panelId'> = {}) {
+    return this.manager.getTickets({ ...filters, panelId: this.id });
+  }
+
+  getOverviewFields(): {
+    id: DatabasePanel['id'];
+    name: DatabasePanel['name'];
+    enabled: boolean;
+    tickets: number;
+    openTickets: number;
+    pinnedTickets: number;
+  } {
+    const tickets = this.getTickets();
+    return {
+      id: this.id,
+      name: this.name,
+      enabled: this.enabled,
+      tickets: tickets.length,
+      openTickets: tickets.filter((ticket) => !ticket.closed).length,
+      pinnedTickets: tickets.filter((ticket) => ticket.pinned).length
+    };
+  }
+
+  override toAutocompleteOption(): AutocompleteOption {
+    return { name: this.id, value: this.id };
+  }
+
+  override toJSON(): DatabasePanel {
     return {
       id: this.id,
       name: this.name,
@@ -67,8 +111,9 @@ class Panel {
       openingMessage: this.openingMessage,
       maxOpenTickets: this.maxOpenTickets,
       pinnedTicketPrefix: this.pinnedTicketPrefix,
+      closedTicketPrefix: this.closedTicketPrefix,
       defaultTicketName: this.defaultTicketName,
-      supportRole: this.supportRole,
+      pingSupportRoleOnOpen: this.#pingSupportRoleOnOpen,
       enabled: this.#enabled
     };
   }

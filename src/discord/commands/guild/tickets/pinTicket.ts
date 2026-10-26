@@ -19,9 +19,8 @@ class PinTicketCommand extends DiscordCommand {
     .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
-    const reason = interaction.options.getString('reason') || 'No reason provided';
     await interaction.followUp({ content: 'Attempting to pin this ticket...' });
-    await this.getTicket(interaction).pin({ reason, runner: interaction.user.id });
+    await this.getTicket(interaction).pin({ reason: this.getReason(interaction), runner: interaction.user.id });
   }
 }
 

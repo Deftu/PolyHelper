@@ -57,7 +57,7 @@ export function ViewSourceCodeButton(): ButtonBuilder {
     .setURL('https://github.com/Polyfrost/PolyHelper');
 }
 
-export function OpenTicketButton({ id, buttonLabel, buttonEmoji, enabled }: DatabasePanel): ButtonBuilder {
+export function OpenTicketButton({ id, buttonLabel, buttonEmoji, enabled }: Panel | DatabasePanel): ButtonBuilder {
   const button = new ButtonBuilder()
     .setStyle(ButtonStyle.Secondary)
     .setLabel(buttonLabel)

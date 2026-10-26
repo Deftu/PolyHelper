@@ -3,8 +3,7 @@ import DiscordCommandMetadata from '../../private/interactions/commands/DiscordC
 import EmbedHelper from '../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../private/error.ts';
 import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../types/discord.ts';
-import { hasRole } from '../../../utils/discordUtils.ts';
-import { isGuildMember } from '@sapphire/discord.js-utilities';
+import { getUserDisplayName, hasRole, isGuildMember } from '../../../utils/discordUtils.ts';
 import { toError } from '../../../utils/miscUtils.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
 
@@ -24,11 +23,10 @@ class CountingBlockCommand extends DiscordCommand {
       throw new PolyHelperError('User already has counting blacklist');
     }
 
-    const reason = interaction.options.getString('reason') || 'No reason provided';
     const embed = new EmbedHelper()
       .setColor('Red')
       .setTitle('Blocked from Counting')
-      .addFields({ name: 'Reason', value: reason })
+      .addFields({ name: 'Reason', value: this.getReason(interaction), format: 'Block' })
       .setFooter({ text: `${member.displayName} (${member.id})`, iconURL: member.displayAvatarURL() });
 
     try {
@@ -48,10 +46,7 @@ class CountingBlockCommand extends DiscordCommand {
     await botLogs.send({
       content: `${member.toString()} has been blocked from counting`,
       embeds: [
-        embed.setAuthor({
-          name: `${interaction.user.displayName} (${interaction.user.id})`,
-          iconURL: interaction.user.displayAvatarURL()
-        })
+        embed.setAuthor({ name: getUserDisplayName(interaction.user), iconURL: interaction.user.displayAvatarURL() })
       ]
     });
   }

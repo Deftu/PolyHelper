@@ -3,8 +3,7 @@ import DiscordCommandMetadata from '../../../private/interactions/commands/Disco
 import PolyHelperError from '../../../../private/error.ts';
 import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
 import { SuccessEmbed } from '../../../private/EmbedHelper.ts';
-import { isGuildMember } from '@sapphire/discord.js-utilities';
-import { isSupportMember } from '../../../../utils/discordUtils.ts';
+import { isGuildMember, isSupportMember } from '../../../../utils/discordUtils.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
 
 class RemoveCommand extends DiscordCommand {

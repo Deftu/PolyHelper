@@ -1,7 +1,11 @@
 import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
-import EmbedHelper from '../../../private/EmbedHelper.ts';
-import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
+import {
+  InteractionFlag,
+  InteractionPermission,
+  InteractionResponse,
+  type InteractionWithGuild
+} from '../../../../types/discord.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
 
 class RenameCommand extends DiscordCommand {
@@ -13,17 +17,12 @@ class RenameCommand extends DiscordCommand {
     )
     .setCleanErrorTitle('renaming this ticket')
     .setFlags(InteractionFlag.RequiresGuild)
+    .setResponse(InteractionResponse.Ephemeral)
     .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
+    await interaction.followUp({ content: 'Attempting to rename this ticket.' });
     await this.getTicket(interaction).rename(interaction.options.getString('name') ?? undefined);
-    await interaction.followUp({
-      embeds: [
-        new EmbedHelper()
-          .setTitle('Ticket Renammed')
-          .setDescription(`This ticket has been renammed by <@${interaction.user.id}>`)
-      ]
-    });
   }
 }
 

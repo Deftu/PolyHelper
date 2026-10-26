@@ -12,6 +12,13 @@ export const EmbedStyles = {
     footer: 'Amber',
     footerMessage: 'Last Updated',
     timestamp: 'Now'
+  },
+  TicketsOverview: {
+    title: 'Showing Tickets Overview',
+    color: 'Pink',
+    footer: 'Amber',
+    footerMessage: 'Last Updated',
+    timestamp: 'Now'
   }
 } satisfies Record<string, EmbedStyleData>;
 

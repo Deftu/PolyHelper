@@ -1,4 +1,6 @@
 import {
+  type APIGuildMember,
+  type APIInteractionDataResolvedGuildMember,
   type APIInteractionGuildMember,
   type BaseInteraction,
   type Client,
@@ -7,9 +9,8 @@ import {
   type Role,
   type SendableChannels,
   Team,
-  type User
+  User
 } from 'discord.js';
-import { isGuildMember } from '@sapphire/discord.js-utilities';
 import type { InteractionWithGuild } from '../types/discord.ts';
 
 export async function getRoles(member: GuildMember): Promise<Role[]> {
@@ -36,6 +37,13 @@ export async function isApplicationOwner(user: User): Promise<boolean> {
 export function isDiscordServerOwner(user: User): boolean {
   if (!user.client.discordManager.isGuildReady()) return false;
   return user.id === user.client.discordManager.guild.ownerId;
+}
+
+export function isGuildMember(
+  member:
+    GuildMember | APIGuildMember | APIInteractionGuildMember | APIInteractionDataResolvedGuildMember | null | undefined
+): member is GuildMember {
+  return member instanceof GuildMember;
 }
 
 export async function isAdminMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
@@ -96,16 +104,19 @@ export function parseInteractionType(type: InteractionType): string {
   }
 }
 
-export function getDisplayNameUser(user: User): string {
-  return user.globalName ?? user.username;
-}
-
-export function getDisplayName(user: GuildMember | User | null): string {
-  if (!user) return 'UNKNOWN';
-  if (user instanceof GuildMember) return user.nickname ?? getDisplayNameUser(user.user);
-  return getDisplayNameUser(user);
+export function getUserDisplayName(user: User, id: boolean = true): string {
+  return `${user.globalName ?? `@${user.username}`} (${id ? `(${user.id})` : ''})`.trim();
 }
 
 export function getFormattedBooleanResponse(value: boolean): string {
   return value ? ':white_check_mark: Yes' : ':x: No';
+}
+
+export function getUserId(user: User | string): string {
+  if (user instanceof User) return user.id;
+  return user;
+}
+
+export function getMention(user: User | string): string {
+  return `<@${getUserId(user)}>`;
 }
