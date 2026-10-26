@@ -4,11 +4,15 @@ import type { Message } from 'discord.js';
 
 export type SparkReportKind = 'analysis' | 'fix';
 
-export interface SparkContext {
-  client: Anthropic;
-  config: Config['sparkAnalysis'];
+export interface SparkProfile {
   sparkId: string;
   profilePath: string;
+}
+
+export interface SparkContext extends SparkProfile {
+  client: Anthropic;
+  config: Config['sparkAnalysis'];
+  baseline: SparkProfile | null;
   supportNotes: string | null;
 }
 
@@ -34,7 +38,7 @@ export interface SparkAnalysis {
 export type ScanSparkLogMetadata = Pick<
   SparkJob,
   'sparkId' | 'supportNotes' | 'channelId' | 'channelUrl' | 'requester'
->;
+> & { baselineId?: string | null };
 
 export interface ScanSparkLogResult {
   analysisMessage: Message;

@@ -15,6 +15,9 @@ a bot to do misc things for the Polyfrost server
 host. One posts an analysis for support in the `sparkAnalysis` channel, the other posts a fix brief for developers in
 the `sparkFixes` channel, ready to paste into their coding agent.
 
+`/spark-compare <baseline> <link>` does the same for two profiles, such as without and with a mod, and reports what
+changed between them.
+
 1. install Python 3. Set `sparkAnalysis.python` if it isn't `python3` on your `PATH`
 2. set `sparkAnalysis.enabled` to `true` and fill in `sparkAnalysis.anthropicApiKey`
 3. optionally set `sparkAnalysis.githubToken` so the fix agent can search mod source code
