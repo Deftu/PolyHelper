@@ -1,5 +1,4 @@
 import BaseParsedDatabaseItem from './BaseParsedDatabaseItem.ts';
-import EmbedHelper, { TicketEmbed } from '../../discord/private/EmbedHelper.ts';
 import PolyHelperError from '../../private/error.ts';
 import {
   ActionRowBuilder,
@@ -10,11 +9,15 @@ import {
   type Message,
   type TextThreadChannel
 } from 'discord.js';
+import { CloseRequestButtons } from '../../discord/private/ComponentHelper.ts';
+import { TicketActionEmbed, TicketEmbed } from '../../discord/private/EmbedHelper.ts';
+import { getMention, getUserId } from '../../utils/discordUtils.ts';
 import { getReason, replaceVariables } from '../../utils/stringUtils.ts';
+import type CloseRequest from './CloseRequest.ts';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Panel from './Panel.ts';
 import type { AutocompleteOption } from '../../types/discord.ts';
-import type { DatabaseTicket } from '../../types/database.ts';
+import type { DatabaseCloseRequest, DatabaseTicket } from '../../types/database.ts';
 import type { TicketAction } from '../../types/misc.ts';
 
 class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
@@ -82,7 +85,13 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
 
   async rename(
     name: string = this.panel.defaultTicketName,
-    options: { shouldReplaceVariables?: boolean; runner?: string; closed?: boolean; pinned?: boolean } = {}
+    options: {
+      shouldReplaceVariables?: boolean;
+      reason?: TicketAction['reason'];
+      runner?: TicketAction['runner'];
+      closed?: boolean;
+      pinned?: boolean;
+    } = {}
   ): Promise<Ticket> {
     const thread = await this.getThread();
 
@@ -106,11 +115,7 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     await thread.setName(name);
     if (options.runner) {
       await thread.send({
-        embeds: [
-          new EmbedHelper()
-            .setTitle('Ticket Renamed')
-            .setDescription(`This ticket has been renamed by <@${options.runner}>`)
-        ]
+        embeds: [new TicketActionEmbed({ title: 'Renamed', runner: options.runner, reason: options.reason })]
       });
     }
     return this.manager.updateTicket({ ...this.toJSON(), name });
@@ -127,14 +132,7 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
     const updated = await this.rename(this.name, { shouldReplaceVariables: false, closed: true });
     const thread = await this.getThread();
-    await thread.send({
-      embeds: [
-        new EmbedHelper()
-          .setTitle('Ticket Closed')
-          .setDescription(`This ticket has been closeed by <@${runner}>`)
-          .setFields({ name: 'Reason', value: getReason(reason), format: 'Block' })
-      ]
-    });
+    await thread.send({ embeds: [new TicketActionEmbed({ title: 'Closed', reason, runner })] });
     const closeRequest = this.manager.getCloseRequestByTicketId(this.id);
     if (closeRequest) await this.manager.deleteCloseRequest(closeRequest.id);
     await thread.setArchived(true);
@@ -146,28 +144,14 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     const thread = await this.getThread();
     await thread.setArchived(false);
     const updated = await this.rename(this.name, { shouldReplaceVariables: false, closed: false });
-    await thread.send({
-      embeds: [
-        new EmbedHelper()
-          .setTitle('Ticket Opened')
-          .setDescription(`This ticket has been opened by <@${runner}>`)
-          .setFields({ name: 'Reason', value: getReason(reason), format: 'Block' })
-      ]
-    });
+    await thread.send({ embeds: [new TicketActionEmbed({ title: 'Opened', reason, runner })] });
     this.manager.updateTicket({ ...updated.toJSON(), closed: 0 });
   }
 
   async pin({ reason, runner }: TicketAction) {
     if (this.pinned) throw new PolyHelperError('This ticket is already pinned. Please unpin it to pin it');
     const thread = await this.getThread();
-    const message = await thread.send({
-      embeds: [
-        new EmbedHelper()
-          .setTitle('Ticket Pinned')
-          .setDescription(`This ticket has been pinned by <@${runner}>`)
-          .setFields({ name: 'Reason', value: getReason(reason), format: 'Block' })
-      ]
-    });
+    const message = await thread.send({ embeds: [new TicketActionEmbed({ title: 'Pinned', reason, runner })] });
     await message.pin();
     return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: message.id }).rename();
   }
@@ -185,15 +169,49 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     const pinMessage = await this.getPinMessage();
     if (!pinMessage) throw new PolyHelperError('Is this ticket pinned? I could not find the pinned message');
     await pinMessage.unpin();
-    await thread.send({
-      embeds: [
-        new EmbedHelper()
-          .setTitle('Ticket Unpinned')
-          .setDescription(`This ticket has been unpinned by <@${runner}>`)
-          .setFields({ name: 'Reason', value: getReason(reason), format: 'Block' })
-      ]
-    });
+    await thread.send({ embeds: [new TicketActionEmbed({ title: 'Unpinned', reason, runner })] });
     return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: null }).rename();
+  }
+
+  get linkedCloseRequest(): CloseRequest | undefined {
+    return this.manager.getCloseRequestByTicketId(this.id);
+  }
+
+  async closeRequest({ reason, runner, autoClose }: TicketAction & { autoClose: DatabaseCloseRequest['autoClose'] }) {
+    if (this.closed) throw new PolyHelperError('This ticket is already closed');
+    if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
+    if (this.linkedCloseRequest) {
+      const closeRequestMessage = await this.linkedCloseRequest.getMessage();
+      throw new PolyHelperError(`There is already an active close request for this ticket. ${closeRequestMessage.url}`);
+    }
+    reason = getReason(reason);
+
+    const embed = new TicketActionEmbed({
+      title: 'Close Request',
+      description: `${getMention(runner)} has requested to close this ticket`,
+      reason,
+      runner
+    });
+    if (autoClose !== null) {
+      embed.addFields({ name: 'Automatically closes at', value: Math.floor(autoClose / 1000), format: 'Timestamp' });
+    }
+    embed.addFields({ name: '_ _', value: 'Please accept or deny using the buttons below.' });
+    const id = crypto.randomUUID();
+    const thread = await this.getThread();
+    const user = await this.getDiscord();
+    const message = await thread.send({
+      content: `Hey <@${user.user.id}>`,
+      embeds: [embed],
+      components: [new ActionRowBuilder<ButtonBuilder>().addComponents(CloseRequestButtons(id))]
+    });
+    return this.manager.insertCloseRequest({
+      id,
+      ticketId: this.id,
+      messageId: message.id,
+      reason,
+      closer: getUserId(runner),
+      autoClose
+    });
   }
 
   async getMessageData(): Promise<BaseMessageOptions> {

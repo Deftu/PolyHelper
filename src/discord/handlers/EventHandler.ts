@@ -26,7 +26,7 @@ class EventHandler {
   }
 
   private async onTicketRename(ticket: Ticket, entry: GuildAuditLogsEntry, action: TicketAction) {
-    await ticket.rename(entry.changes.find((change) => change.key === 'name')?.new, action);
+    await ticket.rename(entry.changes.find((change) => change.key === 'name')?.new, { runner: action.runner });
   }
 
   private async onTicketArchive(ticket: Ticket, action: TicketAction) {

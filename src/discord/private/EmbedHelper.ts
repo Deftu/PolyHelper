@@ -5,13 +5,17 @@ import {
   type ColorResolvable,
   EmbedBuilder,
   type EmbedData,
-  type RestOrArray
+  type RestOrArray,
+  User
 } from 'discord.js';
 import { CommonDevs, EmbedStyles } from '../../private/constants.ts';
 import { ConfigDiscordEmbedsColors } from '../../types/config.ts';
 import { type DevData, type DevName } from '../../types/application.ts';
+import { getMention, getUserDisplayName } from '../../utils/discordUtils.ts';
+import { getReason } from '../../utils/stringUtils.ts';
 import type Ticket from '../../database/private/Ticket.ts';
 import type { EmbedHelperField, EmbedStyleData, EmbedStyleName } from '../../types/discord.ts';
+import type { TicketAction } from '../../types/misc.ts';
 
 export default class EmbedHelper extends EmbedBuilder {
   constructor(data?: EmbedData | APIEmbed) {
@@ -124,5 +128,15 @@ export class TicketEmbed extends SuccessEmbed {
       { name: 'Is Closed', value: ticket.closed, format: 'Boolean' },
       { name: 'Is Pinned', value: ticket.pinned, format: 'Boolean' }
     );
+  }
+}
+
+export class TicketActionEmbed extends EmbedHelper {
+  constructor({ reason, runner, title, description }: TicketAction & { title: string; description?: string }) {
+    super();
+    this.setTitle(`Ticket ${title}`);
+    this.setDescription(description ?? `This ticket has been ${title.toLowerCase()} by ${getMention(runner)}>`);
+    this.setFields({ name: 'Reason', value: getReason(reason), format: 'Block' });
+    if (runner instanceof User) this.setAuthor({ name: getUserDisplayName(runner), url: runner.displayAvatarURL() });
   }
 }
