@@ -22,7 +22,13 @@ import {
 } from '../utils/sparkUtils.ts';
 import { toError } from '../utils/miscUtils.ts';
 import type Application from '../Application.ts';
-import type { ScanSparkLogMetadata, ScanSparkLogResult, SparkJob, SparkReportKind } from '../types/spark.ts';
+import type {
+  ScanSparkLogMetadata,
+  ScanSparkLogResult,
+  SparkJob,
+  SparkProfile,
+  SparkReportKind
+} from '../types/spark.ts';
 
 class SparkManager {
   private readonly running = new Set<string>();
@@ -33,6 +39,7 @@ class SparkManager {
 
   async scanSparkLog({
     sparkId,
+    baselineId = null,
     supportNotes,
     channelId,
     channelUrl,
@@ -40,25 +47,34 @@ class SparkManager {
   }: ScanSparkLogMetadata): Promise<ScanSparkLogResult> {
     const config = this.application.config.sparkAnalysis;
     if (!config.enabled) throw new PolyHelperError('Spark analysis is disabled');
-    if (this.running.has(sparkId)) throw new PolyHelperError('That spark profile is already being analyzed');
+    if (baselineId === sparkId) throw new PolyHelperError('Pick two different spark profiles to compare');
+    const runningKey = baselineId ? `${baselineId}:${sparkId}` : sparkId;
+    if (this.running.has(runningKey)) throw new PolyHelperError('That spark profile is already being analyzed');
 
     const [analysisChannel, fixChannel] = await Promise.all([
       this.application.discord.getChannel('sparkAnalysis'),
       this.application.discord.getChannel('sparkFixes')
     ]);
 
-    this.running.add(sparkId);
-    const profilePath = await downloadProfile(sparkId)
-      .then((data) => saveProfile(sparkId, data))
-      .catch((error) => {
-        this.running.delete(sparkId);
-        throw error;
-      });
+    this.running.add(runningKey);
+    const [profile, baseline] = await Promise.allSettled([
+      this.fetchProfile(sparkId),
+      baselineId ? this.fetchProfile(baselineId) : Promise.resolve(null)
+    ]);
+    if (profile.status === 'rejected' || baseline.status === 'rejected') {
+      this.running.delete(runningKey);
+      await this.removeProfiles([
+        profile.status === 'fulfilled' ? profile.value : null,
+        baseline.status === 'fulfilled' ? baseline.value : null
+      ]);
+      throw profile.status === 'rejected' ? profile.reason : (baseline as PromiseRejectedResult).reason;
+    }
+
     const job: SparkJob = {
       client: new Anthropic({ apiKey: config.anthropicApiKey }),
       config,
-      sparkId,
-      profilePath,
+      ...profile.value,
+      baseline: baseline.value,
       supportNotes,
       channelId,
       channelUrl,
@@ -66,14 +82,26 @@ class SparkManager {
     };
     const [analysisMessage, fixMessage] = await this.sendPendingMessages(job, analysisChannel, fixChannel).catch(
       async (error) => {
-        this.running.delete(sparkId);
-        await removeProfile(profilePath).catch((e) => this.application.logError(toError(e)));
+        this.running.delete(runningKey);
+        await this.removeProfiles([job, job.baseline]);
         throw error;
       }
     );
 
-    this.runJob(job, analysisMessage, fixMessage).finally(() => this.running.delete(sparkId));
+    this.runJob(job, analysisMessage, fixMessage).finally(() => this.running.delete(runningKey));
     return { analysisMessage, fixMessage };
+  }
+
+  private async fetchProfile(sparkId: string): Promise<SparkProfile> {
+    const profilePath = await saveProfile(sparkId, await downloadProfile(sparkId));
+    return { sparkId, profilePath };
+  }
+
+  private async removeProfiles(profiles: (SparkProfile | null)[]) {
+    for (const profile of profiles) {
+      if (!profile) continue;
+      await removeProfile(profile.profilePath).catch((error) => this.application.logError(toError(error)));
+    }
   }
 
   private async sendPendingMessages(
@@ -123,7 +151,7 @@ class SparkManager {
         analysisMessage
       );
     } finally {
-      await removeProfile(job.profilePath).catch((error) => this.application.logError(toError(error)));
+      await this.removeProfiles([job, job.baseline]);
     }
   }
 
@@ -151,7 +179,7 @@ class SparkManager {
   }
 
   private getBaseEmbed(job: SparkJob, kind: SparkReportKind): EmbedHelper {
-    return new EmbedHelper()
+    const embed = new EmbedHelper()
       .setTitle(`${SparkManager.reportTitles[kind]}: ${job.sparkId}`)
       .setURL(getSparkURL(job.sparkId))
       .setColor(SparkManager.reportColors[kind])
@@ -159,13 +187,25 @@ class SparkManager {
         { name: 'Requested By', value: `<@${job.requester}>`, inline: true },
         { name: 'Requested In', value: `<#${job.channelId}>`, inline: true }
       );
+    if (job.baseline) {
+      embed.addFields({ name: 'Compared With', value: getSparkURL(job.baseline.sparkId), inline: true });
+    }
+    return embed;
   }
 
   private getButtons(job: SparkJob, analysisMessage?: Message): BaseMessageOptions['components'] {
     const buttons = [
-      new ButtonBuilder().setLabel('Spark Profile').setStyle(ButtonStyle.Link).setURL(getSparkURL(job.sparkId)),
-      new ButtonBuilder().setLabel('Requested In').setStyle(ButtonStyle.Link).setURL(job.channelUrl)
+      new ButtonBuilder().setLabel('Spark Profile').setStyle(ButtonStyle.Link).setURL(getSparkURL(job.sparkId))
     ];
+    if (job.baseline) {
+      buttons.push(
+        new ButtonBuilder()
+          .setLabel('Baseline Profile')
+          .setStyle(ButtonStyle.Link)
+          .setURL(getSparkURL(job.baseline.sparkId))
+      );
+    }
+    buttons.push(new ButtonBuilder().setLabel('Requested In').setStyle(ButtonStyle.Link).setURL(job.channelUrl));
     if (analysisMessage) {
       buttons.push(new ButtonBuilder().setLabel('Analysis').setStyle(ButtonStyle.Link).setURL(analysisMessage.url));
     }
