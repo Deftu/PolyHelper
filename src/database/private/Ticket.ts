@@ -1,3 +1,4 @@
+import BaseParsedDatabaseItem from './BaseParsedDatabaseItem.ts';
 import EmbedHelper, { TicketEmbed } from '../../discord/private/EmbedHelper.ts';
 import PolyHelperError from '../../private/error.ts';
 import {
@@ -9,13 +10,14 @@ import {
   type Message,
   type TextThreadChannel
 } from 'discord.js';
-import { replaceVariables } from '../../utils/stringUtils.ts';
+import { getReason, replaceVariables } from '../../utils/stringUtils.ts';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Panel from './Panel.ts';
+import type { AutocompleteOption } from '../../types/discord.ts';
 import type { DatabaseTicket } from '../../types/database.ts';
 import type { TicketAction } from '../../types/misc.ts';
 
-class Ticket {
+class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
   readonly id: DatabaseTicket['id'];
   readonly panelId: DatabaseTicket['panelId'];
   readonly threadId: DatabaseTicket['threadId'];
@@ -29,6 +31,7 @@ class Ticket {
     data: DatabaseTicket,
     private readonly manager: DatabaseManager
   ) {
+    super();
     this.id = data.id;
     this.panelId = data.panelId;
     this.threadId = data.threadId;
@@ -79,9 +82,10 @@ class Ticket {
 
   async rename(
     name: string = this.panel.defaultTicketName,
-    options: { shouldReplaceVariables?: boolean; runner?: string } = {}
+    options: { shouldReplaceVariables?: boolean; runner?: string; closed?: boolean; pinned?: boolean } = {}
   ): Promise<Ticket> {
     const thread = await this.getThread();
+
     if (options.shouldReplaceVariables !== false) {
       const discord = await this.getDiscord();
       name = replaceVariables(name, {
@@ -91,8 +95,14 @@ class Ticket {
         cleanPanelName: this.panel.cleanName
       });
     }
-    name = name.replaceAll(this.panel.fullPinnedTicketPrefix, '').trim();
-    if (this.pinned) name = `${this.panel.fullPinnedTicketPrefix} ${name}`;
+
+    name = name
+      .replaceAll(this.panel.fullClosedTicketPrefix, '')
+      .replaceAll(this.panel.fullPinnedTicketPrefix, '')
+      .trim();
+    if (options.closed ?? this.closed) name = `${this.panel.fullClosedTicketPrefix} ${name}`;
+    if (options.pinned ?? this.pinned) name = `${this.panel.fullPinnedTicketPrefix} ${name}`;
+
     await thread.setName(name);
     if (options.runner) {
       await thread.send({
@@ -106,28 +116,45 @@ class Ticket {
     return this.manager.updateTicket({ ...this.toJSON(), name });
   }
 
-  async mentionOwnerInThread(message?: string) {
+  async mentionOwnerInThread(message: string = '') {
     const thread = await this.getThread();
     const user = await this.getDiscord();
     await thread.send({ content: `<@${user.user.id}>\n${message}`.trim() });
   }
 
   async close({ reason, runner }: TicketAction) {
+    if (this.closed) throw new PolyHelperError('This ticket is already closed');
     if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
-    const updated = await this.rename(`[Closed] ${this.name}`, { shouldReplaceVariables: false });
+    const updated = await this.rename(this.name, { shouldReplaceVariables: false, closed: true });
     const thread = await this.getThread();
     await thread.send({
       embeds: [
         new EmbedHelper()
           .setTitle('Ticket Closed')
           .setDescription(`This ticket has been closeed by <@${runner}>`)
-          .setFields({ name: 'Reason', value: reason, format: 'Block' })
+          .setFields({ name: 'Reason', value: getReason(reason), format: 'Block' })
       ]
     });
     const closeRequest = this.manager.getCloseRequestByTicketId(this.id);
     if (closeRequest) await this.manager.deleteCloseRequest(closeRequest.id);
     await thread.setArchived(true);
     this.manager.updateTicket({ ...updated.toJSON(), closed: 1 });
+  }
+
+  async open({ reason, runner }: TicketAction) {
+    if (!this.closed) throw new PolyHelperError('This ticket is already open');
+    const thread = await this.getThread();
+    await thread.setArchived(false);
+    const updated = await this.rename(this.name, { shouldReplaceVariables: false, closed: false });
+    await thread.send({
+      embeds: [
+        new EmbedHelper()
+          .setTitle('Ticket Opened')
+          .setDescription(`This ticket has been opened by <@${runner}>`)
+          .setFields({ name: 'Reason', value: getReason(reason), format: 'Block' })
+      ]
+    });
+    this.manager.updateTicket({ ...updated.toJSON(), closed: 0 });
   }
 
   async pin({ reason, runner }: TicketAction) {
@@ -138,7 +165,7 @@ class Ticket {
         new EmbedHelper()
           .setTitle('Ticket Pinned')
           .setDescription(`This ticket has been pinned by <@${runner}>`)
-          .setFields({ name: 'Reason', value: reason, format: 'Block' })
+          .setFields({ name: 'Reason', value: getReason(reason), format: 'Block' })
       ]
     });
     await message.pin();
@@ -163,7 +190,7 @@ class Ticket {
         new EmbedHelper()
           .setTitle('Ticket Unpinned')
           .setDescription(`This ticket has been unpinned by <@${runner}>`)
-          .setFields({ name: 'Reason', value: reason, format: 'Block' })
+          .setFields({ name: 'Reason', value: getReason(reason), format: 'Block' })
       ]
     });
     return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: null }).rename();
@@ -208,7 +235,11 @@ class Ticket {
     };
   }
 
-  toJSON(): DatabaseTicket {
+  override toAutocompleteOption(): AutocompleteOption {
+    return { name: `${this.name} - ${new Date(this.openingTimestamp).toISOString().split('T')[0]}`, value: this.id };
+  }
+
+  override toJSON(): DatabaseTicket {
     return {
       id: this.id,
       panelId: this.panelId,

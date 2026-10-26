@@ -24,11 +24,10 @@ class CountingBlockCommand extends DiscordCommand {
       throw new PolyHelperError('User already has counting blacklist');
     }
 
-    const reason = interaction.options.getString('reason') || 'No reason provided';
     const embed = new EmbedHelper()
       .setColor('Red')
       .setTitle('Blocked from Counting')
-      .addFields({ name: 'Reason', value: reason })
+      .addFields({ name: 'Reason', value: this.getReason(interaction), format: 'Block' })
       .setFooter({ text: `${member.displayName} (${member.id})`, iconURL: member.displayAvatarURL() });
 
     try {

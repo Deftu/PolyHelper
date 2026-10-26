@@ -1,10 +1,12 @@
+import BaseParsedDatabaseItem from './BaseParsedDatabaseItem.ts';
 import EmbedHelper from '../../discord/private/EmbedHelper.ts';
 import { replaceVariables } from '../../utils/stringUtils.ts';
 import type DatabaseManager from '../DatabaseManager.ts';
+import type { AutocompleteOption } from '../../types/discord.ts';
 import type { BaseMessageOptions, User } from 'discord.js';
 import type { DatabasePanel, TicketSearchFilters } from '../../types/database.ts';
 
-class Panel {
+class Panel extends BaseParsedDatabaseItem<DatabasePanel> {
   readonly id: DatabasePanel['id'];
   readonly name: DatabasePanel['name'];
   readonly cleanName: DatabasePanel['cleanName'];
@@ -15,6 +17,7 @@ class Panel {
   readonly openingMessage: DatabasePanel['openingMessage'];
   readonly maxOpenTickets: DatabasePanel['maxOpenTickets'];
   readonly pinnedTicketPrefix: DatabasePanel['pinnedTicketPrefix'];
+  readonly closedTicketPrefix: DatabasePanel['closedTicketPrefix'];
   readonly defaultTicketName: DatabasePanel['defaultTicketName'];
   readonly #pingSupportRoleOnOpen: DatabasePanel['pingSupportRoleOnOpen'];
   readonly #enabled: DatabasePanel['enabled'];
@@ -22,6 +25,7 @@ class Panel {
     data: DatabasePanel,
     private readonly manager: DatabaseManager
   ) {
+    super();
     this.id = data.id;
     this.name = data.name;
     this.cleanName = data.cleanName;
@@ -32,9 +36,14 @@ class Panel {
     this.openingMessage = data.openingMessage;
     this.maxOpenTickets = data.maxOpenTickets;
     this.pinnedTicketPrefix = data.pinnedTicketPrefix;
+    this.closedTicketPrefix = data.closedTicketPrefix;
     this.defaultTicketName = data.defaultTicketName;
     this.#pingSupportRoleOnOpen = data.pingSupportRoleOnOpen;
     this.#enabled = data.enabled;
+  }
+
+  get fullClosedTicketPrefix(): string {
+    return `[${this.closedTicketPrefix}]`;
   }
 
   get fullPinnedTicketPrefix(): string {
@@ -86,7 +95,11 @@ class Panel {
     };
   }
 
-  toJSON(): DatabasePanel {
+  override toAutocompleteOption(): AutocompleteOption {
+    return { name: this.id, value: this.id };
+  }
+
+  override toJSON(): DatabasePanel {
     return {
       id: this.id,
       name: this.name,
@@ -98,6 +111,7 @@ class Panel {
       openingMessage: this.openingMessage,
       maxOpenTickets: this.maxOpenTickets,
       pinnedTicketPrefix: this.pinnedTicketPrefix,
+      closedTicketPrefix: this.closedTicketPrefix,
       defaultTicketName: this.defaultTicketName,
       pingSupportRoleOnOpen: this.#pingSupportRoleOnOpen,
       enabled: this.#enabled

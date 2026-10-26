@@ -67,3 +67,7 @@ export function replaceVariables(template: string, variables: Readonly<Record<st
     return value === null || value === undefined ? match : String(value);
   });
 }
+
+export function getReason(reason: string | null | undefined): string {
+  return reason ?? 'No reason provided';
+}

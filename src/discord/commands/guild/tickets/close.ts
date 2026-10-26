@@ -19,9 +19,8 @@ class CloseCommand extends DiscordCommand {
     .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
-    const reason = interaction.options.getString('reason') || 'No reason provided';
     await interaction.followUp({ content: 'Attempting to close this ticket...' });
-    await this.getTicket(interaction).close({ reason, runner: interaction.user.id });
+    await this.getTicket(interaction).close({ reason: this.getReason(interaction), runner: interaction.user.id });
   }
 }
 

@@ -1,11 +1,13 @@
+import BaseParsedDatabaseItem from './BaseParsedDatabaseItem.ts';
 import PolyHelperError from '../../private/error.ts';
 import { ActionRowBuilder, ButtonBuilder, type Message } from 'discord.js';
 import { CloseRequestButtons } from '../../discord/private/ComponentHelper.ts';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Ticket from './Ticket.ts';
+import type { AutocompleteOption } from '../../types/discord.ts';
 import type { DatabaseCloseRequest } from '../../types/database.ts';
 
-class CloseRequest {
+class CloseRequest extends BaseParsedDatabaseItem<DatabaseCloseRequest> {
   id: DatabaseCloseRequest['id'];
   ticketId: DatabaseCloseRequest['ticketId'];
   messageId: DatabaseCloseRequest['messageId'];
@@ -16,6 +18,7 @@ class CloseRequest {
     data: DatabaseCloseRequest,
     private readonly manager: DatabaseManager
   ) {
+    super();
     this.id = data.id;
     this.ticketId = data.ticketId;
     this.messageId = data.messageId;
@@ -44,7 +47,11 @@ class CloseRequest {
     });
   }
 
-  toJSON(): DatabaseCloseRequest {
+  override toAutocompleteOption(): AutocompleteOption {
+    return { name: this.id, value: this.id };
+  }
+
+  override toJSON(): DatabaseCloseRequest {
     return {
       id: this.id,
       ticketId: this.ticketId,

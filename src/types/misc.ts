@@ -15,7 +15,7 @@ export interface LogData {
 }
 
 export interface TicketAction {
-  reason: string;
+  reason?: string;
   runner: string;
 }
 

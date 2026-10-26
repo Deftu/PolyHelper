@@ -4,20 +4,14 @@ import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import {
   ActionRowBuilder,
-  AutocompleteInteraction,
   ButtonBuilder,
   ButtonStyle,
   ChatInputCommandInteraction,
   MessageFlags,
   PermissionFlagsBits
 } from 'discord.js';
-import {
-  type AutocompleteOption,
-  InteractionFlag,
-  InteractionResponse,
-  type InteractionWithGuild
-} from '../../../../types/discord.ts';
 import { BasicPanelModal } from '../../../private/ComponentHelper.ts';
+import { InteractionFlag, InteractionResponse, type InteractionWithGuild } from '../../../../types/discord.ts';
 
 class TicketPanelsCommand extends DiscordCommand {
   override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
@@ -44,11 +38,6 @@ class TicketPanelsCommand extends DiscordCommand {
     .setResponse(InteractionResponse.None)
     .setFlags(InteractionFlag.RequiresGuild)
     .setFetchGuildMember(false);
-
-  // eslint-disable-next-line require-await
-  override async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
-    return this.discord.application.database.getPanels().map((panel) => ({ name: panel.name, value: panel.id }));
-  }
 
   async executeAdd(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     await interaction.showModal(BasicPanelModal().setCustomId('panelAdd').setTitle('Add a new panel'));

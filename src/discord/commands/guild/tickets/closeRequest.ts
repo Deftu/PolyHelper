@@ -39,7 +39,7 @@ class CloseRequestCommand extends DiscordCommand {
     const autoClose: DatabaseCloseRequest['autoClose'] = autoCloseDuration ? Date.now() + autoCloseDuration : null;
 
     const ticketOwner = await ticket.getDiscord();
-    const reason = interaction.options.getString('reason') ?? 'No reason provided';
+    const reason = this.getReason(interaction);
 
     const embed = new EmbedHelper()
       .setTitle('Close Request')

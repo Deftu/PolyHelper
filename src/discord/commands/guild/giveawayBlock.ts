@@ -24,11 +24,10 @@ class GiveawayBlockCommand extends DiscordCommand {
       throw new PolyHelperError('User already has giveaway blacklist');
     }
 
-    const reason = interaction.options.getString('reason') || 'No reason provided';
     const embed = new EmbedHelper()
       .setColor('Red')
       .setTitle('Blocked from Giveaways')
-      .addFields({ name: 'Reason', value: reason })
+      .addFields({ name: 'Reason', value: this.getReason(interaction), format: 'Block' })
       .setFooter({ text: `${member.displayName} (${member.id})`, iconURL: member.displayAvatarURL() });
 
     try {

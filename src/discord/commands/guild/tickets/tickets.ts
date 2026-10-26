@@ -4,7 +4,6 @@ import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import {
   ActionRowBuilder,
-  type AutocompleteInteraction,
   type BaseMessageOptions,
   ButtonBuilder,
   ButtonStyle,
@@ -13,7 +12,6 @@ import {
   StringSelectMenuOptionBuilder
 } from 'discord.js';
 import {
-  type AutocompleteOption,
   type EmbedHelperField,
   InteractionFlag,
   InteractionPermission,
@@ -51,25 +49,6 @@ class TicketsCommand extends DiscordCommand {
     .addSubcommand((option) => option.setName('overview').setDescription('Overview of the tickets'))
     .setFlags(InteractionFlag.RequiresGuild)
     .setPermission(InteractionPermission.Support);
-
-  // eslint-disable-next-line require-await
-  override async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
-    const focusedOption = interaction.options.getFocused(true);
-
-    switch (focusedOption.name) {
-      case 'ticket-id':
-        return this.discord.application.database
-          .getTickets({ limit: 25 })
-          .map((ticket) => ({
-            name: `${ticket.name} - ${new Date(ticket.openingTimestamp).toISOString().split('T')[0]}`,
-            value: ticket.id
-          }));
-      case 'panel-id':
-        return this.discord.application.database.getPanels().map((panel) => ({ name: panel.name, value: panel.id }));
-      default:
-        return [{ name: 'No perm' }];
-    }
-  }
 
   async executeView(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     const ticketId = interaction.options.getString('ticket-id', true);

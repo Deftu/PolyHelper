@@ -31,6 +31,7 @@ class PanelEditModal extends DiscordModal {
       openingMessage: this.getTextInputValue(interaction, 'openingMessage') ?? panel.openingMessage,
       maxOpenTickets,
       pinnedTicketPrefix: this.getTextInputValue(interaction, 'pinnedTicketPrefix') ?? panel.pinnedTicketPrefix,
+      closedTicketPrefix: this.getTextInputValue(interaction, 'closedTicketPrefix') ?? panel.closedTicketPrefix,
       defaultTicketName: this.getTextInputValue(interaction, 'defaultTicketName') ?? panel.defaultTicketName,
       pingSupportRoleOnOpen: panel.pingSupportRoleOnOpen ? 1 : 0,
       enabled: this.getCheckbox(interaction, 'enabled', panel.enabled) ? 1 : 0
