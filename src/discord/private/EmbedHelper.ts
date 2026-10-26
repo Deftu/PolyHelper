@@ -135,7 +135,7 @@ export class TicketActionEmbed extends EmbedHelper {
   constructor({ reason, runner, title, description }: TicketAction & { title: string; description?: string }) {
     super();
     this.setTitle(`Ticket ${title}`);
-    this.setDescription(description ?? `This ticket has been ${title.toLowerCase()} by ${getMention(runner)}>`);
+    this.setDescription(description ?? `This ticket has been ${title.toLowerCase()} by ${getMention(runner)}`);
     this.setFields({ name: 'Reason', value: getReason(reason), format: 'Block' });
     if (runner instanceof User) this.setAuthor({ name: getUserDisplayName(runner), url: runner.displayAvatarURL() });
   }
