@@ -1,6 +1,6 @@
 import BaseParsedDatabaseItem from './BaseParsedDatabaseItem.ts';
 import PolyHelperError from '../../private/error.ts';
-import { ActionRowBuilder, ButtonBuilder, type Message } from 'discord.js';
+import { ActionRowBuilder, type ButtonBuilder, type Message } from 'discord.js';
 import { CloseRequestButtons } from '../../discord/private/ComponentHelper.ts';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Ticket from './Ticket.ts';

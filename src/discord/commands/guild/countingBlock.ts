@@ -3,8 +3,7 @@ import DiscordCommandMetadata from '../../private/interactions/commands/DiscordC
 import EmbedHelper from '../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../private/error.ts';
 import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../types/discord.ts';
-import { getUserDisplayName, hasRole } from '../../../utils/discordUtils.ts';
-import { isGuildMember } from '@sapphire/discord.js-utilities';
+import { getUserDisplayName, hasRole, isGuildMember } from '../../../utils/discordUtils.ts';
 import { toError } from '../../../utils/miscUtils.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
 

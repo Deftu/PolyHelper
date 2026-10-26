@@ -1,6 +1,6 @@
 import BasicInteractionHandler from '../private/BasicInteractionHandler.ts';
 import { InteractionResponse } from '../../types/discord.ts';
-import { MessageFlags, StringSelectMenuInteraction } from 'discord.js';
+import { MessageFlags, type StringSelectMenuInteraction } from 'discord.js';
 import { readdir } from 'node:fs/promises';
 import type DiscordStringSelectMenu from '../private/interactions/DiscordStringSelectMenu.ts';
 

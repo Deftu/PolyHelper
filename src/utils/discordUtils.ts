@@ -1,4 +1,6 @@
 import {
+  type APIGuildMember,
+  type APIInteractionDataResolvedGuildMember,
   type APIInteractionGuildMember,
   type BaseInteraction,
   type Client,
@@ -9,7 +11,6 @@ import {
   Team,
   User
 } from 'discord.js';
-import { isGuildMember } from '@sapphire/discord.js-utilities';
 import type { InteractionWithGuild } from '../types/discord.ts';
 
 export async function getRoles(member: GuildMember): Promise<Role[]> {
@@ -36,6 +37,13 @@ export async function isApplicationOwner(user: User): Promise<boolean> {
 export function isDiscordServerOwner(user: User): boolean {
   if (!user.client.discordManager.isGuildReady()) return false;
   return user.id === user.client.discordManager.guild.ownerId;
+}
+
+export function isGuildMember(
+  member:
+    GuildMember | APIGuildMember | APIInteractionGuildMember | APIInteractionDataResolvedGuildMember | null | undefined
+): member is GuildMember {
+  return member instanceof GuildMember;
 }
 
 export async function isAdminMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {

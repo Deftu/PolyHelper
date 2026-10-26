@@ -6,7 +6,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ChatInputCommandInteraction,
+  type ChatInputCommandInteraction,
   MessageFlags,
   PermissionFlagsBits
 } from 'discord.js';

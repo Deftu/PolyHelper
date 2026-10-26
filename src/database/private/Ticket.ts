@@ -1,5 +1,6 @@
 import BaseParsedDatabaseItem from './BaseParsedDatabaseItem.ts';
 import PolyHelperError from '../../private/error.ts';
+import ms from 'ms';
 import {
   ActionRowBuilder,
   type BaseMessageOptions,
@@ -7,12 +8,15 @@ import {
   ButtonStyle,
   type GuildMember,
   type Message,
-  type TextThreadChannel
+  MessageFlags,
+  type TextThreadChannel,
+  ThreadAutoArchiveDuration
 } from 'discord.js';
 import { CloseRequestButtons } from '../../discord/private/ComponentHelper.ts';
 import { TicketActionEmbed, TicketEmbed } from '../../discord/private/EmbedHelper.ts';
 import { getMention, getUserId } from '../../utils/discordUtils.ts';
 import { getReason, replaceVariables } from '../../utils/stringUtils.ts';
+import { toError } from '../../utils/miscUtils.ts';
 import type CloseRequest from './CloseRequest.ts';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Panel from './Panel.ts';
@@ -74,6 +78,49 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     const thread = await channel.threads.fetch(this.threadId);
     if (!thread) throw new PolyHelperError('Could not find the matching thread?');
     return thread;
+  }
+
+  async getLastMessageInTicket(): Promise<Message | null> {
+    const thread = await this.getThread();
+    if (thread.lastMessage !== null) return thread.lastMessage;
+    const messages = await thread.messages.fetch({ limit: 1 });
+    return messages.first() ?? null;
+  }
+
+  async refreshThread(): Promise<number | undefined> {
+    const thread = await this.getThread();
+    const threadArchiveDelay = ms('5m');
+    if (thread.autoArchiveDuration === null) await thread.setAutoArchiveDuration(ThreadAutoArchiveDuration.OneWeek);
+
+    const lastMessage = await this.getLastMessageInTicket();
+    const lastActivity = lastMessage?.createdTimestamp ?? thread.createdTimestamp ?? Date.now();
+    const autoArchiveAt = lastActivity + ms(`${thread.autoArchiveDuration ?? ThreadAutoArchiveDuration.OneWeek}m`);
+    if (autoArchiveAt - Date.now() > threadArchiveDelay) return;
+    if (thread.archived) await thread.setArchived(false);
+
+    if (thread.editable && !thread.locked) {
+      const nextDuration =
+        thread.autoArchiveDuration === ThreadAutoArchiveDuration.OneWeek
+          ? ThreadAutoArchiveDuration.ThreeDays
+          : ThreadAutoArchiveDuration.OneWeek;
+
+      try {
+        await thread.setAutoArchiveDuration(nextDuration);
+        return nextDuration;
+      } catch (error) {
+        await this.manager.application.logError(toError(error), [
+          { name: 'Ticket Id', value: this.id, format: 'Block' },
+          { name: 'Operation', value: 'Set auto-archive duration; trying message fallback', format: 'Block' }
+        ]);
+      }
+    }
+
+    if (!thread.sendable || thread.archived || thread.locked) return;
+    await thread.send({
+      content: 'This ticket is still open. This message prevents the thread from being automatically archived.',
+      flags: MessageFlags.SuppressNotifications
+    });
+    return thread.autoArchiveDuration ?? ThreadAutoArchiveDuration.OneWeek;
   }
 
   async getStartingMessage(): Promise<Message> {
@@ -234,7 +281,7 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
           new ButtonBuilder()
             .setLabel(this.closed ? 'Open' : 'Close')
             .setStyle(this.closed ? ButtonStyle.Secondary : ButtonStyle.Danger)
-            .setCustomId(this.closed ? `openTicket:${this.id}` : `closeTicket:${this.id}`)
+            .setCustomId(this.closed ? `reopenTicket:${this.id}` : `closeTicket:${this.id}`)
             .setDisabled(this.pinned),
           new ButtonBuilder()
             .setLabel(this.pinned ? 'Unpin' : 'Pin')

@@ -1,8 +1,7 @@
 import PolyHelperError from '../../private/error.ts';
 import assert from 'node:assert';
 import { type BaseInteraction, Collection } from 'discord.js';
-import { InteractionFlag } from '../../types/discord.ts';
-import { InteractionPermission, type InteractionTypes } from '../../types/discord.ts';
+import { InteractionFlag, InteractionPermission, type InteractionTypes } from '../../types/discord.ts';
 import {
   isAdminMember,
   isApplicationOwner,

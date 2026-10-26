@@ -2,8 +2,8 @@ import DiscordCommand from '../../../private/interactions/commands/DiscordComman
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import ms, { type StringValue } from 'ms';
-import { ChatInputCommandInteraction } from 'discord.js';
 import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
+import type { ChatInputCommandInteraction } from 'discord.js';
 import type { DatabaseCloseRequest } from '../../../../types/database.ts';
 
 class CloseRequestCommand extends DiscordCommand {

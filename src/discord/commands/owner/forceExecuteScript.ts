@@ -3,9 +3,8 @@ import DiscordCommandMetadata from '../../private/interactions/commands/DiscordC
 import EmbedHelper, { SuccessEmbed } from '../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../private/error.ts';
 import prettyMilliseconds from 'pretty-ms';
-import { AutocompleteInteraction, type ChatInputCommandInteraction } from 'discord.js';
-import { type AutocompleteOption, InteractionPermission } from '../../../types/discord.ts';
-import { titleCaseFromCamel } from '../../../utils/stringUtils.ts';
+import { InteractionPermission } from '../../../types/discord.ts';
+import type { ChatInputCommandInteraction } from 'discord.js';
 
 class ForceExecuteScriptCommand extends DiscordCommand {
   override readonly metadata: DiscordCommandMetadata = new DiscordCommandMetadata()
@@ -15,13 +14,6 @@ class ForceExecuteScriptCommand extends DiscordCommand {
       option.setName('script-name').setDescription('Script Name').setRequired(true).setAutocomplete(true)
     )
     .setPermission(InteractionPermission.Owner);
-
-  // eslint-disable-next-line require-await
-  override async autocomplete(interaction: AutocompleteInteraction): Promise<AutocompleteOption[]> {
-    return this.discord.application.scripts.scripts
-      .map(({ id }) => ({ value: id, name: titleCaseFromCamel(id) }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
 
   override async execute(interaction: ChatInputCommandInteraction) {
     const scriptName = interaction.options.getString('script-name', true);

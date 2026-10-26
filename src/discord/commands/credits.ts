@@ -3,7 +3,7 @@ import DiscordCommandMetadata from '../private/interactions/commands/DiscordComm
 import {
   ActionRowBuilder,
   type BaseMessageOptions,
-  ButtonBuilder,
+  type ButtonBuilder,
   type ChatInputCommandInteraction,
   MessageFlags,
   TextDisplayBuilder

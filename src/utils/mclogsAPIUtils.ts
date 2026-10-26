@@ -1,7 +1,7 @@
 import Application from '../Application.ts';
 import {
-  CrashDataCrashes,
-  MclogInfoMetadata,
+  type CrashDataCrashes,
+  type MclogInfoMetadata,
   type MclogsFetchOptions,
   MclogsFetchResponse,
   type MclogsFetchResult,

@@ -2,7 +2,13 @@ import DiscordCommand from '../../../private/interactions/commands/DiscordComman
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
 import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
-import { ActionRowBuilder, ButtonBuilder, ChatInputCommandInteraction, Message, PermissionFlagsBits } from 'discord.js';
+import {
+  ActionRowBuilder,
+  type ButtonBuilder,
+  type ChatInputCommandInteraction,
+  type Message,
+  PermissionFlagsBits
+} from 'discord.js';
 import {
   InteractionFlag,
   InteractionPermission,

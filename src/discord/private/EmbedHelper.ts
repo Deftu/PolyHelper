@@ -10,10 +10,10 @@ import {
 } from 'discord.js';
 import { CommonDevs, EmbedStyles } from '../../private/constants.ts';
 import { ConfigDiscordEmbedsColors } from '../../types/config.ts';
-import { type DevData, type DevName } from '../../types/application.ts';
 import { getMention, getUserDisplayName } from '../../utils/discordUtils.ts';
 import { getReason } from '../../utils/stringUtils.ts';
 import type Ticket from '../../database/private/Ticket.ts';
+import type { DevData, DevName } from '../../types/application.ts';
 import type { EmbedHelperField, EmbedStyleData, EmbedStyleName } from '../../types/discord.ts';
 import type { TicketAction } from '../../types/misc.ts';
 

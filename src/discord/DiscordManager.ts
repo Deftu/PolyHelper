@@ -12,11 +12,11 @@ import {
   Client,
   Events,
   GatewayIntentBits,
-  Guild,
+  type Guild,
   Message,
   MessageFlags,
   type SendableChannels,
-  TextChannel
+  type TextChannel
 } from 'discord.js';
 import { getCleanErrorEmbed, toError } from '../utils/miscUtils.ts';
 import { parseInteractionType } from '../utils/discordUtils.ts';

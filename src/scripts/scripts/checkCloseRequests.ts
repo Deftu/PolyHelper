@@ -19,7 +19,9 @@ class CheckCloseRequestsScript extends BasicScript {
         }
         const message = await closeRequest.getMessage();
         await message.reply({
-          embeds: [new EmbedHelper().setTitle('Closing').setDescription('Close requests have expired. Auto-closing...')]
+          embeds: [
+            new EmbedHelper().setTitle('Closing').setDescription('This close request has expired. Auto-closing...')
+          ]
         });
         await ticket.close({ reason: closeRequest.reason, runner: closeRequest.closer });
       } catch (error) {

@@ -1,6 +1,6 @@
 import BasicInteractionData from '../basic/BasicInteractionData.ts';
 import { type AutocompleteOption, InteractionResponse } from '../../../../types/discord.ts';
-import { getReason } from '../../../../utils/stringUtils.ts';
+import { getReason, titleCaseFromCamel } from '../../../../utils/stringUtils.ts';
 import type DiscordCommandMetadata from './DiscordCommandMetadata.ts';
 import type { AutocompleteInteraction, ChatInputCommandInteraction } from 'discord.js';
 
@@ -30,6 +30,10 @@ abstract class DiscordCommand extends BasicInteractionData<ChatInputCommandInter
           .map((ticket) => ticket.toAutocompleteOption());
       case 'panel-id':
         return this.discord.application.database.getPanels({ limit: 25 }).map((panel) => panel.toAutocompleteOption());
+      case 'script-name':
+        return this.discord.application.scripts.scripts
+          .map(({ id }) => ({ value: id, name: titleCaseFromCamel(id) }))
+          .sort((a, b) => a.name.localeCompare(b.name));
       default:
         return [{ name: 'No Values Found', value: 'UNKNOWN' }];
     }
