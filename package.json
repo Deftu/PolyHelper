@@ -24,8 +24,8 @@
     "docgen": "pnpm docgen:docs && pnpm docgen:packageScripts",
     "docgen:docs": "pnpm exec tsx scripts/generateDocs.ts",
     "docgen:packageScripts": "pnpm exec tsx scripts/generatePackageScripts.ts",
-    "docgen:docs:configuration": "pnpm exec tsx scripts/docs/Configuration.ts",
     "docgen:docs:config:schema": "pnpm exec tsx scripts/docs/config.schema.ts",
+    "docgen:docs:configuration": "pnpm exec tsx scripts/docs/Configuration.ts",
     "validate": "pnpm validate:config && pnpm validate:exampleConfig",
     "validate:config": "pnpm exec tsx scripts/validate/config.ts",
     "validate:exampleConfig": "pnpm exec tsx scripts/validate/exampleConfig.ts"
@@ -36,6 +36,7 @@
     "better-sqlite3": "13.0.3",
     "chalk": "6.0.1",
     "discord.js": "14.27.0",
+    "fflate": "0.8.3",
     "ms": "2.1.3",
     "node-cache": "5.1.2",
     "node-cron": "4.6.0",

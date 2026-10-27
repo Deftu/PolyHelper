@@ -1,145 +1,201 @@
 import Application from '../Application.ts';
 import PolyHelperError from '../private/error.ts';
-import zod from 'zod';
-import { ModrinthProject, ModrinthSearchResponse } from '../types/modrinth.ts';
-import { defineTool } from './claudeUtils.ts';
+import { findModrinthProject } from './modrinthUtils.ts';
 import { getContentsURL, getGithubRepo, githubRequest } from './githubUtils.ts';
 import { isAxiosError } from 'axios';
-import type { ClientTool } from '../types/claude.ts';
 import type { CodeSearchResponse, ContentEntry } from '../types/github.ts';
+import type { ModrinthProject } from '../types/modrinth.ts';
 
-const maxFileLines = 250;
-const modrinthBaseURL = 'https://api.modrinth.com/v2';
+const versionFiles = ['gradle.properties', 'stonecutter.properties.toml', 'settings.gradle.kts'];
 
-const repoInput = zod
-  .string()
-  .regex(/^[\w.-]+\/[\w.-]+$/)
-  .describe('GitHub repository as "owner/name"');
-const refInput = zod.string().optional().describe('Branch, tag or commit SHA. Defaults to the default branch');
+const maxBranches = 5;
 
-async function getModrinthProject(idOrSlug: string): Promise<ModrinthProject | undefined> {
+const maxGateFiles = 8;
+
+function authHeaders(token: string | null): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function cached<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const hit = Application.cache.get<{ value: T }>(key);
+  if (hit) return hit.value;
+  const value = await load();
+  Application.cache.set(key, { value });
+  return value;
+}
+
+function getRepoInfo(repo: string, token: string | null): Promise<RepoInfo | null> {
+  return cached(`source:repo:${repo.toLowerCase()}`, async () => {
+    try {
+      const response = await githubRequest<RepoInfo>(`https://api.github.com/repos/${repo}`, {
+        headers: authHeaders(token)
+      });
+      return { full_name: response.data.full_name, default_branch: response.data.default_branch };
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) return null;
+      throw error;
+    }
+  });
+}
+
+function scoreText(text: string, modVersion: string | null, mcVersion: string | null): number {
+  let score = 0;
+  if (modVersion && text.includes(modVersion)) score += 2;
+  if (mcVersion && text.includes(mcVersion)) score += 1;
+  return score;
+}
+
+async function scoreBranch(
+  repo: string,
+  branch: string,
+  modVersion: string | null,
+  mcVersion: string | null,
+  token: string | null
+): Promise<number> {
+  const texts = await Promise.all(versionFiles.map((file) => getFileText(repo, file, branch, token).catch(() => null)));
+  return Math.max(0, ...texts.map((text) => (text ? scoreText(text, modVersion, mcVersion) : 0)));
+}
+
+interface RepoInfo {
+  full_name: string;
+  default_branch: string;
+}
+
+export interface ModSource {
+  repo: string | null;
+  project: ModrinthProject | null;
+  polyfrost: boolean;
+}
+
+export interface SourceGateLine {
+  path: string;
+  line: number;
+  text: string;
+  modIds: string[];
+  url: string;
+}
+
+export function findModSource(modId: string, token: string | null): Promise<ModSource> {
+  return cached(`source:mod:${modId.toLowerCase()}`, async () => {
+    const project = await findModrinthProject(modId);
+    let repo = getGithubRepo(project?.source_url) ?? null;
+    if (!repo) repo = (await getRepoInfo(`Polyfrost/${modId}`, token))?.full_name ?? null;
+    return { repo, project, polyfrost: repo?.split('/')[0]?.toLowerCase() === 'polyfrost' };
+  });
+}
+
+export async function getFileText(
+  repo: string,
+  path: string,
+  ref: string | null,
+  token: string | null
+): Promise<string | null> {
   try {
-    const response = await Application.request(`${modrinthBaseURL}/project/${encodeURIComponent(idOrSlug)}`);
-    return await ModrinthProject.parseAsync(response.data);
+    const response = await githubRequest<string>(getContentsURL(repo, path), {
+      params: ref ? { ref } : undefined,
+      headers: { ...authHeaders(token), Accept: 'application/vnd.github.raw+json' },
+      responseType: 'text'
+    });
+    if (String(response.headers['content-type'] ?? '').includes('application/json')) return null;
+    return response.data;
   } catch (error) {
-    if (isAxiosError(error) && error.response?.status === 404) return undefined;
+    if (isAxiosError(error) && error.response?.status === 404) return null;
     throw error;
   }
 }
 
-async function searchModrinth(query: string): Promise<ModrinthProject | undefined> {
-  const response = await Application.request(`${modrinthBaseURL}/search`, {
-    params: { query, facets: JSON.stringify([['project_type:mod']]), limit: 1 }
+export async function listDirectory(
+  repo: string,
+  path: string,
+  ref: string | null,
+  token: string | null
+): Promise<ContentEntry[] | null> {
+  const response = await githubRequest<ContentEntry[] | ContentEntry>(getContentsURL(repo, path), {
+    params: ref ? { ref } : undefined,
+    headers: authHeaders(token)
   });
-  const hit = (await ModrinthSearchResponse.parseAsync(response.data)).hits.at(0);
-  return hit ? await getModrinthProject(hit.slug) : undefined;
+  return Array.isArray(response.data) ? response.data : null;
 }
 
-const lookupMod = defineTool({
-  name: 'lookup_mod',
-  description:
-    'Look up a mod on Modrinth by the mod ID that spark reports, or by its name. Returns the source repository, the issue tracker, and whether Polyfrost owns it.',
-  input: zod.object({ mod: zod.string().min(1).describe('Mod ID or name, e.g. "sodium"') }),
-  run: async ({ mod }) => {
-    const project = (await getModrinthProject(mod)) ?? (await searchModrinth(mod));
-    if (!project) {
-      return `No Modrinth project found for "${mod}". Try its display name, or search GitHub with what you know.`;
+export async function searchCode(repo: string, query: string, token: string | null): Promise<string[]> {
+  if (!token) throw new PolyHelperError('Code search needs a GitHub token, and none is configured');
+  const response = await githubRequest<CodeSearchResponse>('https://api.github.com/search/code', {
+    params: { q: `${query} repo:${repo}`, per_page: 20 },
+    headers: authHeaders(token)
+  });
+  return response.data.items.map((item) => item.path);
+}
+
+export function resolveRef(
+  repo: string,
+  modVersion: string | null,
+  mcVersion: string | null,
+  token: string | null
+): Promise<string | null> {
+  return cached(`source:ref:${repo}:${modVersion}:${mcVersion}`, async () => {
+    if (modVersion) {
+      const tags = await githubRequest<{ ref: string }[]>(
+        `https://api.github.com/repos/${repo}/git/matching-refs/tags/`,
+        { headers: authHeaders(token) }
+      ).catch(() => null);
+      const names = (tags?.data ?? []).map((tag) => tag.ref.replace(/^refs\/tags\//, ''));
+      const matching = names.filter((name) => name.includes(modVersion));
+      const best = matching.find((name) => mcVersion && name.includes(mcVersion)) ?? matching.at(0);
+      if (best) return best;
     }
-    const repo = getGithubRepo(project.source_url);
-    return JSON.stringify({
-      title: project.title,
-      slug: project.slug,
-      description: project.description,
-      modrinthURL: `https://modrinth.com/mod/${project.slug}`,
-      sourceURL: project.source_url ?? null,
-      issuesURL: project.issues_url ?? null,
-      githubRepo: repo ?? null,
-      polyfrost: repo?.split('/')[0]?.toLowerCase() === 'polyfrost'
+
+    const info = await getRepoInfo(repo, token).catch(() => null);
+    const fallback = info?.default_branch ?? null;
+    const branches = await githubRequest<{ name: string }[]>(`https://api.github.com/repos/${repo}/branches`, {
+      params: { per_page: 30 },
+      headers: authHeaders(token)
+    }).catch(() => null);
+    const names = (branches?.data ?? []).map((branch) => branch.name);
+    const named = names.find((name) => mcVersion && name.includes(mcVersion));
+    if (named) return named;
+
+    const candidates = [...new Set([fallback, ...names].filter((name): name is string => name !== null))];
+    const scored = await Promise.all(
+      candidates
+        .slice(0, maxBranches)
+        .map(async (name) => ({ name, score: await scoreBranch(repo, name, modVersion, mcVersion, token) }))
+    );
+    const versionMatch = scored.find((entry) => entry.score >= 2);
+    return versionMatch?.name ?? fallback;
+  });
+}
+
+export function getBlobURL(repo: string, ref: string | null, path: string, line?: number): string {
+  return `https://github.com/${repo}/blob/${ref ?? 'HEAD'}/${path}${line ? `#L${line}` : ''}`;
+}
+
+export async function scanSourceGates(
+  repo: string,
+  ref: string | null,
+  loadedMods: Set<string>,
+  selfId: string,
+  token: string | null
+): Promise<SourceGateLine[]> {
+  if (!token) return [];
+  const paths = (await searchCode(repo, 'isModLoaded', token)).filter((path) => /\.(java|kt)$/.test(path));
+  const gates: SourceGateLine[] = [];
+  for (const path of paths.slice(0, maxGateFiles)) {
+    const text = (await getFileText(repo, path, ref, token)) ?? (await getFileText(repo, path, null, token));
+    if (!text) continue;
+    text.split('\n').forEach((line, index) => {
+      const literals = [...line.matchAll(/"([a-z0-9_-]{3,})"/g)].map((match) => match[1] as string);
+      const modIds = [...new Set(literals.filter((id) => id !== selfId && loadedMods.has(id)))];
+      const code = line.trim();
+      if (/^(?:\/\/|\/\*|\*)/.test(code)) return;
+      if (modIds.length === 0 && !line.includes('isModLoaded')) return;
+      gates.push({
+        path,
+        line: index + 1,
+        text: line.trim().slice(0, 160),
+        modIds,
+        url: getBlobURL(repo, ref, path, index + 1)
+      });
     });
   }
-});
-
-function searchCode(token: string | null = null): ClientTool {
-  return defineTool({
-    name: 'github_search_code',
-    description:
-      'Search code in one GitHub repository. Only the default branch is indexed. Returns matching file paths.',
-    input: zod.object({
-      repo: repoInput,
-      query: zod.string().min(1).describe('Search terms, such as a class or method name')
-    }),
-    run: async ({ repo, query }) => {
-      if (!token) {
-        throw new PolyHelperError(
-          'Code search needs a GitHub token, and none is configured. Browse with github_list_directory instead.'
-        );
-      }
-      const response = await githubRequest<CodeSearchResponse>('https://api.github.com/search/code', {
-        params: { q: `${query} repo:${repo}`, per_page: 20 },
-        headers: { Authorization: token !== null ? `Bearer ${token}` : undefined }
-      });
-      if (response.data.items.length === 0) {
-        return 'No matches. Code search only covers the default branch; browse with github_list_directory instead.';
-      }
-      return response.data.items.map((item) => item.path).join('\n');
-    }
-  });
-}
-
-function listDirectory(token: string | null = null): ClientTool {
-  return defineTool({
-    name: 'github_list_directory',
-    description: 'List the files and folders at a path in a GitHub repository.',
-    input: zod.object({
-      repo: repoInput,
-      path: zod.string().default('').describe('Folder path, empty for the root'),
-      ref: refInput
-    }),
-    run: async ({ repo, path, ref }) => {
-      const response = await githubRequest<ContentEntry[] | ContentEntry>(getContentsURL(repo, path), {
-        params: { ref },
-        headers: { Authorization: token !== null ? `Bearer ${token}` : undefined }
-      });
-      if (!Array.isArray(response.data)) return `${path} is a file. Use github_read_file to read it.`;
-      return response.data.map((entry) => `${entry.type === 'dir' ? 'dir ' : 'file'} ${entry.path}`).join('\n');
-    }
-  });
-}
-
-function readFile(token: string | null = null): ClientTool {
-  return defineTool({
-    name: 'github_read_file',
-    description: `Read a file from a GitHub repository, with line numbers. Returns at most ${maxFileLines} lines per call; use startLine to page through longer files.`,
-    input: zod.object({
-      repo: repoInput,
-      path: zod.string().min(1),
-      ref: refInput,
-      startLine: zod.number().int().min(1).default(1),
-      endLine: zod.number().int().min(1).optional()
-    }),
-    run: async ({ repo, path, ref, startLine, endLine }) => {
-      const response = await githubRequest<string>(getContentsURL(repo, path), {
-        params: { ref },
-        headers: {
-          Authorization: token !== null ? `Bearer ${token}` : undefined,
-          Accept: 'application/vnd.github.raw+json'
-        },
-        responseType: 'text'
-      });
-      if (String(response.headers['content-type'] ?? '').includes('application/json')) {
-        return `${path} is not a file. Use github_list_directory to browse it.`;
-      }
-      const lines = response.data.split('\n');
-      const end = Math.min(endLine ?? lines.length, startLine + maxFileLines - 1, lines.length);
-      const body = lines
-        .slice(startLine - 1, end)
-        .map((line, i) => `${startLine + i}: ${line}`)
-        .join('\n');
-      return `${path} (lines ${startLine}-${end} of ${lines.length})\n${body}`;
-    }
-  });
-}
-
-export default function getSourceTools(githubToken: string | null): ClientTool[] {
-  return [lookupMod, searchCode(githubToken), listDirectory(githubToken), readFile(githubToken)];
+  return gates;
 }

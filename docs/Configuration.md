@@ -45,7 +45,6 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 | `ticketLogs`    | `string OR null` | Discord channel id. If null, an auto-generated channel will be used |
 | `botLogs`       | `string OR null` | Discord channel id. If null, an auto-generated channel will be used |
 | `sparkAnalysis` | `string OR null` | Discord channel id. If null, an auto-generated channel will be used |
-| `sparkFixes`    | `string OR null` | Discord channel id. If null, an auto-generated channel will be used |
 
 ### embeds
 
@@ -62,12 +61,27 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 
 ## sparkAnalysis
 
-| Key               | Type             | Description                                                                    |
-| ----------------- | ---------------- | ------------------------------------------------------------------------------ |
-| `enabled`         | `boolean`        | Should /spark analyze spark profiles with Claude                               |
-| `anthropicApiKey` | `string`         | The Anthropic API key used to run the Claude agents                            |
-| `githubToken`     | `string OR null` | GitHub token used to read mod source code. If null, code search is unavailable |
-| `python`          | `string`         | The Python 3 command used to run the spark-analyzer skill script               |
+| Key               | Type                                  | Description                                                                    |
+| ----------------- | ------------------------------------- | ------------------------------------------------------------------------------ |
+| `enabled`         | `boolean`                             | Should /spark analyze spark profiles with Claude                               |
+| `anthropicApiKey` | `string`                              | The Anthropic API key used to run the Claude agents                            |
+| `githubToken`     | `string OR null`                      | GitHub token used to read mod source code. If null, code search is unavailable |
+| `python`          | `string`                              | The Python 3 command used to run the spark-analyzer skill script               |
+| `model`           | `string`                              | The Claude model that investigates the profile                                 |
+| `helperModel`     | `string`                              | The cheaper Claude model that reads source files for the agent                 |
+| `effort`          | `enum(low, medium, high, xhigh, max)` | Effort level of the agent                                                      |
+| `maxTurns`        | `number`                              | Most agent turns per analysis                                                  |
+| `costTarget`      | `number`                              | Spend in USD at which the agent is told to wrap up                             |
+| `costCap`         | `number`                              | Hard spend limit in USD per analysis                                           |
+| `maxJars`         | `number`                              | Most mod jars scanned per analysis                                             |
+| `jarCache`        | `object`                              | Cache for mod jars downloaded from Modrinth                                    |
+
+### jarCache
+
+| Key        | Type     | Description                                 |
+| ---------- | -------- | ------------------------------------------- |
+| `location` | `string` | Folder where downloaded mod jars are cached |
+| `maxMB`    | `number` | Size limit of the jar cache in megabytes    |
 
 ## other
 
@@ -86,7 +100,7 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 ---
 
 This document is [auto generated](/scripts/docs/Configuration.ts) and was last updated on
-`Mon, 26 Oct 2026 13:34:49 GMT` (`1793021689008`)
+`Tue, 27 Oct 2026 14:16:04 GMT` (`1793110564650`)
 
 To update this document please run `pnpm docgen` or contact a maintainer and ask them to update it.
 

@@ -1,6 +1,6 @@
 {
   "$schema": "./docs/config.schema.json",
-  "configVersion": 3,
+  "configVersion": 4,
   "discord": {
     "token": "DICORD_TOKEN",
     "serverId": "DISCORD_SERVER_ID",
@@ -18,8 +18,7 @@
       "support": "DISCORD_CHANNEL_ID",
       "ticketLogs": null,
       "botLogs": null,
-      "sparkAnalysis": null,
-      "sparkFixes": null
+      "sparkAnalysis": null
     },
     "embeds": {
       "colors": {
@@ -41,7 +40,18 @@
     "enabled": false,
     "anthropicApiKey": "ANTHROPIC_API_KEY",
     "githubToken": null,
-    "python": "python3"
+    "python": "python3",
+    "model": "claude-sonnet-5-5",
+    "helperModel": "claude-haiku-5-5",
+    "effort": "medium",
+    "maxTurns": 10,
+    "costTarget": 0.1,
+    "costCap": 0.15,
+    "maxJars": 5,
+    "jarCache": {
+      "location": "./data/cache/jars",
+      "maxMB": 500
+    }
   },
   "other": {
     "configBackups": {

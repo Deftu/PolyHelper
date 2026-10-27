@@ -48,13 +48,9 @@
             "sparkAnalysis": {
               "description": "Discord channel id. If null, an auto-generated channel will be used",
               "type": ["string", "null"]
-            },
-            "sparkFixes": {
-              "description": "Discord channel id. If null, an auto-generated channel will be used",
-              "type": ["string", "null"]
             }
           },
-          "required": ["errorLog", "support", "ticketLogs", "botLogs", "sparkAnalysis", "sparkFixes"],
+          "required": ["errorLog", "support", "ticketLogs", "botLogs", "sparkAnalysis"],
           "additionalProperties": false,
           "description": "Configuration options the discord channels"
         },
@@ -101,9 +97,64 @@
         "python": {
           "type": "string",
           "description": "The Python 3 command used to run the spark-analyzer skill script"
+        },
+        "model": { "type": "string", "description": "The Claude model that investigates the profile" },
+        "helperModel": {
+          "type": "string",
+          "description": "The cheaper Claude model that reads source files for the agent"
+        },
+        "effort": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "xhigh", "max"],
+          "description": "Effort level of the agent"
+        },
+        "maxTurns": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Most agent turns per analysis"
+        },
+        "costTarget": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Spend in USD at which the agent is told to wrap up"
+        },
+        "costCap": { "type": "number", "exclusiveMinimum": 0, "description": "Hard spend limit in USD per analysis" },
+        "maxJars": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Most mod jars scanned per analysis"
+        },
+        "jarCache": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string", "description": "Folder where downloaded mod jars are cached" },
+            "maxMB": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Size limit of the jar cache in megabytes"
+            }
+          },
+          "required": ["location", "maxMB"],
+          "additionalProperties": false,
+          "description": "Cache for mod jars downloaded from Modrinth"
         }
       },
-      "required": ["enabled", "anthropicApiKey", "githubToken", "python"],
+      "required": [
+        "enabled",
+        "anthropicApiKey",
+        "githubToken",
+        "python",
+        "model",
+        "helperModel",
+        "effort",
+        "maxTurns",
+        "costTarget",
+        "costCap",
+        "maxJars",
+        "jarCache"
+      ],
       "additionalProperties": false,
       "description": "Configuration options for spark profile analysis"
     },
