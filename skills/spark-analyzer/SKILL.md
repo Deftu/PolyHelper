@@ -56,7 +56,8 @@ side-by-side table.
 
 Do these in order. Don't skip to a verdict.
 
-1. **Header and `system:` line.** Note the CPU, RAM, heap and GC, and every
+1. **Header and `system:` line.** Note the CPU (process and system-wide usage),
+   RAM, swap, heap and GC, and every
    `hint:` line. Hints are inference (spark records no GPU), so use them to
    weigh findings, never as the finding.
 2. **By-mod table.** Self-time only, so it hides cost that lands in natives,

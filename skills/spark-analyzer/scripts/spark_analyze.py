@@ -62,8 +62,9 @@ PASS_NAME_RE = re.compile(r'lambda\$add(\w+?)Pass')
 SAMPLER_METADATA = {'start_time': 2, 'interval_us': 3, 'platform_metadata': 7, 'platform_statistics': 8,
                     'system_statistics': 9, 'end_time': 11, 'sources': 13, 'sampler_mode': 15,
                     'sampler_engine': 16}
-SYSTEM_STATISTICS = {'cpu_threads': (1, 1), 'cpu_process_last1m': (1, 2, 1), 'cpu_model': (1, 4),
-                     'ram_used': (2, 1, 1), 'ram_total': (2, 1, 2), 'gc_since_jvm_start': 3,
+SYSTEM_STATISTICS = {'cpu_threads': (1, 1), 'cpu_process_last1m': (1, 2, 1), 'cpu_system_last1m': (1, 3, 1),
+                     'cpu_model': (1, 4), 'ram_used': (2, 1, 1), 'ram_total': (2, 1, 2),
+                     'swap_used': (2, 2, 1), 'swap_total': (2, 2, 2), 'gc_since_jvm_start': 3,
                      'java_version': (6, 2), 'java_vm_args': (6, 4), 'uptime_ms': (7,)}
 PLATFORM_HEAP = {'path': (1, 1), 'used': 1, 'committed': 2, 'max': 4}
 PLUGIN_OR_MOD_VERSION = 2
@@ -303,7 +304,9 @@ def system_stats(m):
         'cpu_model': (ppath(s, f['cpu_model'], pstr) or '').strip() or None,
         'cpu_threads': ppath(s, f['cpu_threads'], pint),
         'cpu_process_last1m': ppath(s, f['cpu_process_last1m'], pdbl),
+        'cpu_system_last1m': ppath(s, f['cpu_system_last1m'], pdbl),
         'ram_used': ppath(s, f['ram_used'], pint), 'ram_total': ppath(s, f['ram_total'], pint),
+        'swap_used': ppath(s, f['swap_used'], pint), 'swap_total': ppath(s, f['swap_total'], pint),
         'heap_used': pint(heap, PLATFORM_HEAP['used']), 'heap_committed': pint(heap, PLATFORM_HEAP['committed']),
         'heap_max': pint(heap, PLATFORM_HEAP['max']),
         'java_version': ppath(s, f['java_version'], pstr), 'xmx': xmx.group(1) if xmx else None,
@@ -524,11 +527,14 @@ def print_system(s):
     bits = []
     if s['cpu_model']:
         cpu = re.sub(r'\(R\)|\(TM\)|CPU|@.*$', '', s['cpu_model'])
-        bits.append('%s (%s thr, proc %.0f%%)' % (' '.join(cpu.split()), s['cpu_threads'] or '?',
-                                                  100 * (s['cpu_process_last1m'] or 0)))
+        bits.append('%s (%s thr, proc %.0f%%, sys %.0f%%)' % (' '.join(cpu.split()), s['cpu_threads'] or '?',
+                                                              100 * (s['cpu_process_last1m'] or 0),
+                                                              100 * (s['cpu_system_last1m'] or 0)))
     if s['ram_total']:
         bits.append('ram %s/%s GB (%.0f%%)' % (gb(s['ram_used']), gb(s['ram_total']),
                                               100.0 * (s['ram_used'] or 0) / s['ram_total']))
+    if s['swap_total']:
+        bits.append('swap %s/%s GB' % (gb(s['swap_used']), gb(s['swap_total'])))
     if s['heap_max']:
         bits.append('heap %s/%s/%s GB' % (gb(s['heap_used']), gb(s['heap_committed']), gb(s['heap_max'])))
     if s['java_version']:
@@ -728,6 +734,7 @@ def pick_thread(res, thread):
 def to_json(lab, r, thread, hook_min, tree, callers_pattern, callers_depth):
     th = r['threads'].get(thread) or {}
     out = {'label': lab, 'meta': r['meta'], 'windows': r['windows'], 'mods': sorted(r['mods']),
+           'mod_versions': r['mod_versions'],
            'thread': thread, 'self_total_ms': th.get('self_total'), 'wall_ms': th.get('wall'),
            'by_mod': dict((th.get('by_mod') or collections.Counter()).most_common())}
     if th:
