@@ -1,61 +1,31 @@
-import Anthropic from '@anthropic-ai/sdk';
-import EmbedHelper from '../discord/private/EmbedHelper.ts';
 import PolyHelperError from '../private/error.ts';
-import {
-  ActionRowBuilder,
-  AttachmentBuilder,
-  type BaseMessageOptions,
-  ButtonBuilder,
-  ButtonStyle,
-  type Message,
-  type SendableChannels
-} from 'discord.js';
-import {
-  analyzeProfile,
-  downloadProfile,
-  getNoFixReason,
-  getSparkURL,
-  parseAnalysis,
-  removeProfile,
-  saveProfile,
-  writeFixBrief
-} from '../utils/sparkUtils.ts';
+import { MessageFlags, type CommandInteraction, type Message } from 'discord.js';
+import { downloadProfile, getSparkURL, removeProfile, saveProfile } from '../utils/sparkUtils.ts';
+import { findModrinthProject } from '../utils/modrinthUtils.ts';
+import { getChannelView, getFailedView, getLateView, getPendingView, getPrivateView } from './SparkViews.ts';
+import { investigate } from './SparkAgent.ts';
+import { runPrepass } from './SparkPrepass.ts';
 import { toError } from '../utils/miscUtils.ts';
 import type Application from '../Application.ts';
-import type {
-  ScanSparkLogMetadata,
-  ScanSparkLogResult,
-  SparkJob,
-  SparkProfile,
-  SparkReportKind
-} from '../types/spark.ts';
+import type { SparkView } from './SparkViews.ts';
+import type { SparkJob, SparkProfile, SparkRequest, SparkResult } from '../types/spark.ts';
+
+const replyEditWindowMs = 14 * 60 * 1000;
+const lateNoticeMs = 13 * 60 * 1000;
 
 class SparkManager {
   private readonly running = new Set<string>();
   constructor(readonly application: Application) {}
 
-  static reportTitles: Record<SparkReportKind, string> = { analysis: 'Spark Analysis', fix: 'Fix Brief' };
-  static reportColors: Record<SparkReportKind, 'Green' | 'Blue'> = { analysis: 'Green', fix: 'Blue' };
-
-  async scanSparkLog({
-    sparkId,
-    baselineId = null,
-    supportNotes,
-    channelId,
-    channelUrl,
-    requester
-  }: ScanSparkLogMetadata): Promise<ScanSparkLogResult> {
+  async scanSparkLog({ mode, sparkId, baselineId, supportNotes, interaction }: SparkRequest): Promise<void> {
     const config = this.application.config.sparkAnalysis;
     if (!config.enabled) throw new PolyHelperError('Spark analysis is disabled');
     if (baselineId === sparkId) throw new PolyHelperError('Pick two different spark profiles to compare');
+    if (!interaction.channel) throw new PolyHelperError('Run this in a server channel');
     const runningKey = baselineId ? `${baselineId}:${sparkId}` : sparkId;
     if (this.running.has(runningKey)) throw new PolyHelperError('That spark profile is already being analyzed');
 
-    const [analysisChannel, fixChannel] = await Promise.all([
-      this.application.discord.getChannel('sparkAnalysis'),
-      this.application.discord.getChannel('sparkFixes')
-    ]);
-
+    const channel = await this.application.discord.getChannel('sparkAnalysis');
     this.running.add(runningKey);
     const [profile, baseline] = await Promise.allSettled([
       this.fetchProfile(sparkId),
@@ -71,25 +41,30 @@ class SparkManager {
     }
 
     const job: SparkJob = {
-      client: new Anthropic({ apiKey: config.anthropicApiKey }),
-      config,
-      ...profile.value,
+      mode,
+      profile: profile.value,
       baseline: baseline.value,
       supportNotes,
-      channelId,
-      channelUrl,
-      requester
+      channelId: interaction.channel.id,
+      requester: interaction.user.id,
+      startedAt: interaction.createdTimestamp
     };
-    const [analysisMessage, fixMessage] = await this.sendPendingMessages(job, analysisChannel, fixChannel).catch(
-      async (error) => {
-        this.running.delete(runningKey);
-        await this.removeProfiles([job, job.baseline]);
-        throw error;
-      }
-    );
 
-    this.runJob(job, analysisMessage, fixMessage).finally(() => this.running.delete(runningKey));
-    return { analysisMessage, fixMessage };
+    let channelMessage: Message;
+    let privateMessage: Message;
+    try {
+      channelMessage = await channel.send(getPendingView(job, null));
+      privateMessage = await interaction.followUp({
+        ...getPendingView(job, channelMessage.url),
+        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+      });
+    } catch (error) {
+      this.running.delete(runningKey);
+      await this.removeProfiles([job.profile, job.baseline]);
+      throw error;
+    }
+
+    this.runJob(job, interaction, channelMessage, privateMessage).finally(() => this.running.delete(runningKey));
   }
 
   private async fetchProfile(sparkId: string): Promise<SparkProfile> {
@@ -104,169 +79,58 @@ class SparkManager {
     }
   }
 
-  private async sendPendingMessages(
+  private async editPrivate(interaction: CommandInteraction, message: Message, options: SparkView) {
+    if (Date.now() - interaction.createdTimestamp > replyEditWindowMs) return;
+    const { components, files, allowedMentions } = options;
+    await interaction
+      .editReply({ message: message.id, components, files, allowedMentions })
+      .catch((error) => console.warn(`Could not edit the private spark reply: ${toError(error).message}`));
+  }
+
+  private async getIcon(modId: string | null | undefined, result: SparkResult): Promise<string | null> {
+    if (!modId) return null;
+    const scanned = result.prepass.scanned.find((mod) => mod.modId === modId);
+    if (scanned) return scanned.iconUrl;
+    return (await findModrinthProject(modId).catch(() => null))?.icon_url ?? null;
+  }
+
+  private async runJob(
     job: SparkJob,
-    analysisChannel: SendableChannels,
-    fixChannel: SendableChannels
-  ): Promise<[Message, Message]> {
-    const analysisMessage = await analysisChannel.send(this.getPendingMessage(job, 'analysis', '⏳ Working on it...'));
-    const fixMessage = await fixChannel.send(
-      this.getPendingMessage(job, 'fix', '⏳ Waiting for the analysis...', analysisMessage)
+    interaction: CommandInteraction,
+    channelMessage: Message,
+    privateMessage: Message
+  ) {
+    const config = this.application.config.sparkAnalysis;
+    const lateTimer = setTimeout(
+      () => {
+        void this.editPrivate(interaction, privateMessage, getLateView(job, channelMessage.url));
+      },
+      lateNoticeMs - (Date.now() - interaction.createdTimestamp)
     );
-    return [analysisMessage, fixMessage];
-  }
-
-  private async runJob(job: SparkJob, analysisMessage: Message, fixMessage: Message) {
     try {
-      const analysis = await this.runReport(job, 'analysis', analysisMessage, async () => {
-        const result = parseAnalysis(await analyzeProfile(job));
-        await analysisMessage.edit(this.getReportMessage(job, 'analysis', result.report));
-        return result;
-      });
-      if (!analysis) {
-        return await this.editSafely(
-          fixMessage,
-          this.getSkippedMessage(job, 'The analysis failed, so no fix was attempted.', analysisMessage)
-        );
-      }
-      if (!analysis.handoff?.possible) {
-        const reason = analysis.handoff?.reason ?? 'The analysis did not find a mod to fix.';
-        return await this.editSafely(fixMessage, this.getSkippedMessage(job, reason, analysisMessage));
-      }
-
-      await this.editSafely(fixMessage, this.getPendingMessage(job, 'fix', '⏳ Working on it...', analysisMessage));
-      await this.runReport(
-        job,
-        'fix',
-        fixMessage,
-        async () => {
-          const report = await writeFixBrief(job, analysis);
-          const noFixReason = getNoFixReason(report);
-          await fixMessage.edit(
-            noFixReason
-              ? this.getSkippedMessage(job, noFixReason, analysisMessage)
-              : this.getReportMessage(job, 'fix', report, analysisMessage)
-          );
-        },
-        analysisMessage
-      );
-    } finally {
-      await this.removeProfiles([job, job.baseline]);
-    }
-  }
-
-  private async runReport<T>(
-    job: SparkJob,
-    kind: SparkReportKind,
-    message: Message,
-    run: () => Promise<T>,
-    analysisMessage?: Message
-  ): Promise<T | undefined> {
-    try {
-      return await run();
+      const prepass = await runPrepass(job, config);
+      const result = await investigate(job, prepass, config);
+      result.durationMs = Date.now() - job.startedAt;
+      const primary = await this.getIcon(result.report?.primaryMod, result);
+      const handoff = await this.getIcon(result.report?.handoff?.mod, result);
+      await channelMessage.edit(getChannelView(job, result, { primary, handoff }));
+      clearTimeout(lateTimer);
+      await this.editPrivate(interaction, privateMessage, getPrivateView(job, result, channelMessage.url, primary));
     } catch (error) {
+      clearTimeout(lateTimer);
       await this.application.logError(toError(error), [
-        { name: 'Spark Profile', value: getSparkURL(job.sparkId) },
-        { name: 'Report', value: SparkManager.reportTitles[kind] }
+        { name: 'Spark Profile', value: getSparkURL(job.profile.sparkId) },
+        { name: 'Mode', value: job.mode }
       ]);
-      await this.editSafely(message, this.getFailedMessage(job, kind, error, analysisMessage));
-      return undefined;
+      const reason = error instanceof PolyHelperError ? error.message : 'This error has been reported to the devs';
+      await channelMessage
+        .edit(getFailedView(job, reason, null))
+        .catch((editError) => this.application.logError(toError(editError)));
+      await this.editPrivate(interaction, privateMessage, getFailedView(job, reason, channelMessage.url));
+    } finally {
+      clearTimeout(lateTimer);
+      await this.removeProfiles([job.profile, job.baseline]);
     }
-  }
-
-  private async editSafely(message: Message, options: BaseMessageOptions) {
-    await message.edit(options).catch((error) => this.application.logError(toError(error)));
-  }
-
-  private getBaseEmbed(job: SparkJob, kind: SparkReportKind): EmbedHelper {
-    const embed = new EmbedHelper()
-      .setTitle(`${SparkManager.reportTitles[kind]}: ${job.sparkId}`)
-      .setURL(getSparkURL(job.sparkId))
-      .setColor(SparkManager.reportColors[kind])
-      .setFields(
-        { name: 'Requested By', value: `<@${job.requester}>`, inline: true },
-        { name: 'Requested In', value: `<#${job.channelId}>`, inline: true }
-      );
-    if (job.baseline) {
-      embed.addFields({ name: 'Compared With', value: getSparkURL(job.baseline.sparkId), inline: true });
-    }
-    return embed;
-  }
-
-  private getButtons(job: SparkJob, analysisMessage?: Message): BaseMessageOptions['components'] {
-    const buttons = [
-      new ButtonBuilder().setLabel('Spark Profile').setStyle(ButtonStyle.Link).setURL(getSparkURL(job.sparkId))
-    ];
-    if (job.baseline) {
-      buttons.push(
-        new ButtonBuilder()
-          .setLabel('Baseline Profile')
-          .setStyle(ButtonStyle.Link)
-          .setURL(getSparkURL(job.baseline.sparkId))
-      );
-    }
-    buttons.push(new ButtonBuilder().setLabel('Requested In').setStyle(ButtonStyle.Link).setURL(job.channelUrl));
-    if (analysisMessage) {
-      buttons.push(new ButtonBuilder().setLabel('Analysis').setStyle(ButtonStyle.Link).setURL(analysisMessage.url));
-    }
-    return [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)];
-  }
-
-  private getPendingMessage(
-    job: SparkJob,
-    kind: SparkReportKind,
-    status: string,
-    analysisMessage?: Message
-  ): BaseMessageOptions {
-    const embed = this.getBaseEmbed(job, kind).setDescription(status);
-    if (job.supportNotes) embed.addFields({ name: 'Notes', value: job.supportNotes });
-    return { embeds: [embed], components: this.getButtons(job, analysisMessage) };
-  }
-
-  private getReportMessage(
-    job: SparkJob,
-    kind: SparkReportKind,
-    report: string,
-    analysisMessage?: Message
-  ): BaseMessageOptions {
-    const truncated = report.length > EmbedHelper.embedDescriptionLimit;
-    const embed = this.getBaseEmbed(job, kind)
-      .setDescription(
-        truncated
-          ? `${report.slice(0, EmbedHelper.embedDescriptionLimit - 100)}\n\n*Truncated. The full report is attached.*`
-          : report
-      )
-      .setAIFooter();
-    if (job.supportNotes) embed.addFields({ name: 'Notes', value: job.supportNotes });
-    return {
-      embeds: [embed],
-      files: truncated ? [new AttachmentBuilder(Buffer.from(report), { name: `${kind}-${job.sparkId}.md` })] : [],
-      components: this.getButtons(job, analysisMessage)
-    };
-  }
-
-  private getSkippedMessage(job: SparkJob, reason: string, analysisMessage?: Message): BaseMessageOptions {
-    return {
-      embeds: [this.getBaseEmbed(job, 'fix').setColor('Gray').setDescription(`No fix brief. ${reason}`).setAIFooter()],
-      components: this.getButtons(job, analysisMessage)
-    };
-  }
-
-  private getFailedMessage(
-    job: SparkJob,
-    kind: SparkReportKind,
-    error: unknown,
-    analysisMessage?: Message
-  ): BaseMessageOptions {
-    const reason = error instanceof PolyHelperError ? error.message : 'This error has been reported to the devs';
-    return {
-      embeds: [
-        this.getBaseEmbed(job, kind)
-          .setColor('Red')
-          .setDescription(`❌ ${SparkManager.reportTitles[kind]} failed: ${reason}`)
-      ],
-      components: this.getButtons(job, analysisMessage)
-    };
   }
 }
 

@@ -93,11 +93,6 @@ export default class EmbedHelper extends EmbedBuilder {
     }
     return value;
   }
-
-  setAIFooter(message: string = 'AI-generated. Check it before acting on it.'): this {
-    this.setFooter({ text: `⚠️ ${message}` });
-    return this;
-  }
 }
 
 export class WarningEmbed extends EmbedHelper {

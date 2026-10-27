@@ -11,13 +11,21 @@ a bot to do misc things for the Polyfrost server
 
 ## spark analysis
 
-`/spark <link>` hands a spark profile to two Claude agents. Both run the `skills/spark-analyzer` skill on the bot's
-host. One posts an analysis for support in the `sparkAnalysis` channel, the other posts a fix brief for developers in
-the `sparkFixes` channel, ready to paste into their coding agent.
+`/spark analyze <link>` hands a spark profile to one Claude agent running the `skills/spark-analyzer` skill on the bot's
+host. Before the agent starts, the bot scans the jars of the suspect mods (the exact versions from Modrinth) for
+bail-out gates, such as a mod turning an optimization off because another mod is loaded. When a mod has no jar on
+Modrinth, it scans the mod's source on GitHub instead. The agent can ask a smaller model to read source files for it.
 
-`/spark-compare <baseline> <link>` does the same for two profiles, such as without and with a mod, and reports what
-changed between them.
+The full analysis, including a dev handoff when a mod's code could fix the problem, is posted in the `sparkAnalysis`
+channel. The support team member who ran the command also gets a private summary with a link to it.
+
+`/spark compare <baseline> <link>` does the same for two profiles, such as without and with a mod, and reports what
+changed between them. The `Scan Spark Log` message context menu runs `analyze` on the link in a message.
+
+Each analysis has a spend target (`sparkAnalysis.costTarget`), where the agent is told to wrap up, and a hard cap
+(`sparkAnalysis.costCap`).
 
 1. install Python 3. Set `sparkAnalysis.python` if it isn't `python3` on your `PATH`
 2. set `sparkAnalysis.enabled` to `true` and fill in `sparkAnalysis.anthropicApiKey`
-3. optionally set `sparkAnalysis.githubToken` so the fix agent can search mod source code
+3. optionally set `sparkAnalysis.githubToken` so the agent can search mod source code and scan mods that aren't on
+   Modrinth

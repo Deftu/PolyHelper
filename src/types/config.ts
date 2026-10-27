@@ -70,8 +70,7 @@ export const ConfigDiscordChannels = zod
     support: ConfigDiscordChannelId,
     ticketLogs: ConfigDiscordChannelIdGenerate,
     botLogs: ConfigDiscordChannelIdGenerate,
-    sparkAnalysis: ConfigDiscordChannelIdGenerate,
-    sparkFixes: ConfigDiscordChannelIdGenerate
+    sparkAnalysis: ConfigDiscordChannelIdGenerate
   })
   .meta({ description: 'Configuration options the discord channels' });
 export const ConfigDiscord = zod
@@ -105,6 +104,12 @@ export const ConfigOther = zod
   })
   .meta({ description: "Configuration options for misc/other stuff or things that don't have a good location" });
 
+export const ConfigSparkAnalysisJarCache = zod
+  .object({
+    location: zod.string().meta({ description: 'Folder where downloaded mod jars are cached' }),
+    maxMB: zod.number().positive().meta({ description: 'Size limit of the jar cache in megabytes' })
+  })
+  .meta({ description: 'Cache for mod jars downloaded from Modrinth' });
 export const ConfigSparkAnalysis = zod
   .object({
     enabled: zod.boolean().meta({ description: 'Should /spark analyze spark profiles with Claude' }),
@@ -113,7 +118,15 @@ export const ConfigSparkAnalysis = zod
       .string()
       .nullable()
       .meta({ description: 'GitHub token used to read mod source code. If null, code search is unavailable' }),
-    python: zod.string().meta({ description: 'The Python 3 command used to run the spark-analyzer skill script' })
+    python: zod.string().meta({ description: 'The Python 3 command used to run the spark-analyzer skill script' }),
+    model: zod.string().meta({ description: 'The Claude model that investigates the profile' }),
+    helperModel: zod.string().meta({ description: 'The cheaper Claude model that reads source files for the agent' }),
+    effort: zod.enum(['low', 'medium', 'high', 'xhigh', 'max']).meta({ description: 'Effort level of the agent' }),
+    maxTurns: zod.number().int().positive().meta({ description: 'Most agent turns per analysis' }),
+    costTarget: zod.number().positive().meta({ description: 'Spend in USD at which the agent is told to wrap up' }),
+    costCap: zod.number().positive().meta({ description: 'Hard spend limit in USD per analysis' }),
+    maxJars: zod.number().int().min(0).meta({ description: 'Most mod jars scanned per analysis' }),
+    jarCache: ConfigSparkAnalysisJarCache
   })
   .meta({ description: 'Configuration options for spark profile analysis' });
 
