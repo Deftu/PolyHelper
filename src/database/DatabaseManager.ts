@@ -9,6 +9,7 @@ import type {
   DatabaseCloseRequest,
   DatabasePanel,
   DatabaseTicket,
+  DatabaseTicketActivity,
   PanelSearchFilters,
   TicketSearchFilters
 } from '../types/database.ts';
@@ -140,7 +141,7 @@ class DatabaseManager extends BasicDatabaseManager {
     const id: DatabaseTicket['id'] = crypto.randomUUID();
     this.db
       .prepare<DatabaseTicket>(
-        'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, startingMessageId, openingTimestamp, name, closed) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @startingMessageId, @openingTimestamp, @name, @closed)'
+        'INSERT INTO tickets (id, panelId, threadId, owner, pinMessageId, startingMessageId, openingTimestamp, name, closed, lastMessageTimestamp, lastMessageBySupport, inactivityAlerts, lastAlertTimestamp) VALUES (@id, @panelId, @threadId, @owner, @pinMessageId, @startingMessageId, @openingTimestamp, @name, @closed, @lastMessageTimestamp, @lastMessageBySupport, @inactivityAlerts, @lastAlertTimestamp)'
       )
       .run({ ...ticketData, id });
     return new Ticket({ ...ticketData, id }, this);
@@ -154,6 +155,17 @@ class DatabaseManager extends BasicDatabaseManager {
       .run(data);
     if (update.changes === 0) throw new PolyHelperError('Could not find this ticket?');
     return new Ticket(data, this);
+  }
+
+  updateTicketActivity(id: DatabaseTicket['id'], activity: DatabaseTicketActivity): Ticket {
+    this.db
+      .prepare<DatabaseTicketActivity & Pick<DatabaseTicket, 'id'>>(
+        'UPDATE tickets SET lastMessageTimestamp = @lastMessageTimestamp, lastMessageBySupport = @lastMessageBySupport, inactivityAlerts = @inactivityAlerts, lastAlertTimestamp = @lastAlertTimestamp WHERE id = @id'
+      )
+      .run({ ...activity, id });
+    const ticket = this.getTicket(id);
+    if (!ticket) throw new PolyHelperError('Could not find this ticket?');
+    return ticket;
   }
 
   getCloseRequest(id: DatabaseCloseRequest['id']): CloseRequest | undefined {

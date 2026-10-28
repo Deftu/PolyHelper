@@ -1,0 +1,4 @@
+ALTER TABLE tickets ADD COLUMN lastMessageTimestamp INT DEFAULT NULL;
+ALTER TABLE tickets ADD COLUMN lastMessageBySupport INT NOT NULL DEFAULT 0;
+ALTER TABLE tickets ADD COLUMN inactivityAlerts INT NOT NULL DEFAULT 0;
+ALTER TABLE tickets ADD COLUMN lastAlertTimestamp INT DEFAULT NULL;
