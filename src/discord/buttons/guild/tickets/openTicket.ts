@@ -82,7 +82,7 @@ class OpenTicketButton extends DiscordButton {
       inactivityAlerts: 0,
       lastAlertTimestamp: null
     });
-    await ticket.rename({ executor: interaction.user });
+    await ticket.rename({ executor: interaction.user, silent: true });
     await interaction.followUp({
       embeds: [new EmbedHelper().setTitle('Ticket').setDescription(`Opened a ticket: <#${thread.id}>`)]
     });
