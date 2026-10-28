@@ -74,7 +74,7 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
   get nextInactivityAlertAt(): number | null {
     if (this.lastMessageTimestamp === null) return null;
     const cap = this.lastMessageBySupport ? ms('2d') : ms('12h');
-    const delay = Math.min(ms('3.75m') * 2 ** this.inactivityAlerts, cap);
+    const delay = Math.min(ms('1h') * 2 ** this.inactivityAlerts, cap);
     return (this.lastAlertTimestamp ?? this.lastMessageTimestamp) + delay;
   }
 
