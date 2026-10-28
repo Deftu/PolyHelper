@@ -226,13 +226,16 @@ export async function scanMod(
     sourceGates: []
   };
 
-  if (!source.project) scanned.jarNote = 'not on Modrinth';
-  else if (!version) scanned.jarNote = 'spark did not report a version';
-  else {
+  if (!source.project) {
+    scanned.jarNote = 'not on Modrinth';
+  } else if (!version) {
+    scanned.jarNote = 'spark did not report a version';
+  } else {
     const match = await findModrinthVersion(source.project.id, version, mcVersion, loader);
     const file = match?.version.files.find((entry) => entry.primary) ?? match?.version.files.at(0);
-    if (!match || !file) scanned.jarNote = `no Modrinth file for ${version}`;
-    else {
+    if (!match || !file) {
+      scanned.jarNote = `no Modrinth file for ${version}`;
+    } else {
       const data = await downloadJar(file, config.jarCache.location, 50 * megabyte, config.jarCache.maxMB * megabyte);
       scanned.jar = readJar(data);
       scanned.jarNote = match.exact ? 'exact version' : `closest Modrinth version ${match.version.version_number}`;

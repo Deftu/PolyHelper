@@ -100,7 +100,7 @@ This document is generated from the Zod config schema in [`src/types/config.ts`]
 ---
 
 This document is [auto generated](/scripts/docs/Configuration.ts) and was last updated on
-`Tue, 27 Oct 2026 14:16:04 GMT` (`1793110564650`)
+`Tue, 27 Oct 2026 14:57:02 GMT` (`1793113022888`)
 
 To update this document please run `pnpm docgen` or contact a maintainer and ask them to update it.
 

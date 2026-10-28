@@ -1,5 +1,5 @@
 import PolyHelperError from '../private/error.ts';
-import { MessageFlags, type CommandInteraction, type Message } from 'discord.js';
+import { type CommandInteraction, type Message, MessageFlags } from 'discord.js';
 import { downloadProfile, getSparkURL, removeProfile, saveProfile } from '../utils/sparkUtils.ts';
 import { findModrinthProject } from '../utils/modrinthUtils.ts';
 import { getChannelView, getFailedView, getLateView, getPendingView, getPrivateView } from './SparkViews.ts';
@@ -7,8 +7,8 @@ import { investigate } from './SparkAgent.ts';
 import { runPrepass } from './SparkPrepass.ts';
 import { toError } from '../utils/miscUtils.ts';
 import type Application from '../Application.ts';
-import type { SparkView } from './SparkViews.ts';
 import type { SparkJob, SparkProfile, SparkRequest, SparkResult } from '../types/spark.ts';
+import type { SparkView } from './SparkViews.ts';
 
 const replyEditWindowMs = 14 * 60 * 1000;
 const lateNoticeMs = 13 * 60 * 1000;
