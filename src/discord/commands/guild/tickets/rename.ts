@@ -22,7 +22,10 @@ class RenameCommand extends DiscordCommand {
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     await interaction.followUp({ content: 'Attempting to rename this ticket.' });
-    await this.getTicket(interaction).rename(interaction.options.getString('name') ?? undefined);
+    await this.getTicket(interaction).rename({
+      executor: interaction.user,
+      name: interaction.options.getString('name') ?? undefined
+    });
   }
 }
 

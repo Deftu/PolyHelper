@@ -10,11 +10,12 @@ import {
   type Message,
   MessageFlags,
   type TextThreadChannel,
-  ThreadAutoArchiveDuration
+  ThreadAutoArchiveDuration,
+  User
 } from 'discord.js';
 import { CloseRequestButtons } from '../../discord/private/ComponentHelper.ts';
 import { TicketActionEmbed, TicketEmbed } from '../../discord/private/EmbedHelper.ts';
-import { getMention, getUserId } from '../../utils/discordUtils.ts';
+import { getMention, getUserDisplayName, getUserId, isSupportMember } from '../../utils/discordUtils.ts';
 import { getReason, replaceVariables } from '../../utils/stringUtils.ts';
 import { toError } from '../../utils/miscUtils.ts';
 import type CloseRequest from './CloseRequest.ts';
@@ -105,7 +106,10 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
           : ThreadAutoArchiveDuration.OneWeek;
 
       try {
-        await thread.setAutoArchiveDuration(nextDuration);
+        await thread.setAutoArchiveDuration(
+          nextDuration,
+          "Keeping thread alive as it's a ticket and shouldn't get lost"
+        );
         return nextDuration;
       } catch (error) {
         await this.manager.application.logError(toError(error), [
@@ -130,16 +134,16 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     return message;
   }
 
-  async rename(
-    name: string = this.panel.defaultTicketName,
-    options: {
-      shouldReplaceVariables?: boolean;
-      reason?: TicketAction['reason'];
-      executor?: TicketAction['executor'];
-      closed?: boolean;
-      pinned?: boolean;
-    } = {}
-  ): Promise<Ticket> {
+  async rename(options: {
+    executor: TicketAction['executor'];
+    name?: string;
+    shouldReplaceVariables?: boolean;
+    reason?: TicketAction['reason'];
+    closed?: boolean;
+    pinned?: boolean;
+    silent?: boolean;
+  }): Promise<Ticket> {
+    let name = options.name ?? this.panel.defaultTicketName;
     const thread = await this.getThread();
 
     if (options.shouldReplaceVariables !== false) {
@@ -159,8 +163,8 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     if (options.closed ?? this.closed) name = `${this.panel.fullClosedTicketPrefix} ${name}`;
     if (options.pinned ?? this.pinned) name = `${this.panel.fullPinnedTicketPrefix} ${name}`;
 
-    await thread.setName(name);
-    if (options.executor) {
+    await thread.setName(name, `Ticket renamed by ${getUserDisplayName(options.executor)}`);
+    if (options.silent !== true) {
       await thread.send({
         embeds: [new TicketActionEmbed({ title: 'Renamed', executor: options.executor, reason: options.reason })]
       });
@@ -177,20 +181,32 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
   async close({ reason, executor }: TicketAction) {
     if (this.closed) throw new PolyHelperError('This ticket is already closed');
     if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
-    const updated = await this.rename(this.name, { shouldReplaceVariables: false, closed: true });
+    const updated = await this.rename({
+      executor,
+      name: this.name,
+      shouldReplaceVariables: false,
+      closed: true,
+      silent: true
+    });
     const thread = await this.getThread();
     await thread.send({ embeds: [new TicketActionEmbed({ title: 'Closed', reason, executor })] });
     const closeRequest = this.manager.getCloseRequestByTicketId(this.id);
     if (closeRequest) await this.manager.deleteCloseRequest(closeRequest.id);
-    await thread.setArchived(true);
+    await thread.setArchived(true, `Ticket closed by ${getUserDisplayName(executor)}`);
     this.manager.updateTicket({ ...updated.toJSON(), closed: 1 });
   }
 
   async open({ reason, executor }: TicketAction) {
     if (!this.closed) throw new PolyHelperError('This ticket is already open');
     const thread = await this.getThread();
-    await thread.setArchived(false);
-    const updated = await this.rename(this.name, { shouldReplaceVariables: false, closed: false });
+    await thread.setArchived(false, `Ticket opened by ${getUserDisplayName(executor)}`);
+    const updated = await this.rename({
+      executor,
+      name: this.name,
+      shouldReplaceVariables: false,
+      closed: false,
+      silent: true
+    });
     await thread.send({ embeds: [new TicketActionEmbed({ title: 'Opened', reason, executor })] });
     this.manager.updateTicket({ ...updated.toJSON(), closed: 0 });
   }
@@ -199,8 +215,10 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     if (this.pinned) throw new PolyHelperError('This ticket is already pinned. Please unpin it to pin it');
     const thread = await this.getThread();
     const message = await thread.send({ embeds: [new TicketActionEmbed({ title: 'Pinned', reason, executor })] });
-    await message.pin();
-    return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: message.id }).rename();
+    await message.pin(`Ticket pinned by ${getUserDisplayName(executor)}`);
+    return await this.manager
+      .updateTicket({ ...this.toJSON(), pinMessageId: message.id })
+      .rename({ executor, silent: true });
   }
 
   async getPinMessage(): Promise<Message | undefined> {
@@ -215,9 +233,46 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     const thread = await this.getThread();
     const pinMessage = await this.getPinMessage();
     if (!pinMessage) throw new PolyHelperError('Is this ticket pinned? I could not find the pinned message');
-    await pinMessage.unpin();
+    await pinMessage.unpin(`Ticket unpinned by ${getUserDisplayName(executor)}`);
     await thread.send({ embeds: [new TicketActionEmbed({ title: 'Unpinned', reason, executor })] });
-    return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: null }).rename();
+    return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: null }).rename({ executor, silent: true });
+  }
+
+  async addUser({ reason, executor, user }: TicketAction & { user: User }): Promise<Ticket> {
+    const thread = await this.getThread();
+    await thread.members.add(user);
+    await thread.send({
+      embeds: [
+        new TicketActionEmbed({
+          title: 'Added to ticket',
+          fullTitleReplace: true,
+          description: `${getMention(user)} was added to the ticket by ${getMention(executor)}`,
+          reason,
+          executor
+        })
+      ]
+    });
+    return this;
+  }
+
+  async removeUser({ reason, executor, user }: TicketAction & { user: GuildMember }): Promise<Ticket> {
+    if (this.owner === user.id) throw new PolyHelperError('You cannot remove the ticket owner from the ticket');
+    const isSupportTeam = await isSupportMember(user);
+    if (isSupportTeam) throw new PolyHelperError('You cannot remove a support member from a ticket');
+    const thread = await this.getThread();
+    await thread.members.remove(user);
+    await thread.send({
+      embeds: [
+        new TicketActionEmbed({
+          title: 'Removed from ticket',
+          fullTitleReplace: true,
+          description: `${getMention(user)} was removed from the ticket by ${getMention(executor)}`,
+          reason,
+          executor
+        })
+      ]
+    });
+    return this;
   }
 
   get linkedCloseRequest(): CloseRequest | undefined {

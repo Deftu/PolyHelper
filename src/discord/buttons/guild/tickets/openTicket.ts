@@ -4,6 +4,7 @@ import EmbedHelper from '../../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../../private/error.ts';
 import { type ButtonInteraction, ChannelType, ThreadAutoArchiveDuration } from 'discord.js';
 import { InteractionFlag, InteractionResponse, type InteractionWithGuild } from '../../../../types/discord.ts';
+import { getUserDisplayName } from '../../../../utils/discordUtils.ts';
 
 class OpenTicketButton extends DiscordButton {
   override readonly metadata: BasicInteractionMetadata = new BasicInteractionMetadata('openTicket')
@@ -45,15 +46,17 @@ class OpenTicketButton extends DiscordButton {
     }
 
     const channel = await this.discord.application.discord.getSupportChannel();
+    const auditLogReason = `Ticket opened by ${getUserDisplayName(interaction.user)}`;
     const thread = await channel.threads.create({
       name: `[${panel.cleanName}] ticket-${interaction.user.username}`,
       autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
       type: ChannelType.PrivateThread,
-      invitable: true
+      invitable: true,
+      reason: auditLogReason
     });
     await thread.members.add(interaction.user);
     const startingMessage = await thread.send(panel.getStartingMessageData(interaction.user));
-    await startingMessage.pin();
+    await startingMessage.pin(auditLogReason);
 
     if (panel.pingSupportRoleOnOpen) {
       const pingMessage = await thread.send({
@@ -75,7 +78,7 @@ class OpenTicketButton extends DiscordButton {
       name: thread.name,
       closed: 0
     });
-    await ticket.rename();
+    await ticket.rename({ executor: interaction.user });
     await interaction.followUp({
       embeds: [new EmbedHelper().setTitle('Ticket').setDescription(`Opened a ticket: <#${thread.id}>`)]
     });

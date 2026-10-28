@@ -10,7 +10,7 @@ import {
 } from 'discord.js';
 import { CommonDevs, EmbedStyles } from '../../private/constants.ts';
 import { ConfigDiscordEmbedsColors } from '../../types/config.ts';
-import { getMention, getUserDisplayName } from '../../utils/discordUtils.ts';
+import { getFullUserDisplayName, getMention } from '../../utils/discordUtils.ts';
 import { getReason } from '../../utils/stringUtils.ts';
 import type Ticket from '../../database/private/Ticket.ts';
 import type { DevData, DevName } from '../../types/application.ts';
@@ -133,13 +133,19 @@ export class TicketEmbed extends SuccessEmbed {
 }
 
 export class TicketActionEmbed extends EmbedHelper {
-  constructor({ reason, executor, title, description }: TicketAction & { title: string; description?: string }) {
+  constructor({
+    reason,
+    executor,
+    title,
+    fullTitleReplace,
+    description
+  }: TicketAction & { title: string; fullTitleReplace?: boolean; description?: string }) {
     super();
-    this.setTitle(`Ticket ${title}`);
+    this.setTitle(fullTitleReplace === true ? title : `Ticket ${title}`);
     this.setDescription(description ?? `This ticket has been ${title.toLowerCase()} by ${getMention(executor)}`);
     this.setFields({ name: 'Reason', value: getReason(reason), format: 'Block' });
     if (executor instanceof User) {
-      this.setAuthor({ name: getUserDisplayName(executor), url: executor.displayAvatarURL() });
+      this.setAuthor({ name: getFullUserDisplayName(executor), url: executor.displayAvatarURL() });
     }
   }
 }

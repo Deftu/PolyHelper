@@ -40,7 +40,7 @@ class CloseRequestCommand extends DiscordCommand {
 
     await this.getTicket(interaction).closeRequest({
       reason: this.getReason(interaction),
-      executor: interaction.user.id,
+      executor: interaction.user,
       autoClose
     });
   }

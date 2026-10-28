@@ -22,7 +22,7 @@ class CloseRequestAcceptButton extends DiscordButton {
           .setDescription(`Close request has been accepted by <@${interaction.user.id}>`)
       ]
     });
-    await closeRequest.ticket.close({ reason: closeRequest.reason, executor: interaction.user.id });
+    await closeRequest.ticket.close({ reason: closeRequest.reason, executor: interaction.user });
   }
 }
 

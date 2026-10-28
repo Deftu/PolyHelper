@@ -3,7 +3,7 @@ import DiscordCommandMetadata from '../../private/interactions/commands/DiscordC
 import EmbedHelper from '../../private/EmbedHelper.ts';
 import PolyHelperError from '../../../private/error.ts';
 import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../types/discord.ts';
-import { getUserDisplayName, hasRole, isGuildMember } from '../../../utils/discordUtils.ts';
+import { getFullUserDisplayName, hasRole, isGuildMember } from '../../../utils/discordUtils.ts';
 import { toError } from '../../../utils/miscUtils.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
 
@@ -46,7 +46,10 @@ class CountingBlockCommand extends DiscordCommand {
     await botLogs.send({
       content: `${member.toString()} has been blocked from counting`,
       embeds: [
-        embed.setAuthor({ name: getUserDisplayName(interaction.user), iconURL: interaction.user.displayAvatarURL() })
+        embed.setAuthor({
+          name: getFullUserDisplayName(interaction.user),
+          iconURL: interaction.user.displayAvatarURL()
+        })
       ]
     });
   }

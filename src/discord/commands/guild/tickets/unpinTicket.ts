@@ -20,7 +20,7 @@ class UnpinTicketCommand extends DiscordCommand {
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     await interaction.followUp({ content: 'Attempting to unpin this ticket...' });
-    await this.getTicket(interaction).unpin({ reason: this.getReason(interaction), executor: interaction.user.id });
+    await this.getTicket(interaction).unpin({ reason: this.getReason(interaction), executor: interaction.user });
   }
 }
 

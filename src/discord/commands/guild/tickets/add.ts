@@ -1,9 +1,11 @@
 import DiscordCommand from '../../../private/interactions/commands/DiscordCommand.ts';
 import DiscordCommandMetadata from '../../../private/interactions/commands/DiscordCommandMetadata.ts';
-import PolyHelperError from '../../../../private/error.ts';
-import { InteractionFlag, InteractionPermission, type InteractionWithGuild } from '../../../../types/discord.ts';
-import { SuccessEmbed } from '../../../private/EmbedHelper.ts';
-import { isGuildMember } from '../../../../utils/discordUtils.ts';
+import {
+  InteractionFlag,
+  InteractionPermission,
+  InteractionResponse,
+  type InteractionWithGuild
+} from '../../../../types/discord.ts';
 import type { ChatInputCommandInteraction } from 'discord.js';
 
 class AddCommand extends DiscordCommand {
@@ -13,17 +15,18 @@ class AddCommand extends DiscordCommand {
     .addUserOption((option) =>
       option.setName('user').setDescription('The user you want to add to the ticket').setRequired(true)
     )
+    .addStringOption((option) => option.setName('reason').setDescription('The reason for adding a user to this ticket'))
     .setCleanErrorTitle('add this user to the ticket')
     .setFlags(InteractionFlag.RequiresGuild)
+    .setResponse(InteractionResponse.Ephemeral)
     .setPermission(InteractionPermission.Support);
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
-    const member = interaction.options.getMember('user');
-    if (!isGuildMember(member)) throw new PolyHelperError('Could not find that user');
-    const thread = await this.getTicket(interaction).getThread();
-    await thread.members.add(member);
-    await interaction.followUp({
-      embeds: [new SuccessEmbed().setDescription(`Added <@${member.user.id}> to the ticket`)]
+    await interaction.followUp({ content: 'Attempting to add a user to this ticket...' });
+    await this.getTicket(interaction).addUser({
+      executor: interaction.user,
+      reason: this.getReason(interaction),
+      user: interaction.options.getUser('user', true)
     });
   }
 }

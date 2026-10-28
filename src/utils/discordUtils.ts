@@ -6,6 +6,7 @@ import {
   type Client,
   GuildMember,
   InteractionType,
+  type PartialUser,
   type Role,
   type SendableChannels,
   Team,
@@ -44,6 +45,11 @@ export function isGuildMember(
     GuildMember | APIGuildMember | APIInteractionGuildMember | APIInteractionDataResolvedGuildMember | null | undefined
 ): member is GuildMember {
   return member instanceof GuildMember;
+}
+
+export function normalizeGuildMember(input: GuildMember | User | PartialUser): User | PartialUser {
+  if (input instanceof GuildMember) return input.user;
+  return input;
 }
 
 export async function isAdminMember(member: GuildMember | APIInteractionGuildMember | null): Promise<boolean> {
@@ -104,19 +110,25 @@ export function parseInteractionType(type: InteractionType): string {
   }
 }
 
-export function getUserDisplayName(user: User, id: boolean = true): string {
-  return `${user.globalName ?? `@${user.username}`} (${id ? `(${user.id})` : ''})`.trim();
-}
-
 export function getFormattedBooleanResponse(value: boolean): string {
   return value ? ':white_check_mark: Yes' : ':x: No';
 }
 
-export function getUserId(user: User | string): string {
-  if (user instanceof User) return user.id;
-  return user;
+export function getUserDisplayName(input: GuildMember | User | PartialUser, id: boolean = true): string {
+  const user = normalizeGuildMember(input);
+  return `@${user.username} ${id ? `(${user.id})` : ''}`.trim();
 }
 
-export function getMention(user: User | string): string {
+export function getFullUserDisplayName(input: GuildMember | User | PartialUser, id: boolean = true): string {
+  const user = normalizeGuildMember(input);
+  return `${user.globalName ?? `@${user.username}`} ${id ? `(${user.id})` : ''}`.trim();
+}
+
+export function getUserId(user: GuildMember | User | PartialUser | string): string {
+  if (typeof user === 'string') return user;
+  return user.id;
+}
+
+export function getMention(user: GuildMember | User | PartialUser | string): string {
   return `<@${getUserId(user)}>`;
 }

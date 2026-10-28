@@ -1,6 +1,6 @@
 import BaseParsedDatabaseItem from './BaseParsedDatabaseItem.ts';
 import PolyHelperError from '../../private/error.ts';
-import { ActionRowBuilder, type ButtonBuilder, type Message } from 'discord.js';
+import { ActionRowBuilder, type ButtonBuilder, GuildMember, type Message } from 'discord.js';
 import { CloseRequestButtons } from '../../discord/private/ComponentHelper.ts';
 import type DatabaseManager from '../DatabaseManager.ts';
 import type Ticket from './Ticket.ts';
@@ -45,6 +45,15 @@ class CloseRequest extends BaseParsedDatabaseItem<DatabaseCloseRequest> {
     return await message.edit({
       components: [new ActionRowBuilder<ButtonBuilder>().addComponents(CloseRequestButtons(this.id, disabled))]
     });
+  }
+
+  async getDiscord(): Promise<GuildMember> {
+    if (!this.manager.application.discord.isGuildReady()) {
+      await this.manager.application.discord.loadGuild();
+      throw new PolyHelperError("The discord server isn't ready. Please try again later");
+    }
+
+    return await this.manager.application.discord.guild.members.fetch(this.closer);
   }
 
   override toAutocompleteOption(): AutocompleteOption {

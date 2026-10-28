@@ -1,5 +1,5 @@
 import type { ChalkInstance } from 'chalk';
-import type { User } from 'discord.js';
+import type { PartialUser, User } from 'discord.js';
 
 declare global {
   export interface Console {
@@ -17,7 +17,7 @@ export interface LogData {
 
 export interface TicketAction {
   reason?: string;
-  executor: User | string;
+  executor: User | PartialUser;
 }
 
 export interface TicketSearch {
