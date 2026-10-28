@@ -17,7 +17,7 @@ export interface LogData {
 
 export interface TicketAction {
   reason?: string;
-  runner: User | string;
+  executor: User | string;
 }
 
 export interface TicketSearch {

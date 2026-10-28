@@ -135,7 +135,7 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     options: {
       shouldReplaceVariables?: boolean;
       reason?: TicketAction['reason'];
-      runner?: TicketAction['runner'];
+      executor?: TicketAction['executor'];
       closed?: boolean;
       pinned?: boolean;
     } = {}
@@ -160,9 +160,9 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     if (options.pinned ?? this.pinned) name = `${this.panel.fullPinnedTicketPrefix} ${name}`;
 
     await thread.setName(name);
-    if (options.runner) {
+    if (options.executor) {
       await thread.send({
-        embeds: [new TicketActionEmbed({ title: 'Renamed', runner: options.runner, reason: options.reason })]
+        embeds: [new TicketActionEmbed({ title: 'Renamed', executor: options.executor, reason: options.reason })]
       });
     }
     return this.manager.updateTicket({ ...this.toJSON(), name });
@@ -174,31 +174,31 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     await thread.send({ content: `<@${user.user.id}>\n${message}`.trim() });
   }
 
-  async close({ reason, runner }: TicketAction) {
+  async close({ reason, executor }: TicketAction) {
     if (this.closed) throw new PolyHelperError('This ticket is already closed');
     if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
     const updated = await this.rename(this.name, { shouldReplaceVariables: false, closed: true });
     const thread = await this.getThread();
-    await thread.send({ embeds: [new TicketActionEmbed({ title: 'Closed', reason, runner })] });
+    await thread.send({ embeds: [new TicketActionEmbed({ title: 'Closed', reason, executor })] });
     const closeRequest = this.manager.getCloseRequestByTicketId(this.id);
     if (closeRequest) await this.manager.deleteCloseRequest(closeRequest.id);
     await thread.setArchived(true);
     this.manager.updateTicket({ ...updated.toJSON(), closed: 1 });
   }
 
-  async open({ reason, runner }: TicketAction) {
+  async open({ reason, executor }: TicketAction) {
     if (!this.closed) throw new PolyHelperError('This ticket is already open');
     const thread = await this.getThread();
     await thread.setArchived(false);
     const updated = await this.rename(this.name, { shouldReplaceVariables: false, closed: false });
-    await thread.send({ embeds: [new TicketActionEmbed({ title: 'Opened', reason, runner })] });
+    await thread.send({ embeds: [new TicketActionEmbed({ title: 'Opened', reason, executor })] });
     this.manager.updateTicket({ ...updated.toJSON(), closed: 0 });
   }
 
-  async pin({ reason, runner }: TicketAction) {
+  async pin({ reason, executor }: TicketAction) {
     if (this.pinned) throw new PolyHelperError('This ticket is already pinned. Please unpin it to pin it');
     const thread = await this.getThread();
-    const message = await thread.send({ embeds: [new TicketActionEmbed({ title: 'Pinned', reason, runner })] });
+    const message = await thread.send({ embeds: [new TicketActionEmbed({ title: 'Pinned', reason, executor })] });
     await message.pin();
     return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: message.id }).rename();
   }
@@ -210,13 +210,13 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     return message;
   }
 
-  async unpin({ reason, runner }: TicketAction) {
+  async unpin({ reason, executor }: TicketAction) {
     if (!this.pinned) throw new PolyHelperError('This ticket isnt pinned. Please pin it to unpin it');
     const thread = await this.getThread();
     const pinMessage = await this.getPinMessage();
     if (!pinMessage) throw new PolyHelperError('Is this ticket pinned? I could not find the pinned message');
     await pinMessage.unpin();
-    await thread.send({ embeds: [new TicketActionEmbed({ title: 'Unpinned', reason, runner })] });
+    await thread.send({ embeds: [new TicketActionEmbed({ title: 'Unpinned', reason, executor })] });
     return await this.manager.updateTicket({ ...this.toJSON(), pinMessageId: null }).rename();
   }
 
@@ -224,7 +224,7 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     return this.manager.getCloseRequestByTicketId(this.id);
   }
 
-  async closeRequest({ reason, runner, autoClose }: TicketAction & { autoClose: DatabaseCloseRequest['autoClose'] }) {
+  async closeRequest({ reason, executor, autoClose }: TicketAction & { autoClose: DatabaseCloseRequest['autoClose'] }) {
     if (this.closed) throw new PolyHelperError('This ticket is already closed');
     if (this.pinned) throw new PolyHelperError('This ticket is pinned. Please unpin it before closing');
     if (this.linkedCloseRequest) {
@@ -235,9 +235,9 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
 
     const embed = new TicketActionEmbed({
       title: 'Close Request',
-      description: `${getMention(runner)} has requested to close this ticket`,
+      description: `${getMention(executor)} has requested to close this ticket`,
       reason,
-      runner
+      executor
     });
     if (autoClose !== null) {
       embed.addFields({ name: 'Automatically closes at', value: Math.floor(autoClose / 1000), format: 'Timestamp' });
@@ -256,7 +256,7 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
       ticketId: this.id,
       messageId: message.id,
       reason,
-      closer: getUserId(runner),
+      closer: getUserId(executor),
       autoClose
     });
   }

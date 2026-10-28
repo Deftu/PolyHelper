@@ -23,7 +23,7 @@ class CheckCloseRequestsScript extends BasicScript {
             new EmbedHelper().setTitle('Closing').setDescription('This close request has expired. Auto-closing...')
           ]
         });
-        await ticket.close({ reason: closeRequest.reason, runner: closeRequest.closer });
+        await ticket.close({ reason: closeRequest.reason, executor: closeRequest.closer });
       } catch (error) {
         this.scripts.application.logError(toError(error), [
           { name: 'Script Id', value: this.id, format: 'Block' },

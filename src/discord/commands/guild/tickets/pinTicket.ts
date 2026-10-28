@@ -20,7 +20,7 @@ class PinTicketCommand extends DiscordCommand {
 
   override async execute(interaction: InteractionWithGuild<ChatInputCommandInteraction>) {
     await interaction.followUp({ content: 'Attempting to pin this ticket...' });
-    await this.getTicket(interaction).pin({ reason: this.getReason(interaction), runner: interaction.user.id });
+    await this.getTicket(interaction).pin({ reason: this.getReason(interaction), executor: interaction.user.id });
   }
 }
 

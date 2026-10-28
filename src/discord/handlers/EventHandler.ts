@@ -17,7 +17,7 @@ class EventHandler {
     if (entry.executor.id === entry.executor.client.user.id) return;
     const ticket = this.discord.application.database.getTicketByThreadId(entry.targetId);
     if (!ticket) return;
-    const action: TicketAction = { runner: entry.executor.id };
+    const action: TicketAction = { executor: entry.executor.id };
     for (const change of entry.changes) {
       if (change.key === 'name') await this.onTicketRename(ticket, entry, action);
       if (change.key === 'archived' && change.new === true) await this.onTicketArchive(ticket, action);
@@ -26,7 +26,7 @@ class EventHandler {
   }
 
   private async onTicketRename(ticket: Ticket, entry: GuildAuditLogsEntry, action: TicketAction) {
-    await ticket.rename(entry.changes.find((change) => change.key === 'name')?.new, { runner: action.runner });
+    await ticket.rename(entry.changes.find((change) => change.key === 'name')?.new, { executor: action.executor });
   }
 
   private async onTicketArchive(ticket: Ticket, action: TicketAction) {
