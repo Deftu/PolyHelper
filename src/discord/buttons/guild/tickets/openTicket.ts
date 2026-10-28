@@ -76,7 +76,11 @@ class OpenTicketButton extends DiscordButton {
       startingMessageId: startingMessage.id,
       openingTimestamp: Date.now(),
       name: thread.name,
-      closed: 0
+      closed: 0,
+      lastMessageTimestamp: null,
+      lastMessageBySupport: 0,
+      inactivityAlerts: 0,
+      lastAlertTimestamp: null
     });
     await ticket.rename({ executor: interaction.user });
     await interaction.followUp({

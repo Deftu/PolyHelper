@@ -35,6 +35,10 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
   readonly openingTimestamp: DatabaseTicket['openingTimestamp'];
   readonly name: DatabaseTicket['name'];
   readonly #closed: DatabaseTicket['closed'];
+  readonly lastMessageTimestamp: DatabaseTicket['lastMessageTimestamp'];
+  readonly #lastMessageBySupport: DatabaseTicket['lastMessageBySupport'];
+  readonly inactivityAlerts: DatabaseTicket['inactivityAlerts'];
+  readonly lastAlertTimestamp: DatabaseTicket['lastAlertTimestamp'];
   constructor(
     data: DatabaseTicket,
     private readonly manager: DatabaseManager
@@ -49,6 +53,10 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     this.openingTimestamp = data.openingTimestamp;
     this.name = data.name;
     this.#closed = data.closed;
+    this.lastMessageTimestamp = data.lastMessageTimestamp;
+    this.#lastMessageBySupport = data.lastMessageBySupport;
+    this.inactivityAlerts = data.inactivityAlerts;
+    this.lastAlertTimestamp = data.lastAlertTimestamp;
   }
 
   get pinned(): boolean {
@@ -57,6 +65,42 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
 
   get closed(): boolean {
     return Boolean(this.#closed);
+  }
+
+  get lastMessageBySupport(): boolean {
+    return Boolean(this.#lastMessageBySupport);
+  }
+
+  get nextInactivityAlertAt(): number | null {
+    if (this.lastMessageTimestamp === null) return null;
+    const cap = this.lastMessageBySupport ? ms('2d') : ms('12h');
+    const delay = Math.min(ms('3.75m') * 2 ** this.inactivityAlerts, cap);
+    return (this.lastAlertTimestamp ?? this.lastMessageTimestamp) + delay;
+  }
+
+  recordMessage(message: Message, bySupport: boolean): Ticket {
+    return this.manager.updateTicketActivity(this.id, {
+      lastMessageTimestamp: message.createdTimestamp,
+      lastMessageBySupport: bySupport ? 1 : 0,
+      inactivityAlerts: 0,
+      lastAlertTimestamp: null
+    });
+  }
+
+  async sendInactivityAlert(): Promise<Ticket> {
+    const thread = await this.getThread();
+    const since = `<t:${Math.floor((this.lastMessageTimestamp ?? Date.now()) / 1000)}:R>`;
+    const supportRole = `<@&${this.manager.application.config.discord.roles.ticketPing}>`;
+    const content = this.lastMessageBySupport
+      ? `<@${this.owner}> Support is waiting on your reply. Last message was ${since}.`
+      : `${supportRole} This ticket is waiting on a reply from support. Last message was ${since}.`;
+    await thread.send({ content });
+    return this.manager.updateTicketActivity(this.id, {
+      lastMessageTimestamp: this.lastMessageTimestamp,
+      lastMessageBySupport: this.#lastMessageBySupport,
+      inactivityAlerts: this.inactivityAlerts + 1,
+      lastAlertTimestamp: Date.now()
+    });
   }
 
   get panel(): Panel {
@@ -194,6 +238,12 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
     if (closeRequest) await this.manager.deleteCloseRequest(closeRequest.id);
     await thread.setArchived(true, `Ticket closed by ${getUserDisplayName(executor)}`);
     this.manager.updateTicket({ ...updated.toJSON(), closed: 1 });
+    this.manager.updateTicketActivity(this.id, {
+      lastMessageTimestamp: null,
+      lastMessageBySupport: 0,
+      inactivityAlerts: 0,
+      lastAlertTimestamp: null
+    });
   }
 
   async open({ reason, executor }: TicketAction) {
@@ -369,7 +419,11 @@ class Ticket extends BaseParsedDatabaseItem<DatabaseTicket> {
       startingMessageId: this.startingMessageId,
       openingTimestamp: this.openingTimestamp,
       name: this.name,
-      closed: this.#closed
+      closed: this.#closed,
+      lastMessageTimestamp: this.lastMessageTimestamp,
+      lastMessageBySupport: this.#lastMessageBySupport,
+      inactivityAlerts: this.inactivityAlerts,
+      lastAlertTimestamp: this.lastAlertTimestamp
     };
   }
 }

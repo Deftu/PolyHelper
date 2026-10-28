@@ -2,6 +2,7 @@ import EmbedHelper, { ErrorEmbed } from '../private/EmbedHelper.ts';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type Message, MessageFlags, MessageType } from 'discord.js';
 import { cleanString, findLogURL, getNewLog, mclogsLogo, verbalizeCrash } from '../../utils/mclogsAPIUtils.ts';
 import { formatSize } from '../../utils/stringUtils.ts';
+import { isSupportMember } from '../../utils/discordUtils.ts';
 import { toError } from '../../utils/miscUtils.ts';
 import type DiscordManager from '../DiscordManager.ts';
 
@@ -10,6 +11,7 @@ class MessageHandler {
 
   async onMessage(message: Message) {
     if (message.type === MessageType.ThreadCreated) await this.onThreadCreated(message);
+    if (message.channel.isThread() && !message.author.bot) await this.onTicketMessage(message);
     if (
       this.discord.application.config.discord.minecraftLogCleaner &&
       !message.flags.has(MessageFlags.SuppressNotifications) &&
@@ -24,6 +26,13 @@ class MessageHandler {
     if (message.author.id !== message.client.user.id) return;
     if (message.channel.id !== this.discord.application.config.discord.channels.support) return;
     await message.delete().catch();
+  }
+
+  private async onTicketMessage(message: Message) {
+    const ticket = this.discord.application.database.getTicketByThreadId(message.channel.id);
+    if (!ticket || ticket.closed) return;
+    const bySupport = message.author.id !== ticket.owner && (await isSupportMember(message.member));
+    ticket.recordMessage(message, bySupport);
   }
 
   private async onLogMessage(message: Message) {

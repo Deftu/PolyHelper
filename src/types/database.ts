@@ -50,9 +50,17 @@ export const DatabaseTicket = zod.object({
   startingMessageId: zod.string(),
   openingTimestamp: zod.int().positive(),
   name: zod.string(),
-  closed: DatabaseBoolean
+  closed: DatabaseBoolean,
+  lastMessageTimestamp: zod.int().positive().nullable(),
+  lastMessageBySupport: DatabaseBoolean,
+  inactivityAlerts: zod.int().nonnegative(),
+  lastAlertTimestamp: zod.int().positive().nullable()
 });
 export type DatabaseTicket = zod.infer<typeof DatabaseTicket>;
+export type DatabaseTicketActivity = Pick<
+  DatabaseTicket,
+  'lastMessageTimestamp' | 'lastMessageBySupport' | 'inactivityAlerts' | 'lastAlertTimestamp'
+>;
 
 export interface TicketSearchFilters extends DatabaseSearchFilters {
   panelId?: DatabaseTicket['panelId'];
